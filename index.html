@@ -647,7 +647,9 @@ const CLERK=NPCS[0];
 const SHORT={mickey:'小鐘',song:'小宋',ak:'饅頭',chen:'阿辰',mei:'小美',clerk:'罐罐',guide:'阿山',yu:'小丁',fruit:'阿梅',fish:'海伯',rancher:'阿牧',camper:'阿野',jie:'阿宇',lin:'林奶奶',fang:'小芳',kai:'阿凱'};
 function hearts(id){return Math.min(5,Math.floor((G.rel[id]||0)/20));}
 function addRel(id,v){G.rel[id]=Math.max(0,Math.min(100,(G.rel[id]||0)+v));}
-function isWalk(x,y){return x>=0&&y>=0&&x<MW&&y<MH&&WALK.has(G.map[y][x]);}
+// 阿辰在家時，腳踏車停在門口（村子 22～23 欄、第 17 列），那兩格不能走過去；G.bikeP 每個畫格更新一次
+function bikeAt(x,y){return!!G.bikeP&&y===17&&(x===VX+22||x===VX+23);}
+function isWalk(x,y){return x>=0&&y>=0&&x<MW&&y<MH&&WALK.has(G.map[y][x])&&!bikeAt(x,y);}
 
 function rollWeather(){const r=Math.random();G.weather=r<.28?'rainy':r<.52?'cloudy':'sunny';}
 function initRain(){G.rain=[];for(let i=0;i<90;i++)G.rain.push({x:Math.random()*(W2+60)-30,y:Math.random()*H2,spd:3.5+Math.random()*4,len:5+Math.floor(Math.random()*7),a:.28+Math.random()*.28});}
@@ -725,7 +727,7 @@ function buildVillage(m){const S=(x,y,t,b)=>{m[y][VX+x]=t;if(b)VBASE[y][x]=b;};
   F(2,7,12,7,T.PLAZA,'z');F(10,6,12,6,T.PLAZA,'z');F(17,7,21,7,T.PLAZA,'z');F(23,7,28,7,T.PLAZA,'z');F(17,17,23,18,T.PLAZA,'z');
   for(const c of COURTS)F(c.x0,c.y0,c.x0+c.w-1,c.y0+c.h-1,T.COURT,'g');
   for(const[,x,y,w,h]of VFOOT)F(x,y,x+w-1,y+h-1,T.VB);
-  for(const[x,y]of[[8,6],[6,7],[7,7]])S(x,y,T.VDECO);
+  for(const[x,y]of[[2,7],[6,7],[7,7]])S(x,y,T.VDECO);   // (2,7) 木工坊門口左邊的木頭堆
   for(const[x,y]of[[27,10],[28,10],[3,21],[9,21],[16,22],[19,22],[22,22],[25,22],[27,22]])S(x,y,T.TREE);
 }
 function vBase(sx,sy,x,y){const b=VBASE[y]&&VBASE[y][x-VX];if(b==='p')drawGravel(sx,sy,x,y);else if(b==='z')drawPlaza(sx,sy,x,y);else drawGrass(sx,sy,x,y);}
@@ -767,9 +769,9 @@ function vArt(){if(VART)return VART;const out=[];const o=ctx;let LT=null,TXL=[];
     base(X,Y+H-15,W);door(4*TILE+2,Y+H-15,'#5a3a20',null);
     const fy=Y+H+2;R(6*TILE+2,fy+10,34,4,'#8a5a30');for(const lx of[6*TILE+4,6*TILE+30])R(lx,fy+14,3,16,'#7a4a24');R(6*TILE-6,fy,50,12,'#b07a44');R(6*TILE-6,fy,9,12,'#e0b080');R(6*TILE+35,fy,9,12,'#e0b080');
     R(7*TILE+6,fy+8,26,18,'#8a5a30');R(7*TILE+6,fy+8,26,5,'#e0b080');R(7*TILE+16,fy-10,4,20,'#6a4428');R(7*TILE+10,fy-14,14,8,'#9aa0ac');
-    for(let r=0;r<3;r++)for(let k=0;k<4-r;k++){const lx=8*TILE+k*8+r*4,ly=7*TILE-24-r*9;R(lx,ly,8,9,'#8a5a30');R(lx+2,ly+2,4,5,'#e0b080');}
     for(let k=0;k<12;k++)R(5*TILE+hs(k,1)*90,fy+18+hs(k,2)*12,3,2,'#e8c88a');
-    const bx=X+8,by=fy+4;R(bx,by+6,16,16,'#a8743e');R(bx+2,by,12,10,'#a8743e');R(bx+1,by-2,4,4,'#a8743e');R(bx+11,by-2,4,4,'#a8743e');R(bx+5,by+4,2,2,'#3a2010');R(bx+9,by+4,2,2,'#3a2010');R(bx+6,by+7,4,2,'#7a4a24');});
+    // 門口左邊的木頭堆（原本放熊木雕的地方）
+    for(let r=0;r<3;r++)for(let k=0;k<4-r;k++){const lx=X+2+k*8+r*4,ly=fy+17-r*9;R(lx,ly,8,9,'#8a5a30');R(lx+2,ly+2,4,5,'#e0b080');}});
   // 林奶奶家
   mk('lin',16*TILE,-10,7*TILE,8*TILE+10,7*TILE-2,()=>{const X=17*TILE,Y=1*TILE-6,W=5*TILE,H=6*TILE+6,wy=72;shadow(X,Y+H,W);
     wall(X,Y+wy,W,H-wy-15,'brick',['#b8624a','#8a3a2a','#c87a5a']);R(X,Y+wy,W,6,'#7a4a24');
@@ -836,7 +838,7 @@ function villageEnts(ents){if(!villageVisible())return;const A=vArt();const nigh
 }
 const VTAP={jie:'木工坊裡傳來鋸木頭的聲音，\n還有周杰倫的〈鬥牛〉。\n（之後就可以進去參觀喔！）',lin:'門口的搖椅上放著一條毛毯，\n屋裡飄出蘿蔔湯的香味。',girls:'門上貼著一張紙條：\n「冰箱裡的草莓蛋糕是小芳的，不准偷吃！」',apt:'信箱上寫著：小鐘、小宋、饅頭、阿辰。\n二樓陽台晾著一件紅短褲。',lot:'門口放著一個貼滿貼紙的行李箱，\n屋裡傳來音樂和笑聲。'};
 function vTap(tx,ty){const h=houseAt(tx,ty);if(h){if(ROOMS[h]&&enterRoom(h))return true;popInfo(VHOUSE_N[h]+(h==='lot'?'（預定地）':''),VTAP[h],h==='lot'?'好期待！':'好喔');return true;}
-  const lx=tx-VX;if(lx===8&&ty===6||(lx===6||lx===7)&&ty===7){msg('阿宇的木頭和鋸木架，\n上面都是木屑。');return true;}return false;}
+  const lx=tx-VX;if(lx===2&&ty===7){msg('阿宇堆在門口的木頭，\n每一根都排得整整齊齊。');return true;}if((lx===6||lx===7)&&ty===7){msg('阿宇的鋸木架，\n上面都是木屑。');return true;}return false;}
 
 // ===== 房子內部（地圖 x ≥ RX 的區域；客廳 → 各自的房間） =====
 const RX=VX+FARMW;
@@ -1826,7 +1828,7 @@ function drawHintLabel(text,x,y){
 
 function getFacing(){const tx=Math.floor(G.px/TILE),ty=Math.floor(G.py/TILE);return G.dir==='up'?[tx,ty-1]:G.dir==='down'?[tx,ty+1]:G.dir==='left'?[tx-1,ty]:[tx+1,ty];}
 function npcAtTile(x,y){return NPCS.find(n=>!n.away&&(n.id!=='clerk'||!isInStore(n))&&Math.floor(n.x/TILE)===x&&Math.floor(n.y/TILE)===y);}
-function getHint(tx,ty){if(tx<0||ty<0||tx>=MW||ty>=MH)return null;const n=npcAtTile(tx,ty);if(n)return n.hint;if(tx>=RX){const rt=G.map[ty][tx];if(rt===T.IFURN){const bd=buildAt(tx,ty);return bd?BUILDS[bd.k].n:null;}if(rt===T.IW||rt===T.IF||rt===T.IDOOR||(rt===T.HF&&!buildAt(tx,ty)))return null;}if(tx>=VX){const vt=G.map[ty][tx];if(vt===T.COURT){const c=courtAt(tx,ty);if(c)return c.n;}if(vt===T.VB){const h=houseAt(tx,ty);if(h)return VHOUSE_N[h];}if(vt===T.VDECO){const lx=tx-VX;if(VLAMPS.some(([a,b])=>a===lx&&b===ty))return null;return'看看';}}const t=G.map[ty][tx],c=G.cr[ty][tx],tool=TOOLS[G.tool].id;if(t===T.TREE&&tool==='axe')return'砍樹';if(t===T.STUMP)return tool==='axe'?'挖樹根':'樹墩';{const bd=buildAt(tx,ty);if(bd)return BUILDS[bd.k].n;}if(t===T.SHELF)return'看書';if(t===T.BD||t===T.BD2)return'睡覺';if(t===T.SC)return'和老闆對話';if(t===T.HOTF)return'熟食櫃台';if(t===T.FRIDGE)return'飲料櫃';if(t===T.SEEDC)return'種子農具櫃台';if(t===T.CH)return'出貨';if(t===T.TROUGH)return'餵飼料';if(t===T.TABLE)return'圖鑑';if(t===T.WARDROBE)return'衣櫃';if(t===T.BENCH)return tool==='axe'?'長椅':'坐下';if(t===T.LAMP)return'路燈';if(t===T.SPROUT)return'樹苗';if(t===T.VEND)return'販賣機';if(t===T.RCNT)return'牧場櫃台';if(t===T.TENT)return'帳篷';if(t===T.FIRE)return'營火';if(t===T.CTABLE)return'露營桌';if(t===T.STOVE)return'煮飯';if(t===T.WELL&&tool==='water')return G.water<G.maxWater?'裝水':'水桶已滿';if(t===T.STALL)return'擺攤';if(t===T.SEA&&tool==='rod')return'釣魚';if(t===T.CHALK)return'今日行情';if(t===T.QBOARD)return'看委託';if(t===T.D&&tool==='hoe')return'翻土';if((t===T.TI||t===T.WA)&&c&&tool==='hoe')return'鏟起';if((t===T.TI||t===T.WA)&&!!CROPS[tool]&&!c)return'播種';if((t===T.TI||t===T.WA)&&tool==='water'&&c&&!c.watered)return'澆水';if(c&&c.stage===3&&tool==='basket')return'收穫';return null;}
+function getHint(tx,ty){if(tx<0||ty<0||tx>=MW||ty>=MH)return null;const n=npcAtTile(tx,ty);if(n)return n.hint;if(bikeAt(tx,ty))return'阿辰的公路車';if(tx>=RX){const rt=G.map[ty][tx];if(rt===T.IFURN){const bd=buildAt(tx,ty);return bd?BUILDS[bd.k].n:null;}if(rt===T.IW||rt===T.IF||rt===T.IDOOR||(rt===T.HF&&!buildAt(tx,ty)))return null;}if(tx>=VX){const vt=G.map[ty][tx];if(vt===T.COURT){const c=courtAt(tx,ty);if(c)return c.n;}if(vt===T.VB){const h=houseAt(tx,ty);if(h)return VHOUSE_N[h];}if(vt===T.VDECO){const lx=tx-VX;if(VLAMPS.some(([a,b])=>a===lx&&b===ty))return null;return'看看';}}const t=G.map[ty][tx],c=G.cr[ty][tx],tool=TOOLS[G.tool].id;if(t===T.TREE&&tool==='axe')return'砍樹';if(t===T.STUMP)return tool==='axe'?'挖樹根':'樹墩';{const bd=buildAt(tx,ty);if(bd)return BUILDS[bd.k].n;}if(t===T.SHELF)return'看書';if(t===T.BD||t===T.BD2)return'睡覺';if(t===T.SC)return'和老闆對話';if(t===T.HOTF)return'熟食櫃台';if(t===T.FRIDGE)return'飲料櫃';if(t===T.SEEDC)return'種子農具櫃台';if(t===T.CH)return'出貨';if(t===T.TROUGH)return'餵飼料';if(t===T.TABLE)return'圖鑑';if(t===T.WARDROBE)return'衣櫃';if(t===T.BENCH)return tool==='axe'?'長椅':'坐下';if(t===T.LAMP)return'路燈';if(t===T.SPROUT)return'樹苗';if(t===T.VEND)return'販賣機';if(t===T.RCNT)return'牧場櫃台';if(t===T.TENT)return'帳篷';if(t===T.FIRE)return'營火';if(t===T.CTABLE)return'露營桌';if(t===T.STOVE)return'煮飯';if(t===T.WELL&&tool==='water')return G.water<G.maxWater?'裝水':'水桶已滿';if(t===T.STALL)return'擺攤';if(t===T.SEA&&tool==='rod')return'釣魚';if(t===T.CHALK)return'今日行情';if(t===T.QBOARD)return'看委託';if(t===T.D&&tool==='hoe')return'翻土';if((t===T.TI||t===T.WA)&&c&&tool==='hoe')return'鏟起';if((t===T.TI||t===T.WA)&&!!CROPS[tool]&&!c)return'播種';if((t===T.TI||t===T.WA)&&tool==='water'&&c&&!c.watered)return'澆水';if(c&&c.stage===3&&tool==='basket')return'收穫';return null;}
 function getNearbyAnimal(){let cl=null,cd=TILE*2.2;for(const a of G.animals){const d=Math.hypot(a.x-G.px,a.y-G.py);if(d<cd){cl=a;cd=d;}}return cl;}
 
 function render(){
@@ -1841,7 +1843,7 @@ function render(){
   if(!G.path&&!G.moving&&!G.indoor&&fx>=0&&fy>=0&&fx<MW&&fy<MH){ctx.strokeStyle='rgba(255,255,255,.3)';ctx.lineWidth=2;ctx.strokeRect(fx*TILE-cam.x+1,fy*TILE-cam.y+1,TILE-2,TILE-2);}
   for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++)if(G.cr[y][x])drawCrop(x,y,G.cr[y][x]);
   drawTarget();
-  const drawFarmAnimal=a=>{if(a.baby>0){const ax=a.x-cam.x,ay=a.y-cam.y+12;ctx.save();ctx.translate(ax,ay);ctx.scale(.65,.65);ctx.translate(-ax,-ay);drawAnimal(a,true);ctx.restore();}else drawAnimal(a,true);};
+  const drawFarmAnimal=a=>{if(a.fade!=null){ctx.save();ctx.globalAlpha=Math.max(0,a.fade)*(a.fade>.85&&(frameCount>>1)%2?.4:1);drawFarmAnimal0(a);ctx.restore();return;}drawFarmAnimal0(a);},drawFarmAnimal0=a=>{if(a.baby>0){const ax=a.x-cam.x,ay=a.y-cam.y+12;ctx.save();ctx.translate(ax,ay);ctx.scale(.65,.65);ctx.translate(-ax,-ay);drawAnimal(a,true);ctx.restore();}else drawAnimal(a,true);};
   const ptx=Math.floor(G.px/TILE),pty=Math.floor(G.py/TILE),curT=G.map[pty]?.[ptx];
   const insideHouse=false;
   const insideShop=curT===T.SF||(ptx===22&&pty===5);const insideBarn=curT===T.BF||(ptx===12&&pty===21);G.indoor=insideHouse||insideShop||insideBarn||zoneOf(G.px)===2;
@@ -1922,6 +1924,8 @@ function clearPath(){G.path=null;G.pathAct=null;G.target=null;}
 function faceTo(x,y){const dx=x-G.px,dy=y-G.py;G.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');}
 
 // ★ 罐罐只在店裡走動；阿山、小丁可以走遍整張地圖的草地和碎石路
+// 正在跟玩家說話，或從對話打開的選單（問答、送禮、小遊戲…）還沒關：NPC 要原地等
+function npcHeld(n){return G.talk===n||(G.holdNpc===n&&G.ph!=='play');}
 function npcBusy(n){return n.trip==='rush'||n.trip==='in'||n.trip==='out'||n.trip==='lunch'||n.trip==='eating'||n.trip==='help'||n.trip==='helpwait'||n.trip==='tent';}
 function helpPass(x,y){if(travelAllowed(x,y))return true;const t=G.map[y]&&G.map[y][x];return t===T.TI||t===T.WA||t===T.D;}
 function helpTargets(){const L=[];for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(c&&!c.watered&&c.stage<3&&c.type!=='grass')L.push([x,y]);}return L;}
@@ -2041,6 +2045,7 @@ function campGuest(n,h){
   return true;
 }
 function updateNPCs(){
+  {const ch=NPCS.find(n=>n.id==='chen');G.bikeP=!!(ch&&ch.away&&!ch.trip);}
   if(G.ph==='play'&&!G.talk)G.holdNpc=null;
   const h=G.time/60;
   for(const n of NPCS){
@@ -2048,32 +2053,36 @@ function updateNPCs(){
     if((n.id==='guide'||n.id==='rancher')&&campGuest(n,G.time/60))continue;
     if(n.id==='camper'){const on=campAwake();if(!on&&n.sit)unsit(n);
       if(on&&n.away){n.away=false;n.sit=null;n.x=3*TILE;n.y=19.6*TILE;n.trip='in';n.path=[{x:3*TILE,y:20.5*TILE},...(tilePath(3,20,5,19)||[])];n.say=G.time<9*60?'早安～睡得好飽！':'嗨～';n.sayT=140;}
-      if(!on&&!n.away&&n.trip!=='tent'){if(G.time<12*60){n.away=true;n.trip=null;n.path=null;}
+      if(!on&&!n.away&&n.trip!=='tent'&&!npcHeld(n)){if(G.time<12*60){n.away=true;n.trip=null;n.path=null;}
         else{if(G.talk===n)closeTalk();n.chat=null;n.trip='tent';n.path=[...(tilePath(Math.floor(n.x/TILE),Math.floor(n.y/TILE),3,20)||[]),{x:3*TILE,y:20.4*TILE},{x:3*TILE,y:19.6*TILE}];n.say='晚安～我去睡囉！';n.sayT=150;}}
       if(n.away)continue;
       if(n.sit){if(Math.random()<.0008){unsit(n);n.wait=90;}else{n.moving=false;continue;}}
       else if(on&&!n.trip&&!(n.path&&n.path.length)&&!n.chat&&G.talk!==n&&Math.random()<(NPCS.some(v=>v.sit&&v!==n)?.02:.003)){const p=tilePath(Math.floor(n.x/TILE),Math.floor(n.y/TILE),5,19);if(p){n.path=p;n.trip='tosit';}}}
-    if(n.id==='rancher'){const on=h>=6&&h<19.5;if(on&&n.away){n.x=13.5*TILE;n.y=19.5*TILE;n.path=null;}n.away=!on;if(n.away)continue;}
+    if(n.id==='rancher'){const on=h>=6&&h<19.5;if(on&&n.away){n.x=13.5*TILE;n.y=19.5*TILE;n.path=null;}if(!npcHeld(n))n.away=!on;if(n.away)continue;}
     const s=SCHED[n.id];
     if(s){
       const here=h>=s.arr&&h<s.lv&&!npcOff(n.id);
       if(here&&n.away&&!n.trip){n.away=false;n.trip='in';
         const[gx,gy]=n.spot?[Math.floor(n.spot[0]/TILE),Math.floor(n.spot[1]/TILE)]:randomSpot(n);
         n.path=npcInPath(n,gx,gy);if(n.spot)n.path.push({x:n.spot[0],y:n.spot[1]});}
-      if(!here&&!n.away&&n.trip!=='out'){n.trip='out';if(G.talk===n)closeTalk();
+      if(!here&&!n.away&&n.trip!=='out'&&!npcHeld(n)){n.trip='out';
         n.path=npcOutPath(n);
         n.say=n.id==='clerk'?'打烊囉，明天早上見！':n.static?'收攤囉，明天見！':n.id==='lu'?(npcOff('lu')==='job'?'我去兼差囉～':'回公寓寫程式囉！'):'天黑了，我先回家囉！';n.sayT=150;}
       if((n.id==='yu'||n.id==='guide'||n.id==='song'||n.id==='lu')&&here){
-        if(!n.away&&!n.trip&&h>=12&&h<12.7&&n.lunchDay!==G.day&&G.talk!==n){n.lunchDay=G.day;n.chat=null;n.trip='lunch';n.path=tilePath(Math.floor(n.x/TILE),Math.floor(n.y/TILE),22,5)||[];n.say='去 6-TWELVE 買午餐囉～';n.sayT=140;}
+        if(!n.away&&!n.trip&&h>=12&&h<12.7&&n.lunchDay!==G.day&&!npcHeld(n)){n.lunchDay=G.day;n.chat=null;n.trip='lunch';n.path=tilePath(Math.floor(n.x/TILE),Math.floor(n.y/TILE),22,5)||[];n.say='去 6-TWELVE 買午餐囉～';n.sayT=140;}
         if(n.trip==='eating'&&h>=12.8){n.away=false;n.trip=null;n.x=22.5*TILE;n.y=5.5*TILE;n.dir='down';n.say='吃飽了！';n.sayT=120;n.wait=30;}
-        if(G.helper===n.id&&G.helpDay!==G.day&&!n.away&&!n.trip&&h>=9&&h<15&&G.talk!==n&&G.weather!=='rainy'&&helpTargets().length){G.helpDay=G.day;n.chat=null;n.trip='help';n.helped=0;if(n.id==='song'&&G.cat&&G.cat.adopted&&G.cat.fishDay!==G.day){G.cat.fishDay=G.day;G.songCat=G.day;msg('小宋：「我順便餵了阿喵喔～」');}n.say='我來幫忙澆水～';n.sayT=140;nextHelp(n);}
-        if(n.id==='yu'&&!n.away&&!n.trip&&h>=17.3&&n.sunDay!==G.day&&G.talk!==n){n.sunDay=G.day;n.chat=null;n.trip='sunset';n.path=tilePath(Math.floor(n.x/TILE),Math.floor(n.y/TILE),23,17)||[];}
+        if(G.helper===n.id&&G.helpDay!==G.day&&!n.away&&!n.trip&&h>=9&&h<15&&!npcHeld(n)&&G.weather!=='rainy'&&helpTargets().length){G.helpDay=G.day;n.chat=null;n.trip='help';n.helped=0;if(n.id==='song'&&G.cat&&G.cat.adopted&&G.cat.fishDay!==G.day){G.cat.fishDay=G.day;G.songCat=G.day;msg('小宋：「我順便餵了阿喵喔～」');}n.say='我來幫忙澆水～';n.sayT=140;nextHelp(n);}
+        if(n.id==='yu'&&!n.away&&!n.trip&&h>=17.3&&n.sunDay!==G.day&&!npcHeld(n)){n.sunDay=G.day;n.chat=null;n.trip='sunset';n.path=tilePath(Math.floor(n.x/TILE),Math.floor(n.y/TILE),23,17)||[];}
       }
       if(n.away)continue;
     }
     if(n.chat){n.moving=false;const o=n.chat,dx=o.x-n.x,dy=o.y-n.y;n.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');continue;}
-    const near=Math.hypot(n.x-G.px,n.y-G.py)<TILE*1.7,talking=G.talk===n||(G.holdNpc===n&&G.ph!=='play'),called=G.pathAct&&G.pathAct.npc===n;
-    if(!npcBusy(n)&&(near||talking||called)){n.moving=false;if(near||talking){faceP(n);if(n.static)n.wait=120;}continue;}
+    const near=Math.hypot(n.x-G.px,n.y-G.py)<TILE*1.7,talking=npcHeld(n),called=G.pathAct&&G.pathAct.npc===n;
+    // 經過主角身邊只停下來看一下（約 1 秒）就繼續走，不然大家會越聚越多；主角走開才重新計時。擺攤的人照舊一直面向主角
+    if(near)n.nearT=(n.nearT||0)+1;else n.nearT=0;
+    const greet=near&&(n.static||n.nearT<70);
+    // 說話中一律停下；回家路上的 NPC 被玩家叫住也會停下來等
+    if(talking||(!npcBusy(n)&&(greet||called))||(n.trip==='out'&&called)){n.moving=false;if(greet||talking){faceP(n);if(n.static)n.wait=120;}continue;}
     if(n.path&&n.path.length){
       const wp=n.path[0],dx=wp.x-n.x,dy=wp.y-n.y,d=Math.hypot(dx,dy),sp=(n.trip==='rush'||n.trip==='rushback')?2.8:n.trip?1.15:(n.spd||1);
       if(d>0.3)n.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');
@@ -2141,7 +2150,7 @@ function onTap(wx,wy){
   let goals,act=null,mark={tx,ty};
   const pcur=G.map[pty]?.[ptx],inShop=pcur===T.SF||(ptx===21&&pty===5);
   const eo=G.event&&G.event.obj,hitObj=eo&&Math.hypot(wx-eo.x,wy-eo.y)<22,hitCat=G.cat&&Math.hypot(wx-G.cat.x,wy-G.cat.y)<20;
-  const inBarn=pcur===T.BF||(ptx===12&&pty===21);const hitNPC=NPCS.find(n=>(n.id!=='clerk'||inShop===isInStore(n))&&(n.id!=='rancher'||inBarn===isInBarn(n))&&!n.away&&n.x<RX*TILE&&!npcBusy(n)&&Math.abs(wx-n.x)<18&&wy>n.y+15-66&&wy<n.y+20);const hitCust=G.cust.find(c=>c.alpha>=1&&c.x<RX*TILE&&!['think','haggle','leave'].includes(c.state)&&inShop===isInStore(c)&&Math.abs(wx-c.x)<18&&wy>c.y+15-66&&wy<c.y+20);
+  const inBarn=pcur===T.BF||(ptx===12&&pty===21);const hitNPC=NPCS.find(n=>(n.id!=='clerk'||inShop===isInStore(n))&&(n.id!=='rancher'||inBarn===isInBarn(n))&&!n.away&&n.x<RX*TILE&&(!npcBusy(n)||n.trip==='out')&&Math.abs(wx-n.x)<18&&wy>n.y+15-66&&wy<n.y+20);const hitCust=G.cust.find(c=>c.alpha>=1&&c.x<RX*TILE&&!['think','haggle','leave'].includes(c.state)&&inShop===isInStore(c)&&Math.abs(wx-c.x)<18&&wy>c.y+15-66&&wy<c.y+20);
   const an=G.animals.find(a=>Math.hypot(a.x-wx,a.y-wy)<24);const hitRes=resAtTap(wx,wy);
   if(hitObj){const ox=Math.floor(eo.x/TILE),oy=Math.floor(eo.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={evobj:true};mark={tx:ox,ty:oy};}
   else if(hitCat){const ox=Math.floor(G.cat.x/TILE),oy=Math.floor(G.cat.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={cat:true};mark={tx:ox,ty:oy};}
@@ -2170,7 +2179,7 @@ function arrive(){
   if(a.res){resTalk(a.res);return;}
   if(a.cust){if(!G.cust.includes(a.cust)||a.cust.state==='leave'){msg('他已經走掉了…');return;}faceTo(a.cust.x,a.cust.y);const pr=custProxy(a.cust);openTalk(pr);a.cust.dir=pr.dir;a.cust.line=pr.line;return;}
   if(a.evobj){pickEventObj();return;}
-  if(a.cat){if(G.cat)faceTo(G.cat.x,G.cat.y);interactCat();return;}
+  if(a.cat){if(G.cat)faceTo(G.cat.x,G.cat.y);openCatTalk();return;}
   if(a.animal){faceTo(a.animal.x,a.animal.y);interactAnimal(a.animal);return;}
   if(a.item){const it=a.item,r=ROOMS[it[0]];faceTo((r.x0+it[1]+it[3]/2)*TILE,(r.y0+it[2]+it[4]/2)*TILE);roomAct(it,a.tx,a.ty);return;}
   if(a.benchPick){const ptx=Math.floor(G.px/TILE),pty=Math.floor(G.py/TILE),hit=a.benchPick.find(([c,f])=>f[0]===ptx&&f[1]===pty&&c[0]===a.tx&&c[1]===a.ty)||a.benchPick.find(([c,f])=>f[0]===ptx&&f[1]===pty),bb=buildAt(a.tx,a.ty);if(hit&&bb){sitBench(bb,hit[0][0],hit[0][1]);return;}}
@@ -2203,7 +2212,7 @@ function move(){
 }
 
 function drawAvatar(n){
-  const ic=document.getElementById('npc-icon');ic._ls=npcSheet(n);ic._t0=performance.now();talkAnim();
+  const ic=document.getElementById('npc-icon');ic._cat=false;ic._ls=npcSheet(n);ic._t0=performance.now();talkAnim();
 }
 // ===== 對話框：人物會呼吸、眨眼；對話逐字打出來 =====
 // 站姿兩格（正面站第 0、1 格）各做一張睜眼、一張閉眼
@@ -2250,7 +2259,7 @@ const UIICON={bolt:[[8,1,4,2,'#f9c74f'],[6,3,4,2,'#f9c74f'],[4,5,8,2,'#f9c74f'],
  shop:[[2,4,12,3,'#e05050'],[2,4,2,3,'#ffffff'],[6,4,2,3,'#ffffff'],[10,4,2,3,'#ffffff'],[3,7,10,7,'#f0e2c0'],[6,9,4,5,'#7a4a24']]};
 function uiIconURL(k){if(!uiIconURL.c)uiIconURL.c={};if(uiIconURL.c[k])return uiIconURL.c[k];const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');x.imageSmoothingEnabled=false;
   if(UIICON[k]){for(const[a,b,w,h,col]of UIICON[k]){x.fillStyle=col;x.fillRect(a*2,b*2,w*2,h*2);}}else if(k.startsWith('seed:'))drawSeedIcon(x,k.slice(5),16,16,2);else drawIcon(x,k,16,16,2);return uiIconURL.c[k]=c.toDataURL();}
-const BTN_ICON=[[/農產品/,'wheat'],[/便宜|好啊/,'coin'],[/原價|不行/,'no'],[/送禮/,'gift'],[/問答|挑戰/,'quiz'],[/爬山/,'mount'],[/出海/,'boat'],[/騎馬/,'horse'],[/露營/,'tent'],[/買蔬果/,'strawberry'],[/買漁獲/,'fish_m'],[/吃一碗|吃的|熟食/,'riceball'],[/飲料/,'drink'],[/種子|農具/,'seed:turnip'],[/行情/,'chart'],[/買動物/,'chicken'],[/賣動物/,'coin'],[/收購/,'egg'],[/擴建/,'hammer'],[/木材/,'wood'],[/離開|再見|好喔|下次|謝謝|關閉|好的/,'door']];
+const BTN_ICON=[[/農產品/,'wheat'],[/便宜|好啊/,'coin'],[/原價|不行/,'no'],[/送禮/,'gift'],[/問答|挑戰/,'quiz'],[/爬山/,'mount'],[/出海/,'boat'],[/騎馬/,'horse'],[/露營/,'tent'],[/買蔬果/,'strawberry'],[/買漁獲/,'fish_m'],[/[吃喝]一[碗盤顆條支杯份]|吃的|熟食/,'riceball'],[/飲料/,'drink'],[/種子|農具/,'seed:turnip'],[/行情/,'chart'],[/買動物/,'chicken'],[/賣動物/,'coin'],[/收購/,'egg'],[/擴建/,'hammer'],[/木材/,'wood'],[/離開|再見|好喔|下次|謝謝|關閉|好的/,'door']];
 Object.assign(UIICON,{talk:[[2,3,12,8,'#f4f4f0'],[3,2,10,1,'#f4f4f0'],[3,11,10,1,'#f4f4f0'],[4,12,3,2,'#f4f4f0'],[4,6,2,2,'#5a5a64'],[7,6,2,2,'#5a5a64'],[10,6,2,2,'#5a5a64']],no:[[3,3,2,2,'#e53935'],[5,5,2,2,'#e53935'],[7,7,2,2,'#e53935'],[9,9,2,2,'#e53935'],[11,11,2,2,'#e53935'],[11,3,2,2,'#e53935'],[9,5,2,2,'#e53935'],[5,9,2,2,'#e53935'],[3,11,2,2,'#e53935']]});
 function btnIcon(label){for(const[re,k]of BTN_ICON)if(re.test(label))return k;return null;}
 function setCards(cards){const box=document.getElementById('npc-btns');const g=el('div','acgrid');for(const c of cards){const b=el('button','accard'+(c.on?'':' off')+(c.danger?' danger':''));b.type='button';const im=document.createElement('img');im.src=uiIconURL(c.icon);im.alt='';b.appendChild(im);b.appendChild(el('span','acl',c.label));b.appendChild(el('span','acs',c.sub));b.onclick=e=>{if(!c.on){msg(c.sub);return;}c.fn(b);};g.appendChild(b);}box.insertBefore(g,box.firstChild);}
@@ -2281,9 +2290,9 @@ function openTalk(n){
     m.textContent=evTalk(n,txt)+giftBack(n)+(n.id==='fish'?(G.fishQuizDay==null||G.day-G.fishQuizDay>=5?'\n\n來挑戰釣魚小知識吧！連對 5 題送你魚！':'\n\n（釣魚問答的獎勵還要 '+(G.fishQuizDay+5-G.day)+' 天）'):'');
     if(n.id==='rancher')m.textContent+=(G.horseQuizDay==null||G.day-G.horseQuizDay>=5?'\n\n要不要考考你的馬術知識？\n連對 5 題送你牧草 ×10！':'\n\n（馬術問答的獎勵還要 '+(G.horseQuizDay+5-G.day)+' 天）');
     if(n.id==='jie')btns.push(['買樹苗','bp',()=>{closeTalk();buySapling('阿宇');},'sapling']);if(n.id==='jie'&&!(G.mat&&G.mat.wood>0))btns.push(['賣木材（現在沒有木材）','bc',()=>{msg('阿宇：「拿斧頭砍樹就有木材了，\n一個 8G，有多少我收多少！」');}]);if(n.id==='jie'&&G.mat&&G.mat.wood>0){const w=G.mat.wood;btns.push(['賣木材（有 '+w+' 個）','bp',()=>{closeTalk();sellWood();},'wood']);}
-    if(n.id==='camper'){const d=campDish(),ate=G.campMealDay===G.day;m.textContent+=ate?'\n\n今天的'+FOOD[d].n+'好吃吧？\n明天我再煮別的給你吃！':'\n\n今天營火上煮的是「'+FOOD[d].n+'」，\n來一碗吧，不用錢！';
+    if(n.id==='camper'){const d=campDish(),ate=G.campMealDay===G.day;m.textContent+=ate?'\n\n今天的'+FOOD[d].n+'好吃吧？\n明天我再煮別的給你吃！':'\n\n今天營火上煮的是「'+FOOD[d].n+'」，\n來一'+foodUnit(d)+'吧，不用錢！';
       m.textContent+=(G.campQuizDay==null||G.day-G.campQuizDay>=5?'\n連對 5 題露營問答，再送你料理帶回家！':'\n（露營問答的獎勵還要 '+(G.campQuizDay+5-G.day)+' 天）');
-      if(!ate)btns.push(['吃一碗'+FOOD[d].n+'（免費）','bp',()=>{closeTalk();campEat();},d]);
+      if(!ate)btns.push([foodVerb(d)+'一'+foodUnit(d)+FOOD[d].n+'（免費）','bp',()=>{closeTalk();campEat();},d]);
       btns.push(['挑戰露營問答','bp',()=>{closeTalk();startQuiz('camp');}]);tripBtn(btns,'camp');}
     if(n.id==='rancher'&&!isInBarn(n)){m.textContent+='\n\n（出來透透氣，要買賣的話到牧場櫃台叫我！）';}
     if(n.id==='rancher'&&isInBarn(n)){btns.push(['買動物','bp',()=>{closeTalk();openRanch('buy');}]);btns.push(['賣動物','bp',()=>{closeTalk();openRanch('sell');}]);btns.push(['賣農產品','bp',()=>{closeTalk();openRanch('goods');}]);btns.push(['擴建畜欄','bp',()=>{closeTalk();openRanch('pen');}]);btns.push(['買樹苗','bp',()=>{closeTalk();buySapling('阿牧');},'sapling']);}
@@ -2409,10 +2418,23 @@ function useTool(){if(G.ph!=='play'||G.act)return;const[fx,fy]=getFacing();if(fx
   else if(!!CROPS[tool]){if(t!==T.TI&&t!==T.WA){msg('先翻土才能播種！');return;}if(c){msg('這裡已有作物了。');return;}if(G.seeds[tool]<=0){msg('沒有'+CROPS[tool].n+'種子了！');return;}G.seeds[tool]--;sfx('plant');G.cr[fy][fx]={type:tool,stage:0,watered:false,daysLeft:CROPS[tool].d,slow:!inSeason(tool)};if(!G.seeds[tool])buildTools();spendE(1);msg('種下'+CROPS[tool].n+'種子！');updTB();tutEvent('plant');}
 }
 // ===== 畜欄：飼料槽與照顧動物 =====
+// 長按確認：按住 ms 毫秒，卡片背景會慢慢填滿紅色；中途放開就重來
+function holdToConfirm(card,ms,done){let t0=0,raf=0;const base=getComputedStyle(card).backgroundColor;
+  const paint=p=>{card.style.background=p>0?'linear-gradient(90deg,#c0392b '+(p*100)+'%,'+base+' '+(p*100)+'%)':'';};
+  const step=()=>{const p=Math.min(1,(performance.now()-t0)/ms);paint(p);if(p>=1){stop();card.onpointerdown=null;done();return;}raf=requestAnimationFrame(step);};
+  const stop=()=>{cancelAnimationFrame(raf);raf=0;t0=0;};
+  card.onpointerdown=e=>{e.preventDefault();t0=performance.now();step();};
+  for(const ev of['pointerup','pointerleave','pointercancel'])card.addEventListener(ev,()=>{if(t0){stop();paint(0);}});}
+// 宰殺：主角面向動物揮劍，動物閃一下後淡出，最後才拿到肉
+function slaughter(a){const d=ANIMAL_DATA[a.type];closeTalk();G.ph='busy';clearPath();faceTo(a.x,a.y);G.act={row:6,n:4,spd:7,t:0};sfx('hoe');
+  setTimeout(()=>{a.hit=1;sfx('wrong');G.fx.push({x:a.x,y:a.y-14,text:'咻！',t:0});for(let i=0;i<4;i++)G.fx.push({kind:'chip',x:a.x,y:a.y,vx:(Math.random()-.5)*3,vy:-1.5-Math.random()*2,t:0});
+    a.fade=1;const iv=setInterval(()=>{a.fade-=.08;if(a.fade>0)return;clearInterval(iv);const i=G.animals.indexOf(a);if(i>=0)G.animals.splice(i,1);
+      G.products[d.meat]+=d.meatQ;bump(G.today.harv,d.meat,d.meatQ);updTB();G.ph='play';msg('處理好了，獲得'+PRODUCT_DATA[d.meat].n+' ×'+d.meatQ+'\n可以拿去賣，或在爐子煮成料理');saveGame();},40);},380);}
 function interactAnimal(a){
   G.ph='od';clearPath();G.talk=null;const d=ANIMAL_DATA[a.type];
   document.getElementById('npc-name').textContent=d.n+(a.baby>0?'寶寶':'')+' '+'♥'.repeat(a.love)+'♡'.repeat(5-a.love);
-  {const ic=document.getElementById('npc-icon'),x=ic.getContext('2d');ic._ls=null;x.clearRect(0,0,ic.width,ic.height);x.imageSmoothingEnabled=false;drawIcon(x,a.type,24,30,2.6);}
+  {const ic=document.getElementById('npc-icon'),x=ic.getContext('2d');ic._ls=null;ic._cat=false;x.clearRect(0,0,ic.width,ic.height);x.imageSmoothingEnabled=false;
+    const o=ctx,ox=cam.x,oy=cam.y;ctx=x;cam.x=a.x-24;cam.y=a.y-30;try{const A={...a,face:'right',moving:false};if(a.baby>0){x.save();x.translate(24,43);x.scale(.75,.75);x.translate(-24,-43);drawAnimal(A,true);x.restore();}else drawAnimal(A,true);}finally{ctx=o;cam.x=ox;cam.y=oy;}}
   const crop=seasonCrops().filter(k=>G.hv[k]>0).sort((p,q)=>G.hv[q]-G.hv[p])[0];
   const same=G.animals.filter(b=>b!==a&&b.type===a.type&&!(b.baby>0)),count=G.animals.filter(b=>b.type===a.type).length;
   let s=a.baby>0?'還是寶寶，再 '+a.baby+' 天長大才會生產。':(a.readyProduct?'可以收集'+d.productN+'了！':'吃飽後還要 '+a.daysLeft+' 天才有'+d.productN+'。');
@@ -2424,7 +2446,7 @@ function interactAnimal(a){
   CARDS.push({icon:'heart',label:'摸摸牠',sub:a.petDay===G.day?(a.akDay===G.day?'饅頭已經摸過了':'今天摸過了'):'心情 +',on:a.petDay!==G.day,fn:()=>{closeTalk();a.petDay=G.day;sfx('heart');animalCall(a.type,1);G.fx.push({kind:'heart',x:a.x,y:a.y-18,t:0});msg('你摸了摸'+d.n+'，牠看起來很開心！');}});
   if(!(a.baby>0)){const can=crop&&a.treatDay!==G.day;CARDS.push({icon:crop||'feed',label:crop?'餵'+CROPS[crop].n:'餵蔬果',sub:a.treatDay===G.day?'今天吃過了':crop?'背包 '+G.hv[crop]+' 個':'沒有當季作物',on:!!can,fn:()=>{closeTalk();G.hv[crop]--;a.treatDay=G.day;a.love=Math.min(5,a.love+1);sfx('eat');G.fx.push({kind:'heart',x:a.x,y:a.y-18,t:0});updTB();
       const pair=same.some(b=>b.treatDay===G.day);msg(d.n+'開心地吃掉了'+CROPS[crop].n+'！'+(pair?(count<maxOf(a.type)?'\n兩隻都吃飽了，明天可能會有寶寶喔':'\n可惜畜欄已經滿了，沒辦法再多養'):(same.length?'\n再餵另一隻'+d.n+'，就可能繁殖':'')));saveGame();}});}
-  CARDS.push({icon:'knife',label:'宰殺',sub:G.knife?'得到'+PRODUCT_DATA[d.meat].n+' ×'+d.meatQ:'要先買屠宰刀',on:!!G.knife,danger:true,fn:(card)=>{if(!card.dataset.arm){card.dataset.arm='1';card.querySelector('.acl').textContent='再按一次確定';return;}closeTalk();G.animals.splice(G.animals.indexOf(a),1);G.products[d.meat]+=d.meatQ;bump(G.today.harv,d.meat,d.meatQ);updTB();msg('處理好了，獲得'+PRODUCT_DATA[d.meat].n+' ×'+d.meatQ+'\n可以拿去賣，或在爐子煮成料理');saveGame();}});
+  CARDS.push({icon:'knife',label:'宰殺',sub:G.knife?'得到'+PRODUCT_DATA[d.meat].n+' ×'+d.meatQ:'要先買屠宰刀',on:!!G.knife,danger:true,fn:(card)=>{if(card.dataset.arm)return;card.dataset.arm='1';card.querySelector('.acl').textContent='長按確認宰殺';card.querySelector('.acs').textContent='按住不放 1 秒';holdToConfirm(card,1000,()=>slaughter(a));}});
   B.push(['離開','bc',closeTalk]);setButtons(B);setCards(CARDS);document.getElementById('od').style.display='flex';return;
   if(a.readyProduct)B.push(['收集'+d.productN,'bp',()=>{closeTalk();animalQuick(a);}]);
   if(a.petDay!==G.day)B.push(['摸摸牠','bp',()=>{closeTalk();a.petDay=G.day;sfx('heart');animalCall(a.type,1);G.fx.push({kind:'heart',x:a.x,y:a.y-18,t:0});msg('你摸了摸'+d.n+'，牠看起來很開心！');}]);
@@ -3035,6 +3057,10 @@ function drawRideArt(cv,step){
   if(step===1){f(hx+80,gy-22,10,8,'#f0f0f0');f(hx+86,gy-30,3,8,'#f0f0f0');f(hx+81,gy-28,3,6,'#f0f0f0');f(hx+88,gy-19,2,2,'#101010');f(hx+56,gy-96,3,10,'#ffd040');f(hx+56,gy-84,3,3,'#ffd040');f(hx+62,gy-92,3,10,'#ffd040');f(hx+62,gy-80,3,3,'#ffd040');}
 }
 // ===== 阿野的營火料理 =====
+// 阿野營火料理的量詞（沒列到的用「份」）
+const FOOD_UNIT={soup:'碗',pumpkinsoup:'碗',fishsoup:'碗',lambstew:'碗',bakedpotato:'顆',omelette:'顆',tomatoegg:'盤',braisedpork:'盤',roastsweet:'條',grilledfish:'條',roastchicken:'支',hotmilk:'杯'};
+function foodUnit(k){return FOOD_UNIT[k]||'份';}
+function foodVerb(k){return k==='hotmilk'?'喝':'吃';}   // 熱牛奶用喝的
 const CAMP_MENU=['soup','bakedpotato','tomatoegg','roastsweet','pumpkinsoup','grilledfish','fishsoup','roastchicken','lambstew','braisedpork','hotmilk','omelette'];
 function campDish(){return CAMP_MENU[(G.day*5+3)%CAMP_MENU.length];}
 function campEat(){const k=campDish(),d=FOOD[k];if(G.campMealDay===G.day)return;G.campMealDay=G.day;sfx('eat');G.full=Math.min(100,G.full+d.full);G.en=Math.min(MAX_E,G.en+d.en);addRel('camper',2);
@@ -3265,17 +3291,21 @@ function updateCat(){
   const cx=Math.floor(c.x/TILE),cy=Math.floor(c.y/TILE),s=randSpot((x,y)=>Math.abs(x-cx)+Math.abs(y-cy)<=6&&catOK(x,y));
   if(s){const p=bfs(cx,cy,new Set([s[1]*MW+s[0]]),catOK);if(p)c.path=p.map(q=>({x:(q.x+.5)*TILE,y:(q.y+.5)*TILE}));}
 }
+// 貓的樣子（以腳底中央為原點，面向右）；o.leg 走路的腳、o.blink 閉眼、o.wag 尾巴往上甩
+function catShape(R_,o){
+  R_(-8,6,16,2,'rgba(0,0,0,.2)');
+  if(o.sleep){R_(-7,0,14,6,'#e8964a');R_(-7,0,14,2,'#f8b878');R_(3,-2,5,5,'#e8964a');R_(4,-4,1,2,'#e8964a');R_(7,-4,1,2,'#e8964a');R_(-9,3,4,2,'#e8964a');R_(-3,1,2,4,'#c8742a');R_(1,1,2,4,'#c8742a');return;}
+  const l=o.leg||0;
+  R_(-6,-2,11,6,'#e8964a');R_(-6,-2,11,2,'#f8b878');R_(-3,-2,2,6,'#c8742a');R_(1,-2,2,6,'#c8742a');
+  R_(4,-7,6,6,'#e8964a');R_(4,-9,2,2,'#e8964a');R_(8,-9,2,2,'#e8964a');
+  if(o.blink){R_(5,-5,1,1,'#c8742a');R_(8,-5,1,1,'#c8742a');}else{R_(5,-5,1,1,'#222');R_(8,-5,1,1,'#222');}R_(7,-3,1,1,'#f4a0a0');
+  if(o.wag){R_(-9,-8,2,6,'#e8964a');R_(-10,-9,2,2,'#e8964a');}else{R_(-9,-6,2,5,'#e8964a');R_(-8,-7,2,2,'#e8964a');}
+  R_(-5,4,2,3-l,'#c8742a');R_(-1,4,2,2+l,'#c8742a');R_(2,4,2,3-l,'#c8742a');}
 function drawCat(){
   const c=G.cat;if(!c)return;const sx=Math.round(c.x-cam.x),sy=Math.round(c.y-cam.y);if(sx<-20||sy<-20||sx>W2+20||sy>H2+20)return;
   ctx.save();ctx.translate(sx,sy);if(c.dir==='left')ctx.scale(-1,1);
   const R_=(x,y,w,h,col)=>{ctx.fillStyle=col;ctx.fillRect(x,y,w,h);};
-  R_(-8,6,16,2,'rgba(0,0,0,.2)');
-  if(c.sleep){R_(-7,0,14,6,'#e8964a');R_(-7,0,14,2,'#f8b878');R_(3,-2,5,5,'#e8964a');R_(4,-4,1,2,'#e8964a');R_(7,-4,1,2,'#e8964a');R_(-9,3,4,2,'#e8964a');R_(-3,1,2,4,'#c8742a');R_(1,1,2,4,'#c8742a');}
-  else{const l=c.moving?(c.anim>>3)%2:0;
-    R_(-6,-2,11,6,'#e8964a');R_(-6,-2,11,2,'#f8b878');R_(-3,-2,2,6,'#c8742a');R_(1,-2,2,6,'#c8742a');
-    R_(4,-7,6,6,'#e8964a');R_(4,-9,2,2,'#e8964a');R_(8,-9,2,2,'#e8964a');R_(5,-5,1,1,'#222');R_(8,-5,1,1,'#222');R_(7,-3,1,1,'#f4a0a0');
-    R_(-9,-6,2,5,'#e8964a');R_(-8,-7,2,2,'#e8964a');
-    R_(-5,4,2,3-l,'#c8742a');R_(-1,4,2,2+l,'#c8742a');R_(2,4,2,3-l,'#c8742a');}
+  catShape(R_,{sleep:c.sleep,leg:c.moving?(c.anim>>3)%2:0});
   ctx.restore();
   if(c.sleep&&(frameCount>>5)%2){ctx.fillStyle='#ffffff';ctx.font='11px Cubic11';ftx('z',sx+8,sy-10);}
 }
@@ -3291,8 +3321,46 @@ function interactCat(){
   if(fk&&!fedBy){G.products[fk]--;c.fishDay=G.day;c.petDay=G.day;animalCall('cat',1);G.fx.push({kind:'heart',x:c.x,y:c.y-16,t:0});updTB();msg('阿喵開心地吃掉了'+PRODUCT_DATA[fk].n+'！\n（吃飽的阿喵，隔天可能會叼禮物回來）');saveGame();return;}
   const why=fedBy?(fedBy==='你'?'阿喵今天已經吃過魚了，明天再餵吧～':'阿喵今天已經被'+fedBy+'餵過魚了，肚子圓滾滾的～'):'（背包裡有魚的話可以餵牠喔）';
   if(c.petDay!==G.day){c.petDay=G.day;animalCall('cat',1);G.fx.push({kind:'heart',x:c.x,y:c.y-16,t:0});msg('阿喵：喵～（舒服地瞇起眼睛）\n'+why);}
-  else msg(c.sleep?'阿喵睡得好香…':why);
+  else{const M=['阿喵：喵？','阿喵：喵～','阿喵：喵嗚——（翻肚子）','阿喵蹭了蹭你的腳。','阿喵：喵！（尾巴翹得高高的）'];msg(c.sleep?'阿喵睡得好香…':M[Math.floor(Math.random()*M.length)]+(Math.random()<.3?'\n'+why:''));}
 }
+// ===== 阿喵的對話框：左邊是會眨眼、甩尾巴的阿喵，按鈕分開「摸摸」和「餵魚」 =====
+function catPortrait(){const ic=document.getElementById('npc-icon'),od=document.getElementById('od'),c=G.cat;
+  if(!ic._cat||!c||(od.style.display!=='flex'&&performance.now()-ic._t0>400)){ic._raf2=0;return;}
+  const t=performance.now()-ic._t0,x=ic.getContext('2d');x.clearRect(0,0,ic.width,ic.height);x.imageSmoothingEnabled=false;
+  const R_=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(24+a*2,40+b*2,w*2,h*2);};
+  catShape(R_,{sleep:c.sleep,blink:t%3200>3050,wag:Math.floor(t/500)%2===1});
+  if(c.sleep&&Math.floor(t/700)%2){x.fillStyle='#ffffff';x.fillRect(38,12,4,1);x.fillRect(41,13,1,1);x.fillRect(40,14,1,1);x.fillRect(39,15,1,1);x.fillRect(38,16,4,1);}
+  if(!ic._raf2)ic._raf2=requestAnimationFrame(()=>{ic._raf2=0;catPortrait();});}
+const CAT_MEOW=['阿喵：喵～','阿喵：喵？（歪頭）','阿喵：喵嗚——（翻肚子）','阿喵蹭了蹭你的腳。','阿喵：喵！（尾巴翹得高高的）'];
+function catFish(){return['fish_s','fish_m','fish_l','fish_x'].find(k=>G.products[k]>0);}
+function catFedBy(){const c=G.cat;return c.fishDay===G.day?(G.akCat===G.day?'饅頭':G.songCat===G.day?'小宋':'你'):null;}
+function openCatTalk(){const c=G.cat;if(!c)return;G.ph='od';clearPath();G.talk=null;
+  const ic=document.getElementById('npc-icon');ic._ls=null;ic._cat=true;ic._t0=performance.now();catPortrait();
+  catTalk(c.sleep?'阿喵睡得好香……\n（輕輕的打呼聲）':c.adopted?CAT_MEOW[Math.floor(Math.random()*CAT_MEOW.length)]:'小貓看起來肚子餓了……\n牠一直盯著你看。');
+  document.getElementById('od').style.display='flex';}
+// 依目前狀態更新對話和按鈕；say 是阿喵這次的反應
+function catTalk(say){const c=G.cat,B=[];
+  document.getElementById('npc-name').textContent=c.adopted?'阿喵':'小貓';
+  let info='';
+  if(!c.adopted){
+    const fish=catFish(),food=fish?null:Object.keys(FOOD).find(f=>G.food[f]>0),k=fish||food;
+    if(k)B.push(['餵牠吃'+(fish?PRODUCT_DATA[fish].n:FOOD[food].n),'bp',()=>{animalCall('cat',1);if(fish){G.products[fish]--;c.fishDay=G.day;}else G.food[food]--;c.adopted=true;c.petDay=G.day;sfx('heart');G.fx.push({kind:'heart',x:c.x,y:c.y-16,t:0});updTB();saveGame();
+      catTalk('小貓吃得好開心！\n牠決定留在你的農場了，取名叫「阿喵」！');},fish||'riceball']);
+    else{B.push(['沒有吃的','bc',()=>catTalk('（帶點吃的或釣到的魚來給牠吧）'),'riceball']);}
+  }else if(c.sleep){
+    B.push(['輕輕摸一下','bp',()=>catTalk('阿喵翻了個身，繼續睡。'),'heart']);
+  }else{
+    const fedBy=catFedBy(),fish=catFish();
+    info='\n\n'+(c.petDay===G.day?'今天摸過了。':'今天還沒摸摸牠。')+'\n'+(fedBy?(fedBy==='你'?'今天吃過你餵的魚了。':'今天'+fedBy+'已經餵過魚了。'):'今天還沒吃魚。');
+    B.push([c.petDay===G.day?'再摸一下':'摸摸','bp',()=>{if(c.petDay!==G.day){c.petDay=G.day;animalCall('cat',1);sfx('heart');G.fx.push({kind:'heart',x:c.x,y:c.y-16,t:0});catTalk('阿喵：喵～（舒服地瞇起眼睛）');}else catTalk(CAT_MEOW[Math.floor(Math.random()*CAT_MEOW.length)]);},'heart']);
+    if(fedBy)B.push(['今天吃過了','bc',()=>catTalk(fedBy==='你'?'阿喵今天已經吃過魚了，明天再餵吧～':'阿喵今天已經被'+fedBy+'餵過魚了，肚子圓滾滾的～'),'fish_s']);
+    else if(fish)B.push(['餵'+PRODUCT_DATA[fish].n,'bp',()=>{G.products[fish]--;c.fishDay=G.day;c.petDay=G.day;animalCall('cat',1);G.fx.push({kind:'heart',x:c.x,y:c.y-16,t:0});updTB();saveGame();
+      catTalk('阿喵開心地吃掉了'+PRODUCT_DATA[fish].n+'！\n（吃飽的阿喵，隔天可能會叼禮物回來）');},fish]);
+    else B.push(['背包沒有魚','bc',()=>catTalk('（背包裡有魚的話可以餵牠喔）'),'fish_s']);
+  }
+  B.push(['離開','bc',closeTalk]);
+  document.getElementById('npc-msg').textContent=say+info;
+  setButtons(B);}
 function evTalk(n,txt){
   const E=G.event||{};
   if(E.id==='bday'&&n.id==='yu')return'今天是我的生日喔！嘿嘿～\n'+txt;
@@ -3667,7 +3735,9 @@ function applyWorld(){
   for(const b of G.builds||[])if(b.k==='lamp'&&G.map[b.y]&&G.map[b.y][b.x]===T.LAMP&&!LAMPS.some(([a,c])=>a===b.x&&c===b.y))LAMPS.push([b.x,b.y]);
   fixRoadGaps();}
 const ROAD_GAPS=[[6,9],[19,16],[20,16],[21,16]];   // 家門口路燈、市集旁路燈和委託板原本的位置
-function fixRoadGaps(){for(const[x,y]of ROAD_GAPS)if(G.map[y]&&G.map[y][x]===T.G&&!buildAt(x,y))G.map[y][x]=T.PA;}
+function fixRoadGaps(){
+  {const a=VX+8,b=VX+2;if(G.map[6][a]===T.VDECO)G.map[6][a]=T.G;if(G.map[7][b]===T.PLAZA&&!buildAt(b,7))G.map[7][b]=T.VDECO;}   // 阿宇木工坊的木頭堆搬到門口左邊
+  for(const[x,y]of ROAD_GAPS)if(G.map[y]&&G.map[y][x]===T.G&&!buildAt(x,y))G.map[y][x]=T.PA;}
 function choppable(x,y){return x>0&&y>0&&x<MW-1&&y<MH-1;}
 function chopTree(x,y){const t=G.map[y][x];if(t===T.STUMP){if(!choppable(x,y))return;if(G.en<3){msg('太累了，先休息一下吧…');return;}playAct('axe');sfx('hoe');spendE(3);if(!G.treeHP)G.treeHP={};const k=x+','+y,hk='s'+k;G.treeHP[hk]=(G.treeHP[hk]||0)+1;
     for(let i=0;i<3;i++)G.fx.push({kind:'chip',x:(x+.5)*TILE,y:(y+.8)*TILE,vx:(Math.random()-.5)*3,vy:-1.5-Math.random()*2,t:0});G.fx.push({x:(x+.5)*TILE,y:(y-.1)*TILE,text:'挖樹根 '+G.treeHP[hk]+'/3',t:0});
@@ -4195,11 +4265,11 @@ Object.assign(SHORT,{ted:'阿翔',sony:'小許',su:'小蘇',le:'阿樂'});
 Object.assign(HOMES,{ted:'lot',sony:'lot',su:'girls',le:'le'});
 Object.assign(SCHED,{ted:{arr:8,lv:21},sony:{arr:10,lv:23.5},su:{arr:7.5,lv:22},le:{arr:9,lv:21}});
 Object.assign(LINES,{
- ted:[["Hi～我是阿翔！\n剛從加拿大的路易斯湖打工度假回來，Nice to meet you！","我跟小許是高中同學，\n後來還一起念觀光，超有緣 right？","今天 leg day！\n……明天走路可能會怪怪的。","存錢？Hmm……\n薪水一來就 bye bye 了啦。"],
+ ted:[["Hi～我是阿翔！\n剛從加拿大的路易斯湖打工度假回來，Nice to meet you！","我跟小許是高中同學，\n都是應用外語科的，超有緣 right？","今天 leg day！\n……明天走路可能會怪怪的。","存錢？Hmm……\n薪水一來就 bye bye 了啦。"],
   ["Gym 練完來一瓶運動飲料，\nPerfect！","偶爾也會跟阿樂打排球，\n他的發球 so 強！","在加拿大學最多的不是英文，\n是怎麼一個人把日子過好。","小許每次出門都要換三套衣服，\nI'm waiting 啦！"],
   ["You are my best friend here！\n下次一起去健身房？","我還很想念路易斯湖……\n不過這個村子 really 很像家。","謝謝你常常來找我，\nThat means a lot！"]],
  sony:[["Girl～我是小許！\n我跟阿翔是高中同學，現在住在一起喔～","我很想你們耶！\n……我們昨天才見過？那也很想！","晚上要不要去喝一杯？\n我知道一家很 chill 的酒吧。","穿搭的重點是低調，\n顏色不要超過三種，Girl～"],
-  ["我們要一起去舞台跳跳跳跳跳！","我跟阿翔高中同班，後來也一起念觀光，\n他從以前就存不了錢。","你今天這套可以喔！\n……不過帽子可以再想一下。","小蘇唱歌真的好好聽，\n下次一起去唱歌！"],
+  ["我們要一起去舞台跳跳跳跳跳！","我跟阿翔高中同班，都念應用外語科，\n他從以前就存不了錢。","你今天這套可以喔！\n……不過帽子可以再想一下。","小蘇唱歌真的好好聽，\n下次一起去唱歌！"],
   ["Girl～你是我在這裡最好的朋友！\n我很想你們耶，尤其是你！","我們要一起去舞台跳跳跳跳跳！\n這次你一定要來！","有你在，普通的日子也變得閃閃發亮。"]],
  su:[["嗨！我是小蘇，從台東來的！\n大家都叫我「小阿妹」。","剛練完重訓，今天練背，超爽！","早餐店我每次都點太多，\n最後都要分給大家吃……","有比賽就叫我！\n不管什麼比賽我都想參加！"],
   ["今晚有派對嗎？\n沒有的話我們自己辦一個！","暑假我都會回台東部落參加祭典，\n那幾天村子裡就找不到我囉。","唱歌是我最喜歡的事，\n心情不好的時候唱一首就好了。","啤酒要冰一點才好喝！\n……不過喝完隔天還是要去練腿。"],
@@ -4300,7 +4370,7 @@ function mgSet(M){Object.assign(M,{n:0,perf:0,f:0,res:null,flash:null,say:'手�
 const STALL_TAG={clam:'西部沿海養殖的文蛤',fish_milk:'台南魚塭養殖',fish_tila:'外銷美國的養殖魚',fish_saury:'遠洋漁船捕撈',fish_grouper:'南部養殖的活魚'};
 Object.assign(FRIEND,{
  ted:{factLabel:'聽阿翔聊加拿大',facts:['我打工的路易斯湖，\n在加拿大亞伯達省的班夫國家公園裡，\n湖面海拔大約 1750 公尺！','路易斯湖是土耳其藍色的，\n因為冰河融水把很細的「岩粉」帶進湖裡。\nSo beautiful！','班夫是加拿大第一座國家公園，\n1885 年就成立了！','路易斯湖冬天會結冰，\n可以在湖上溜冰喔！','全世界大約七成的楓糖漿是加拿大做的，\n其中九成來自魁北克！','加拿大的官方語言有兩種：\n英文和法文。','台灣跟加拿大的青年交流（打工度假）協定，\n2010 年開始生效。','練完重訓記得好好休息，\n肌肉是在休息的時候長回來的！','打工度假的第一課：\n薪水一入帳，先存起來。\n（我還在學……）']},
- sony:{factLabel:'聽小許聊穿搭',facts:['低調色系最好搭：\n黑、白、灰、卡其、海軍藍，\n怎麼配都不會出錯，Girl～','全身的顏色控制在三種以內，\n看起來就會很乾淨。','我跟阿翔都是念觀光的，\n出去玩找我們就對了！']},
+ sony:{factLabel:'聽小許聊穿搭',facts:['低調色系最好搭：\n黑、白、灰、卡其、海軍藍，\n怎麼配都不會出錯，Girl～','全身的顏色控制在三種以內，\n看起來就會很乾淨。','我跟阿翔都是念應用外語科的，\n出國玩找我們就對了！']},
  su:{factLabel:'聽小蘇聊台東',facts:['我每年暑假都會回台東，\n參加部落的祭典。','全國原住民族運動會\n每兩年辦一次喔！','我的早餐固定班底：\n蛋餅、奶茶、雞塊、薯條……\n你看，一不小心就點太多了。']},
  le:{factLabel:'聽阿樂聊排球',facts:['室內排球一隊上場 6 個人，\n沙灘排球是 2 個人。','每一隊最多碰球 3 次\n就要把球送過網，攔網不算。','穿不同顏色球衣的是自由球員，\n專門負責接發球和防守。','像素遊戲的角色，\n常常畫在 16×16 或 32×32 的小格子裡。']}});
 if(LINES.fish&&LINES.fish[0])LINES.fish[0].push('這片海晚上常常有白帶魚，\n冬天還會有烏魚游過來喔！','冬天東北季風一吹，烏魚就來了，\n冬至前後最多，我們都叫牠「烏金」！');
