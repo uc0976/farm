@@ -2323,7 +2323,9 @@ function openTalk(n){
   const giftBtn=()=>{if(G.gifted[n.id]!==G.day)btns.push(['送禮物','bg',()=>{openGiftFromTalk(n);}]);};
   if(n.id==='clerk'){
     const inS=isInStore(n);m.textContent=evTalk(n,lineFor(n))+giftBack(n)+(inS?'':'\n\n（出來走走而已，等等就回店裡！\n要買東西的話到櫃台叫我～）');
-    if(inS){btns.push(['買吃的（熟食櫃台）','bp',()=>{closeTalk();openShop('food');}]);btns.push(['買飲料（飲料櫃）','bp',()=>{closeTalk();openShop('drink');}]);btns.push(['買種子・飼料・農具','bp',()=>{closeTalk();openShop('farm');}]);}giftBtn();btns.push(['離開','bc',()=>{closeTalk();n.say='謝謝光臨，歡迎再來！';n.sayT=130;}]);
+    if(inS){btns.push(['買吃的（熟食櫃台）','bp',()=>{closeTalk();openShop('food');}]);btns.push(['買飲料（飲料櫃）','bp',()=>{closeTalk();openShop('drink');}]);btns.push(['買種子・飼料・農具','bp',()=>{closeTalk();openShop('farm');}]);}
+    if(G.wish&&G.wish.fest)btns.push(G.wish.lanOff?['把燈籠掛回廣場','bp',()=>{G.wish.lanOff=false;closeTalk();saveGame();msg('罐罐：「好～燈籠掛回去了！\n晚上亮起來還是很漂亮吧！」');},'lantern']:['把廣場的燈籠收起來','bp',()=>{G.wish.lanOff=true;closeTalk();saveGame();msg('罐罐：「沒問題，我幫你收起來了！\n想再掛回去，隨時跟我說～\n（節慶的晚上還是會掛上喔）」');},'lantern']);
+    giftBtn();btns.push(['離開','bc',()=>{closeTalk();n.say='謝謝光臨，歡迎再來！';n.sayT=130;}]);
   }else if(n.id==='guide'){
     const done=!(G.quizDay<0||G.day-G.quizDay>=5);
     m.textContent=evTalk(n,'嘿！我是登山嚮導阿山。\n'+lineFor(n))+'\n\n來挑戰「登山小知識」吧！連續答對 5 題有獎勵。'+(done?'\n（獎勵每 5 天能領一次，還要 '+(G.quizDay+5-G.day)+' 天）':'\n（今天可以領獎勵喔！）')+giftBack(n);
@@ -2957,7 +2959,7 @@ function drawFestTable(){const x0=Math.round(18*TILE-cam.x),y0=Math.round(13*TIL
   else{ctx.fillStyle='#f4e0b8';for(let k=0;k<w;k+=12)ctx.fillRect(x0+k,y0+22,6,3);}
   food.forEach((k,i)=>{const cx=x0+12+i*(w-24)/(food.length-1);if(!grill){ctx.fillStyle='#f4f0e6';ctx.fillRect(Math.round(cx-9),y0+9,18,6);}drawIcon(ctx,k,cx,y0+6,1);});
   if(grill)for(let i=0;i<5;i++){const p=(G.festOn.t*.6+i*37)%60;ctx.fillStyle=`rgba(220,220,220,${(.3*(1-p/60)).toFixed(2)})`;ctx.fillRect(Math.round(x0+30+i*50+Math.sin((G.festOn.t+i*20)*.05)*4),Math.round(y0-p),4,4);}}
-function drawFestDeco(){const F=G.festOn;if(!(F||(G.wish&&G.wish.fest))||zoneOf(G.px)!==0)return;
+function drawFestDeco(){const F=G.festOn;if(!(F||(G.wish&&G.wish.fest&&!G.wish.lanOff))||zoneOf(G.px)!==0)return;
   const xa=16.3*TILE,xb=26.6*TILE,glow=lampsOn(),lc=(F&&FESTS[F.k].lc)||['#d8402c','#f0a030','#d8402c'];if(xb-cam.x<-20||xa-cam.x>W2+20)return;
   ctx.fillStyle=glow?'#24160c':'#4a2e18';for(const px of[xa,xb])ctx.fillRect(Math.round(px-cam.x-2),Math.round(9.8*TILE-cam.y),4,Math.round(7.6*TILE));
   for(const[yy,sag,n]of[[10,16,13],[17,12,13]]){const y0=yy*TILE-cam.y;ctx.strokeStyle=glow?'#1c120a':'#3a2a1a';ctx.lineWidth=1;ctx.beginPath();
