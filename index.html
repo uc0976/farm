@@ -228,6 +228,12 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 .logx{color:var(--ink);font-size:11px;line-height:1.7;white-space:pre-line;min-width:0}
 .tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}.tab{flex:1;min-width:52px;padding:7px 4px;font-family:var(--font-ui);font-size:11px;color:var(--muted);background:#2a1a0a;border:2px solid #4a3520;border-radius:6px;cursor:pointer}.tab.act{color:#2a1a00;background:var(--gold);border-color:var(--gold)}
 .almgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:6px}.almcount{justify-content:center}.almc{min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:#2a1a0a;border:1px solid #4a3520;border-radius:6px;font-size:11px;text-align:center}.almc img{width:32px;height:32px;image-rendering:pixelated}.almc.unk img{filter:brightness(0);opacity:.35}.almc.unk{color:#6a5a48}
+.calg{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin:8px 0 6px}
+.calc{background:#21160d;border:2px solid #4a3826;border-radius:6px;min-height:58px;padding:3px 1px;display:flex;flex-direction:column;align-items:center;gap:1px;color:#d8c49a;font:inherit;cursor:pointer}
+.calc .cn{font-size:12px;font-weight:700}.calc img{width:22px;height:22px;image-rendering:pixelated}
+.calc .cf{font-size:9px;color:#ffcf40;line-height:1.1}.calc .cb{font-size:9px;color:#f48fb1;line-height:1.1}
+.calc.fest{border-color:#8a5a2a}.calc.today{border-color:#ffcf40;background:#4a3514}.calc.past{opacity:.45}
+.calev{font-size:12px;line-height:1.9;color:#d8c49a;white-space:pre-line;margin:2px 0 8px}
 .qsum{text-align:center;color:#d8c49a;font-size:12px;line-height:1.7;margin:6px 0 4px}
 .qwrap{overflow-x:auto;margin:0 -4px 8px;padding:4px 4px 8px}
 .qtree{display:inline-flex;flex-direction:column;min-width:100%}
@@ -309,7 +315,7 @@ function seasonCrops(){return SEASON_CROPS[season()];}
 function seasonLabel(){return SEASONS[season()]+' '+((G.day-1)%SEASON_LEN+1)+' 日';}
 // 日期顯示：點左上角的日期可以在「春 5 日」和「第 5 天」之間切換，結算頁和早上的提示也用同一種
 let DATE_MODE='season';try{DATE_MODE=localStorage.getItem('farm-date')==='day'?'day':'season';}catch(e){}
-document.getElementById('dt').addEventListener('click',e=>{e.stopPropagation();toggleDate();});
+document.getElementById('dt').addEventListener('click',e=>{e.stopPropagation();if(started&&G.ph==='play'){sfx('click');openCalendar();}else toggleDate();});
 function dateLabel(){return DATE_MODE==='day'?'第 '+G.day+' 天':seasonLabel();}
 function toggleDate(){DATE_MODE=DATE_MODE==='day'?'season':'day';try{localStorage.setItem('farm-date',DATE_MODE);}catch(e){}updHUD();sfx('click');}
 const SEASON_PAL=[{g:'#4a7c3f',gd:'#3d6b34',tree:['#2f5a2a','#3f7a36','#5a9a48','#24481f'],fl:['#f8f0a0','#f4a8c0','#ffffff']},
@@ -667,7 +673,7 @@ const G={map:null,cr:null,px:4.5*TILE,py:8.5*TILE,cust:[],fx:[],market:null,dir:
   path:null,pathAct:null,target:null,talk:null,
   seeds:Object.fromEntries(Object.keys(CROPS).map(k=>[k,({tomato:5,potato:2})[k]||0])),hv:Object.fromEntries(Object.keys(CROPS).map(k=>[k,k==='turnip'?4:0])),
   gold:500,en:MAX_E,day:1,ph:'play',animals:[],products:{egg:0,wool:0,fish_s:0,fish_m:0,fish_l:0,fish_x:0,meat_c:0,meat_s:0,truffle:0,milk:0,meat_p:0,meat_b:0,fish_hair:0,fish_mullet:0,fish_mahi:0,fish_milk:0,fish_tila:0,fish_saury:0,fish_grouper:0},knife:false,drops:[],
-  rel:{clerk:0,guide:0,yu:0,fruit:0,fish:0,rancher:0,camper:0,jie:0,lin:0,fang:0,kai:0},penLv:0,ranch:[],seen:{fish:{},crops:{},dishes:{},animals:{}},stats:{harvest:0,fish:0,cook:0,earned:0,reqs:0,quizH:0,quizF:0,gifts:0},ach:{},relGift:{},talked:{},gifted:{},reqs:[],today:null,lastHike:-9,lastSea:-9,lastRide:-9,discount:1,rod:false,full:80,food:{riceball:1},crabs:[],indoor:false,weather:'sunny',rain:[],water:20,maxWater:20,quizDay:-99,hay:5,trough:3,time:330,lights:[],tl:{hoe:0,water:0,axe:0},wish:{}};
+  rel:{clerk:0,guide:0,yu:0,fruit:0,fish:0,rancher:0,camper:0,jie:0,lin:0,fang:0,kai:0},penLv:0,ranch:[],seen:{fish:{},crops:{},dishes:{},animals:{}},stats:{harvest:0,fish:0,cook:0,earned:0,reqs:0,quizH:0,quizF:0,gifts:0},ach:{},relGift:{},talked:{},gifted:{},reqs:[],today:null,lastHike:-9,lastSea:-9,lastRide:-9,discount:1,rod:false,full:80,food:{riceball:1},crabs:[],indoor:false,weather:'sunny',rain:[],water:20,maxWater:20,quizDay:-99,hay:5,trough:3,time:330,lights:[],tl:{hoe:0,water:0,axe:0},wish:{},cal:{done:{},att:{},riddle:0,boatWin:0}};
 const cam={x:0,y:0};const keys={};let W2=380,H2=680,Z=1.25,DPR=1,started=false;
 
 const NPCS=[
@@ -2764,13 +2770,13 @@ const SAVE_KEY='farm-story-save-v3';
 function fixNums(){if(G.products)for(const k in PRODUCT_DATA)if(G.products[k]==null)G.products[k]=0;for(const o of [G.seeds,G.hv,G.products,G.food,G.mat,G.stashB])if(o)for(const k in o){const v=o[k];if(v===null||v===undefined||(typeof v==='number'&&!isFinite(v)))o[k]=0;}if(!isFinite(G.gold))G.gold=0;}
 function saveGame(){fixNums();
   if(!started)return;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:3,mw:MW,mh:MH,map:G.map,cr:G.cr,px:G.px,py:G.py,dir:G.dir,tool:G.tool,seeds:G.seeds,hv:G.hv,gold:G.gold,en:G.en,day:G.day,time:G.time,products:G.products,weather:G.weather,water:G.water,quizDay:G.quizDay,hay:G.hay,trough:G.trough,full:G.full,food:G.food,rel:G.rel,relGift:G.relGift,sport:G.sport,fridge:G.fridge,plantW:G.plantW,yuAsk:G.yuAsk,talked:G.talked,gifted:G.gifted,reqs:G.reqs,today:G.today,lastHike:G.lastHike,discount:G.discount,rod:G.rod,helper:G.helper,helpDay:G.helpDay,penLv:G.penLv,seen:G.seen,stats:G.stats,ach:G.ach,fishQuizDay:G.fishQuizDay,store:G.store,loot:G.loot||[],mat:G.mat,builds:G.placeMove?[...G.builds,G.placeMove]:G.builds,stumps:G.stumps,removed:G.removed,benchMerged:G.benchMerged,lampMerged:G.lampMerged,potMerged:G.potMerged,homeMig:G.homeMig,vlampMerged:G.vlampMerged,homeFurn:G.homeFurn,riSeen:G.riSeen,floors:G.floors||{},road2:G.road2,mv3:G.mv3,wellB:G.wellB,aptV3:G.aptV3,suFix:G.suFix,benchUp:G.benchUp,boardMerged:G.boardMerged,stashB:G.stashB,cleared:G.cleared,fixBench1:G.fixBench1,saplings:G.saplings,planted:G.planted,bbase:G.bbase,look:G.look,owned:G.owned,orders:G.orders,pname:G.pname,tut:G.tut,curSeed:G.curSeed,tdays:G.tdays,lastCampTrip:G.lastCampTrip,fq:G.fq,akDay:G.akDay,akCat:G.akCat,songCat:G.songCat,argueDay:G.argueDay,horseQuizDay:G.horseQuizDay,campQuizDay:G.campQuizDay,hatBack:G.hatBack,lastSea:G.lastSea,lastRide:G.lastRide,campMealDay:G.campMealDay,campGuest:G.campGuest,campGuestDay:G.campGuestDay,campStay:G.campStay,campNight:G.campNight,knife:G.knife,tl:G.tl,wish:G.wish,drops:G.drops,event:G.event,cat:G.cat?{adopted:G.cat.adopted,x:G.cat.x,y:G.cat.y,petDay:G.cat.petDay,fishDay:G.cat.fishDay}:null,
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:3,mw:MW,mh:MH,map:G.map,cr:G.cr,px:G.px,py:G.py,dir:G.dir,tool:G.tool,seeds:G.seeds,hv:G.hv,gold:G.gold,en:G.en,day:G.day,time:G.time,products:G.products,weather:G.weather,water:G.water,quizDay:G.quizDay,hay:G.hay,trough:G.trough,full:G.full,food:G.food,rel:G.rel,relGift:G.relGift,sport:G.sport,fridge:G.fridge,plantW:G.plantW,yuAsk:G.yuAsk,talked:G.talked,gifted:G.gifted,reqs:G.reqs,today:G.today,lastHike:G.lastHike,discount:G.discount,rod:G.rod,helper:G.helper,helpDay:G.helpDay,penLv:G.penLv,seen:G.seen,stats:G.stats,ach:G.ach,fishQuizDay:G.fishQuizDay,store:G.store,loot:G.loot||[],mat:G.mat,builds:G.placeMove?[...G.builds,G.placeMove]:G.builds,stumps:G.stumps,removed:G.removed,benchMerged:G.benchMerged,lampMerged:G.lampMerged,potMerged:G.potMerged,homeMig:G.homeMig,vlampMerged:G.vlampMerged,homeFurn:G.homeFurn,riSeen:G.riSeen,floors:G.floors||{},road2:G.road2,mv3:G.mv3,wellB:G.wellB,aptV3:G.aptV3,suFix:G.suFix,benchUp:G.benchUp,boardMerged:G.boardMerged,stashB:G.stashB,cleared:G.cleared,fixBench1:G.fixBench1,saplings:G.saplings,planted:G.planted,bbase:G.bbase,look:G.look,owned:G.owned,orders:G.orders,pname:G.pname,tut:G.tut,curSeed:G.curSeed,tdays:G.tdays,lastCampTrip:G.lastCampTrip,fq:G.fq,akDay:G.akDay,akCat:G.akCat,songCat:G.songCat,argueDay:G.argueDay,horseQuizDay:G.horseQuizDay,campQuizDay:G.campQuizDay,hatBack:G.hatBack,lastSea:G.lastSea,lastRide:G.lastRide,campMealDay:G.campMealDay,campGuest:G.campGuest,campGuestDay:G.campGuestDay,campStay:G.campStay,campNight:G.campNight,knife:G.knife,tl:G.tl,wish:G.wish,cal:G.cal,drops:G.drops,event:G.event,cat:G.cat?{adopted:G.cat.adopted,x:G.cat.x,y:G.cat.y,petDay:G.cat.petDay,fishDay:G.cat.fishDay}:null,
     market:{mult:G.market.mult,hot:G.market.hot,stall:G.market.stall,rep:G.market.rep,price:G.market.price||{}},
     animals:G.animals.map(a=>({type:a.type,x:a.x,y:a.y,daysLeft:a.daysLeft,readyProduct:a.readyProduct,love:a.love,fed:a.fed,petDay:a.petDay,bonus:a.bonus,treatDay:a.treatDay,baby:a.baby}))}));}catch(e){}
 }
 function readSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null');return s&&s.v>=3&&(s.mw===MW||s.mw===FARMW||s.mw===60||s.mw===90)&&s.mh===MH?s:null;}catch(e){return null;}}
 function loadGame(s){
-  for(const k of['map','cr','px','py','dir','tool','gold','en','day','time','weather','water','quizDay','hay','trough','full','relGift','sport','fridge','plantW','yuAsk','talked','gifted','reqs','today','lastHike','discount','rod','helper','helpDay','fishQuizDay','store','mat','builds','stumps','removed','benchMerged','lampMerged','potMerged','cleared','fixBench1','saplings','planted','bbase','look','owned','orders','pname','tut','curSeed','tdays','lastCampTrip','fq','akDay','akCat','songCat','argueDay','horseQuizDay','campQuizDay','hatBack','lastSea','lastRide','campMealDay','campGuest','campGuestDay','campStay','campNight','knife','drops','loot','tl','wish',])if(s[k]!==undefined)G[k]=s[k];if(!G.tl)G.tl={};if(!G.wish)G.wish={};applyToolLv();
+  for(const k of['map','cr','px','py','dir','tool','gold','en','day','time','weather','water','quizDay','hay','trough','full','relGift','sport','fridge','plantW','yuAsk','talked','gifted','reqs','today','lastHike','discount','rod','helper','helpDay','fishQuizDay','store','mat','builds','stumps','removed','benchMerged','lampMerged','potMerged','cleared','fixBench1','saplings','planted','bbase','look','owned','orders','pname','tut','curSeed','tdays','lastCampTrip','fq','akDay','akCat','songCat','argueDay','horseQuizDay','campQuizDay','hatBack','lastSea','lastRide','campMealDay','campGuest','campGuestDay','campStay','campNight','knife','drops','loot','tl','wish','cal',])if(s[k]!==undefined)G[k]=s[k];if(!G.tl)G.tl={};if(!G.wish)G.wish={};G.cal=Object.assign({done:{},att:{},riddle:0,boatWin:0},G.cal||{});applyToolLv();
   G.benchMerged=!!s.benchMerged;G.lampMerged=!!s.lampMerged;G.potMerged=!!s.potMerged;G.homeMig=!!s.homeMig;G.vlampMerged=!!s.vlampMerged;G.homeFurn=!!s.homeFurn;G.riSeen=s.riSeen||null;G.floors=s.floors||{};G.mv3=!!s.mv3;G.wellB=!!s.wellB;G.aptV3=!!s.aptV3;G.loot=s.loot||[];G.suFix=!!s.suFix;G.benchUp=!!s.benchUp;G.boardMerged=!!s.boardMerged;G.stashB=s.stashB||{};G.fixBench1=!!s.fixBench1;if(!s.builds)G.builds=[];
   {const fresh=buildMap(),F=[T.D,T.TI,T.WA],RC=new Set(road2Cells().map(([a,b])=>a+','+b));if(!s.road2){for(const k of RC){const[a,b]=k.split(',').map(Number);if(!(G.cr[b]&&G.cr[b][a]))delete G.floors[k];}}G.road2=true;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){if(RC.has(x+','+y)&&s.map[y]&&(s.map[y][x]===T.TI||s.map[y][x]===T.WA||(G.cr[y]&&G.cr[y][x])))fresh[y][x]=s.map[y][x];if((F.includes(fresh[y][x])||(G.floors&&G.floors[x+','+y]==='dirt'))&&s.map[y]&&F.includes(s.map[y][x]))fresh[y][x]=s.map[y][x];if(!F.includes(fresh[y][x])&&G.cr[y])G.cr[y][x]=null;}G.map=fresh;applyWorld();}
   Object.assign(G.seeds,s.seeds);Object.assign(G.hv,s.hv);Object.assign(G.products,s.products);
@@ -2848,7 +2854,7 @@ const WISHES=[
   {id:'grain',n:'五穀豐收',npc:'clerk',why:'要做豐收祭的米糕和麵包，穀子越多越好',need:{wheat:10,rice:10},gold:2000},
 ];
 function wishDone(){return WISHES.filter(w=>G.wish.d&&G.wish.d[w.id]).length;}
-function wishIntro(){G.festNag=0;if(festPending())setTimeout(()=>msg('今晚 6 點，市集廣場要辦豐收祭！\n大家都在等你喔'),4500);if(G.wish.intro||(G.tut!=null&&G.tut>=0))return;G.wish.intro=1;setTimeout(()=>msg('罐罐：村子好多年沒辦豐收祭了……\n廣場告示板上多了一本「村莊心願簿」，\n去看看大家許了什麼願吧！'),4500);}
+function wishIntro(){G.festNag=0;calMorning();if(festPending())setTimeout(()=>msg('今晚 6 點，市集廣場要辦豐收祭！\n大家都在等你喔'),4500);if(G.wish.intro||(G.tut!=null&&G.tut>=0))return;G.wish.intro=1;setTimeout(()=>msg('罐罐：村子好多年沒辦豐收祭了……\n廣場告示板上多了一本「村莊心願簿」，\n去看看大家許了什麼願吧！'),4500);}
 function openWishes(){
   G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';const W=G.wish;if(!W.p)W.p={};if(!W.d)W.d={};
   box.appendChild(el('div','ot','村莊心願簿'));
@@ -2886,46 +2892,90 @@ const FEST_CHEER=['哇～好漂亮！','好大一朵！','再來一個！','明�
 const FW_COL=['#ffd54f','#ff6b6b','#7ee0ff','#b388ff','#8cff9a','#ffffff','#ff9ecf','#ffb74d'];
 function festPending(){return!!(G.wish&&G.wish.fin&&!G.wish.fest);}
 function inFestArea(){const x=G.px/TILE,y=G.py/TILE;return x>=FEST_AREA[0]&&x<FEST_AREA[2]&&y>=FEST_AREA[1]&&y<FEST_AREA[3];}
-function festCheck(){if(!festPending()||G.festOn||G.ph!=='play'||G.time<18*60||zoneOf(G.px)!==0||G.sitting!=null||G.lying)return;
-  if(inFestArea())startFest();else if(!G.festNag){G.festNag=1;msg('豐收祭開始了！\n快到市集廣場和大家會合吧');}}
-function startFest(){if(G.festOn)return;clearPath();G.ph='fest';G.act=null;G.cust.length=0;
+// ===== 節慶：豐收祭＋四季節日共用同一套廣場場景 =====
+// s=季節(0春…3冬)、d=當季第幾天；act=節目中間的小遊戲；sky=夜空效果（fw 煙火、lan 天燈、moon 月亮）
+const FESTS={
+  harvest:{n:'豐收祭',ic:'ui:lantern',sky:'fw',food:FEST_FOOD,cheer:FEST_CHEER,
+    lines:me=>[['clerk','各位！睽違好多年的豐收祭，開始囉！'],['fruit','春天的家常菜來囉～趁熱吃！'],['yu','夏天的冰品攤，我也搬來了！'],['lin','秋收供桌擺好了，謝謝土地公保佑。'],['jie','冬天的火鍋也煮好囉，大家快來！'],['rancher','牛奶跟雞蛋，都是今天早上剛收的。'],['fish','烤魚好囉！剛上岸的，保證新鮮！'],['kai','師傅的烤魚，我也有幫忙顧火喔！'],['guide','這一年，村子真的熱鬧起來了！'],['clerk','這一切都要謝謝'+me+'！大家，乾杯！'],['*','乾杯！']],
+    end:()=>['謝謝你！','煙火一朵接一朵在夜空綻放，\n大家一直聊到深夜才散。\n\n你讓這個小村子重新熱鬧起來了。\n獲得豐收祭紀念獎金 5000G\n\n廣場的燈籠會一直掛著，\n農場的日子還會繼續，慢慢來就好。']},
+  lantern:{n:'元宵燈會',s:0,d:7,ic:'ui:lantern',sky:'lan',act:'riddle',lc:['#d8402c','#f0a030','#e86aa0','#6ab8e8','#9ccc65'],
+    food:['twriceball','riceball','greentea','matcha','teaegg','cake','milktea','bread'],cheer:['好美喔～','飄好高！','許願成功！','元宵快樂！','湯圓好好吃！'],
+    lines:me=>[['clerk','元宵節快樂！今晚的燈會開始囉！'],['lin','先吃碗湯圓，大家團團圓圓。'],['fang','你看那盞兔子燈，好可愛喔！'],['guide','燈籠上都有燈謎，'+me+'要不要猜猜看？'],['@'],['clerk','最後，大家一起放天燈吧！'],['*','許個願吧！']],
+    desc:'市集廣場掛滿花燈，猜燈謎、放天燈',
+    end:F=>['元宵燈會','一盞盞天燈帶著大家的願望，\n慢慢飄向夜空。\n\n燈謎猜中 '+(F.score||0)+' 題'+(F.score?'，獲得 '+F.score*300+'G':'')+'\n今年也會是好年！']},
+  boat:{n:'端午龍舟賽',s:1,d:5,ic:'ui:boat',sky:null,act:'race',lc:['#2e9d5a','#d8402c','#f0c030'],
+    food:['riceball','tunarice','bamboo','teaegg','greentea','sports','watermelon','cola'],cheer:['好緊張喔！','加油加油！','粽子好香！','端午快樂！'],
+    lines:me=>[['clerk','端午節快樂！一年一度的龍舟賽要開始囉！'],['fish','海伯我年輕時可是划龍舟冠軍！'],['mei','划船要整齊，節奏最重要！'],['ak','我當裁判，大家注意安全喔！'],['@'],['jie','比完賽來吃粽子！北部粽還是南部粽？'],['yu','我兩種都要！']],
+    desc:'在海上划龍舟比賽，連點畫面衝刺',
+    end:F=>['端午龍舟賽','大家一邊吃粽子，一邊聊著今天的比賽。\n\n'+(F.rank?'你拿到第 '+F.rank+' 名，獲得 '+[0,1500,800,400][F.rank]+'G\n':'')+'記得掛艾草，健健康康過夏天！']},
+  moon:{n:'中秋烤肉',s:2,d:10,ic:'steak',sky:'moon',act:'grill',lc:['#f0a030','#ffd54f','#e07030'],
+    food:['corn','sweetpotato','steak','roastchicken','grilledfish','meat_p','guava','teppan'],cheer:['月亮好圓！','好香喔～','中秋快樂！','再烤一串！'],
+    lines:me=>[['clerk','中秋節快樂！烤肉架準備好囉！'],['fruit','柚子剝好了，大家來吃！'],['rancher','肉我帶來了，烤之前先刷醬喔。'],['lin','今晚的月亮，好圓啊……'],['@'],['guide','烤得真香！謝謝你帶來的食材！'],['*','中秋快樂！']],
+    desc:'圍著烤肉架賞月，拿自己的食材烤給大家吃',
+    end:F=>['中秋烤肉','大家圍著烤肉架，邊吃邊賞月，\n一直聊到月亮爬上頭頂。\n\n'+(F.grilled?'你烤了 '+F.grilled+' 樣食材分給大家，\n村民們跟你更親近了！':'今晚就好好吃、好好看月亮吧！')]},
+  newyear:{n:'跨年倒數',s:3,d:14,ic:'cake',sky:'fw',act:'count',lc:['#d8402c','#ffd54f','#ffffff'],
+    food:['noodle','soup','cake','beer','cola','bento','oden','hotmilk'],cheer:['新年快樂！','明年見！','好漂亮！','新的一年加油！'],
+    lines:me=>[['clerk','今年最後一天了！大家準備好倒數了嗎？'],['su','新的一年，我要學會游泳！'],['chen','我要騎單車環島一圈！'],['jie','我要把木工房再擴建一點。'],['clerk','那'+me+'呢？……先倒數再說吧！'],['@'],['*','新年快樂！']],
+    desc:'全村一起倒數，迎接新年煙火',
+    end:()=>['新年快樂！','新的一年開始了！\n罐罐偷偷塞給你一個紅包。\n\n獲得紅包 1000G']},
+};
+function dayOfSeason(){return(G.day-1)%SEASON_LEN+1;}
+function yearNo(){return Math.floor((G.day-1)/(SEASON_LEN*4));}
+function festTodayKey(){for(const k in FESTS){const f=FESTS[k];if(f.s===season()&&f.d===dayOfSeason()&&!(G.cal.done[k]===yearNo()))return k;}return null;}
+function festKeyNow(){if(G.festDay===G.day)return null;return festPending()?'harvest':festTodayKey();}
+function festCheck(){const k=festKeyNow();if(!k||G.festOn||G.ph!=='play'||G.time<18*60||zoneOf(G.px)!==0||G.sitting!=null||G.lying)return;
+  if(inFestArea())startFest(k);else if(G.festNag!==k){G.festNag=k;msg(FESTS[k].n+'開始了！\n快到市集廣場和大家會合吧');}}
+function startFest(k){k=k||'harvest';if(G.festOn)return;clearPath();G.ph='fest';G.act=null;G.cust.length=0;
   G.px=21.5*TILE;G.py=15.5*TILE;G.dir='up';G.zfade=1;if(G.time<20.5*60)G.time=20.5*60;updClock();
-  const me=G.pname||'小農夫';
-  G.festOn={t:0,i:-1,next:50,cheer:0,flash:0,fwOn:false,fw:[],lastTap:0,
+  G.festOn={k,t:0,i:-1,next:50,cheer:0,flash:0,fwOn:false,fw:[],lastTap:0,wait:false,
     guests:FEST_SEATS.map(([id,x,y,dir])=>{const n=NPCS.find(v=>v.id===id)||(FEST_RES[id]&&{id,row:FEST_RES[id],name:SHORT[id]});return n?Object.assign({},n,{x:(x+.5)*TILE,y:(y+.5)*TILE,by:(y+.5)*TILE,dir,sit:null,chat:null,trip:null,path:null,moving:false,away:false,bike:false,bubble:null,say:'',sayT:0}):null;}).filter(Boolean),
-    lines:[['clerk','各位！睽違好多年的豐收祭，開始囉！'],['fruit','春天的家常菜來囉～趁熱吃！'],['yu','夏天的冰品攤，我也搬來了！'],['lin','秋收供桌擺好了，謝謝土地公保佑。'],['jie','冬天的火鍋也煮好囉，大家快來！'],['rancher','牛奶跟雞蛋，都是今天早上剛收的。'],['fish','烤魚好囉！剛上岸的，保證新鮮！'],['kai','師傅的烤魚，我也有幫忙顧火喔！'],['guide','這一年，村子真的熱鬧起來了！'],['clerk','這一切都要謝謝'+me+'！大家，乾杯！'],['*','乾杯！']]};}
-function festTap(){const F=G.festOn;if(!F||F.done||F.t-F.lastTap<12)return;F.lastTap=F.t;if(F.i<F.lines.length)F.next=F.t;else F.next=Math.min(F.next,F.t+150);}
-function festAdvance(){const F=G.festOn;F.i++;
+    lines:FESTS[k].lines(G.pname||'小農夫')};}
+function festTap(){const F=G.festOn;if(!F||F.done||F.wait||F.t-F.lastTap<12)return;F.lastTap=F.t;if(F.i<F.lines.length)F.next=F.t;else F.next=Math.min(F.next,F.t+150);}
+function festSay(id,txt,t){const g=G.festOn.guests.find(v=>v.id===id);if(g){g.say=txt;g.sayT=t||200;}}
+function festResume(){const F=G.festOn;if(!F)return;F.wait=false;F.next=F.t+30;}
+function festAdvance(){const F=G.festOn,FD=FESTS[F.k];F.i++;
   if(F.i<F.lines.length){const[id,txt]=F.lines[F.i];for(const g of F.guests)if(g.sayT>20)g.sayT=20;
-    if(id==='*'){for(const g of F.guests){g.say=txt;g.sayT=150+Math.floor(Math.random()*40);}F.cheer=150;F.fwOn=true;sfx('catch');F.next=F.t+200;}
-    else{const g=F.guests.find(v=>v.id===id);if(g){g.say=txt;g.sayT=210;}sfx('click');F.next=F.t+190;}return;}
-  if(F.i===F.lines.length){F.next=F.t+520;return;}
-  if(!F.done){F.done=1;popInfo('謝謝你！','煙火一朵接一朵在夜空綻放，\n大家一直聊到深夜才散。\n\n你讓這個小村子重新熱鬧起來了。\n獲得豐收祭紀念獎金 5000G\n\n廣場的燈籠會一直掛著，\n農場的日子還會繼續，慢慢來就好。','好',endFest,'#ffcf40');}}
-function endFest(){G.festOn=null;G.wish.fest=G.day;G.gold+=5000;G.today.earn+=5000;G.stats.earned+=5000;G.ph='play';G.time=Math.max(G.time,22*60);updClock();updHUD();updTB();saveGame();setTimeout(()=>msg('豐收祭圓滿落幕！\n獲得 5000G'),300);}
+    if(id==='@'){F.wait=true;FEST_ACT[FD.act]();return;}
+    if(id==='*'){for(const g of F.guests){g.say=txt;g.sayT=150+Math.floor(Math.random()*40);}F.cheer=150;if(FD.sky==='fw'||FD.sky==='lan')F.fwOn=true;sfx('catch');F.next=F.t+200;}
+    else{festSay(id,txt,210);sfx('click');F.next=F.t+190;}return;}
+  if(F.i===F.lines.length){F.next=F.t+(F.fwOn?520:140);return;}
+  if(!F.done){F.done=1;const[tt,body]=FD.end(F);popInfo(tt,body,'好',()=>endFest(F.k),'#ffcf40');}}
+function endFest(k){const F=G.festOn;G.festOn=null;G.festDay=G.day;G.ph='play';G.time=Math.max(G.time,22*60);
+  if(k==='harvest'){G.wish.fest=G.day;G.gold+=5000;G.today.earn+=5000;G.stats.earned+=5000;}
+  else{G.cal.done[k]=yearNo();G.cal.att[k]=(G.cal.att[k]||0)+1;if(k==='newyear'){G.gold+=1000;G.today.earn+=1000;}}
+  updClock();updHUD();updTB();saveGame();setTimeout(()=>msg(FESTS[k].n+'圓滿落幕！'+(k==='harvest'?'\n獲得 5000G':'')),300);}
 function festTick(){const F=G.festOn;F.t++;if(F.cheer>0)F.cheer--;
   for(const g of F.guests){if(g.sayT>0)g.sayT--;g.y=g.by-(F.cheer>0?Math.round(Math.abs(Math.sin((F.t+g.by*.7)*.16))*6):0);}
-  if(F.fwOn&&F.t%120===60){const g=F.guests[Math.floor(Math.random()*F.guests.length)];if(!g.sayT){g.say=FEST_CHEER[Math.floor(Math.random()*FEST_CHEER.length)];g.sayT=110;}}
-  if(F.t>=F.next)festAdvance();}
+  const ch=FESTS[F.k].cheer;if((F.fwOn||F.i>=F.lines.length)&&F.t%120===60){const g=F.guests[Math.floor(Math.random()*F.guests.length)];if(!g.sayT){g.say=ch[Math.floor(Math.random()*ch.length)];g.sayT=110;}}
+  if(F.count!=null&&F.t>=F.countT){F.countT=F.t+60;if(F.count>0){sfx('click');F.count--;}else{F.count=null;festResume();}}
+  if(!F.wait&&F.t>=F.next)festAdvance();}
 function festEnts(ents){if(!G.festOn)return;festTick();ents.push({y:13*TILE+30,f:drawFestTable});for(const g of G.festOn.guests)ents.push({y:g.by,f:()=>{const t=g.sayT;g.sayT=0;drawNPC(g);g.sayT=t;}});}
-function drawFestTable(){const x0=Math.round(18*TILE-cam.x),y0=Math.round(13*TILE+4-cam.y),w=7*TILE;
+function drawFestTable(){const x0=Math.round(18*TILE-cam.x),y0=Math.round(13*TILE+4-cam.y),w=7*TILE,food=FESTS[G.festOn.k].food,grill=G.festOn.k==='moon';
   ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(x0+4,y0+30,w-8,5);ctx.fillStyle='#5a3a1e';ctx.fillRect(x0+6,y0+20,4,13);ctx.fillRect(x0+w-10,y0+20,4,13);
-  ctx.fillStyle='#b83a2e';ctx.fillRect(x0,y0,w,22);ctx.fillStyle='#d8574a';ctx.fillRect(x0,y0,w,4);ctx.fillStyle='#8e2a20';ctx.fillRect(x0,y0+18,w,4);
-  ctx.fillStyle='#f4e0b8';for(let k=0;k<w;k+=12)ctx.fillRect(x0+k,y0+22,6,3);
-  FEST_FOOD.forEach((k,i)=>{const cx=x0+12+i*(w-24)/(FEST_FOOD.length-1);ctx.fillStyle='#f4f0e6';ctx.fillRect(Math.round(cx-9),y0+9,18,6);drawIcon(ctx,k,cx,y0+6,1);});}
-function drawFestDeco(){if(!(G.festOn||(G.wish&&G.wish.fest))||zoneOf(G.px)!==0)return;
-  const xa=16.3*TILE,xb=26.6*TILE,glow=lampsOn();if(xb-cam.x<-20||xa-cam.x>W2+20)return;
+  ctx.fillStyle=grill?'#3a3a3a':'#b83a2e';ctx.fillRect(x0,y0,w,22);ctx.fillStyle=grill?'#5a5a5a':'#d8574a';ctx.fillRect(x0,y0,w,4);ctx.fillStyle=grill?'#2a2a2a':'#8e2a20';ctx.fillRect(x0,y0+18,w,4);
+  if(grill){for(let k=8;k<w-6;k+=8){ctx.fillStyle=(Math.floor(G.festOn.t/8)+k)%3?'#e0602a':'#ffb040';ctx.fillRect(x0+k,y0+15,4,3);}ctx.fillStyle='#888';for(let k=4;k<w;k+=6)ctx.fillRect(x0+k,y0+4,1,14);}
+  else{ctx.fillStyle='#f4e0b8';for(let k=0;k<w;k+=12)ctx.fillRect(x0+k,y0+22,6,3);}
+  food.forEach((k,i)=>{const cx=x0+12+i*(w-24)/(food.length-1);if(!grill){ctx.fillStyle='#f4f0e6';ctx.fillRect(Math.round(cx-9),y0+9,18,6);}drawIcon(ctx,k,cx,y0+6,1);});
+  if(grill)for(let i=0;i<5;i++){const p=(G.festOn.t*.6+i*37)%60;ctx.fillStyle=`rgba(220,220,220,${(.3*(1-p/60)).toFixed(2)})`;ctx.fillRect(Math.round(x0+30+i*50+Math.sin((G.festOn.t+i*20)*.05)*4),Math.round(y0-p),4,4);}}
+function drawFestDeco(){const F=G.festOn;if(!(F||(G.wish&&G.wish.fest))||zoneOf(G.px)!==0)return;
+  const xa=16.3*TILE,xb=26.6*TILE,glow=lampsOn(),lc=(F&&FESTS[F.k].lc)||['#d8402c','#f0a030','#d8402c'];if(xb-cam.x<-20||xa-cam.x>W2+20)return;
   ctx.fillStyle=glow?'#24160c':'#4a2e18';for(const px of[xa,xb])ctx.fillRect(Math.round(px-cam.x-2),Math.round(9.8*TILE-cam.y),4,Math.round(7.6*TILE));
   for(const[yy,sag,n]of[[10,16,13],[17,12,13]]){const y0=yy*TILE-cam.y;ctx.strokeStyle=glow?'#1c120a':'#3a2a1a';ctx.lineWidth=1;ctx.beginPath();
     for(let k=0;k<=24;k++){const t=k/24,x=xa+(xb-xa)*t-cam.x,y=y0+sag*4*t*(1-t);k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
-    for(let i=0;i<n;i++){const t=(i+.5)/n,lx=Math.round(xa+(xb-xa)*t-cam.x),ly=Math.round(y0+sag*4*t*(1-t)),c=i%3===1?'#f0a030':'#d8402c',sw=G.festOn?Math.round(Math.sin(G.festOn.t*.05+i)*1):0;
+    for(let i=0;i<n;i++){const t=(i+.5)/n,lx=Math.round(xa+(xb-xa)*t-cam.x),ly=Math.round(y0+sag*4*t*(1-t)),c=lc[i%lc.length],sw=F?Math.round(Math.sin(F.t*.05+i)*1):0;
       ctx.fillStyle='#2a1a0e';ctx.fillRect(lx-1+sw,ly,2,3);ctx.fillRect(lx-3+sw,ly+3,6,1);ctx.fillStyle=c;ctx.fillRect(lx-4+sw,ly+4,8,8);ctx.fillStyle=glow?'#ffe08a':'rgba(255,255,255,.35)';ctx.fillRect(lx-2+sw,ly+5,2,6);ctx.fillStyle='#2a1a0e';ctx.fillRect(lx-3+sw,ly+12,6,1);ctx.fillStyle='#ffcf40';ctx.fillRect(lx+sw,ly+13,1,3);
       if(glow){ctx.fillStyle='rgba(255,190,90,.13)';ctx.fillRect(lx-9+sw,ly+1,18,14);ctx.fillRect(lx-6+sw,ly-2,12,20);}}}}
 function drawFestNight(){if(!G.festOn)return;const gr=ctx.createLinearGradient(0,0,0,H2);gr.addColorStop(0,'rgba(6,8,30,.62)');gr.addColorStop(.42,'rgba(6,8,30,.32)');gr.addColorStop(1,'rgba(6,8,30,.3)');ctx.fillStyle=gr;ctx.fillRect(0,0,W2,H2);
   const cx=21.5*TILE-cam.x,cy=13.6*TILE-cam.y;ctx.fillStyle='rgba(255,170,80,.07)';for(const k of[1,.75,.5])ctx.fillRect(Math.round(cx-5*TILE*k),Math.round(cy-2.4*TILE*k),Math.round(10*TILE*k),Math.round(4.8*TILE*k));
   G.bub=[];for(const g of[...G.festOn.guests].sort((a,b)=>a.by-b.by))if(g.sayT>0&&g.say){ctx.font='11px Cubic11,"Noto Sans TC",sans-serif';const hw=fmw(g.say)/2+10;drawSay(Math.round(Math.max(hw,Math.min(W2-hw,g.x-cam.x))),Math.round(g.y+15-cam.y),g.say,Math.min(1,g.sayT/20));}}
 function festRocket(){const F=G.festOn;F.fw.push({r:1,x:W2*(.15+Math.random()*.7),y:H2*.55,vy:-(4.2+Math.random()*1.4),ty:H2*(.07+Math.random()*.2),c:FW_COL[Math.floor(Math.random()*FW_COL.length)]});}
-function drawFestSky(){const F=G.festOn;if(!F||!F.fwOn)return;
-  if(F.t%34===0||(F.t%34===17&&Math.random()<.5))festRocket();
+function drawFestSky(){const F=G.festOn;if(!F)return;const sky=FESTS[F.k].sky;
+  if(sky==='moon'){const mx=W2-70,my=60;ctx.fillStyle='rgba(255,240,180,.08)';for(const r of[46,38,32])blockDisc(ctx,mx,my,r);ctx.fillStyle='#fff3c4';blockDisc(ctx,mx,my,24);ctx.fillStyle='#f0dfa0';ctx.fillRect(mx-8,my-6,6,5);ctx.fillRect(mx+6,my+6,5,4);ctx.fillRect(mx-2,my+10,4,3);
+    ctx.fillStyle='rgba(255,255,230,.7)';for(let i=0;i<14;i++){if((F.t+i*13)%90<60)ctx.fillRect(Math.round(hash(i,3,1)*W2),Math.round(hash(i,3,2)*H2*.3),1,1);}}
+  if(sky==='lan'&&F.fwOn){if(F.t%22===0)F.fw.push({lan:1,x:W2*(.1+Math.random()*.8),y:H2*.62,vy:-(.5+Math.random()*.35),ph:Math.random()*6,c:Math.random()<.5?'#f0a030':'#e86a3a'});
+    for(let i=F.fw.length-1;i>=0;i--){const p=F.fw[i];p.y+=p.vy;p.x+=Math.sin(F.t*.02+p.ph)*.25;if(p.y<-20){F.fw.splice(i,1);continue;}const sc=Math.max(.45,Math.min(1,p.y/(H2*.6)+.3)),w=Math.round(9*sc),h=Math.round(11*sc),x=Math.round(p.x-w/2),y=Math.round(p.y);
+      ctx.fillStyle='rgba(255,180,80,.16)';ctx.fillRect(x-4,y-3,w+8,h+6);ctx.fillStyle=p.c;ctx.fillRect(x,y,w,h);ctx.fillStyle='#ffe9a8';ctx.fillRect(x+Math.round(w*.3),y+h-Math.max(2,Math.round(h*.35)),Math.max(2,Math.round(w*.4)),Math.max(2,Math.round(h*.35)));}}
+  if(sky==='fw'&&F.fwOn){if(F.t%34===0||(F.t%34===17&&Math.random()<.5))festRocket();
   if(F.flash>0){ctx.fillStyle=`rgba(255,240,210,${(F.flash*.07).toFixed(3)})`;ctx.fillRect(0,0,W2,H2);F.flash--;}
   for(let i=F.fw.length-1;i>=0;i--){const p=F.fw[i];
     if(p.r){p.y+=p.vy;p.vy*=.985;ctx.fillStyle='#fff6d0';ctx.fillRect(Math.round(p.x),Math.round(p.y),2,3);ctx.fillStyle='rgba(255,200,120,.5)';ctx.fillRect(Math.round(p.x),Math.round(p.y+4),2,4);
@@ -2934,6 +2984,50 @@ function drawFestSky(){const F=G.festOn;if(!F||!F.fwOn)return;
         if(SND.ctx&&SND.on){noiseHit(.7,.16,260,'lowpass');noiseHit(.5,.035,4200,'highpass',.12);}}continue;}
     p.x+=p.vx;p.y+=p.vy;p.vx*=.975;p.vy=p.vy*.975+.035;p.life--;if(p.life<=0){F.fw.splice(i,1);continue;}
     ctx.globalAlpha=Math.min(1,p.life/40);ctx.fillStyle=p.c;const ps=p.life>50?3:2;ctx.fillRect(Math.round(p.x),Math.round(p.y),ps,ps);if(p.life>45){ctx.fillStyle='#fff';ctx.fillRect(Math.round(p.x),Math.round(p.y),1,1);}ctx.globalAlpha=1;}}
+  if(F.count!=null){const t=F.count?String(F.count):'0';ctx.font='bold 64px Cubic11,"Noto Sans TC",sans-serif';ctx.textAlign='center';const k=1-((F.countT-F.t)/60);ctx.globalAlpha=Math.max(.2,1-k*.7);ctx.fillStyle='#2a1406';ctx.fillText(t,W2/2+3,H2*.3+3);ctx.fillStyle='#ffcf40';ctx.fillText(t,W2/2,H2*.3);ctx.globalAlpha=1;ctx.textAlign='left';}}
+// 節慶中間的小遊戲：自己的小視窗，可以有好幾個按鈕
+function festPop(title,body,btns,cls){const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn',title);if(cls)t.style.color=cls;box.appendChild(t);box.appendChild(el('div','dpd',body));
+  for(const[label,fn,c]of btns){const b=el('button',c||'bp',label);b.type='button';b.onclick=()=>{document.getElementById('dp').style.display='none';fn&&fn();};box.appendChild(b);}document.getElementById('dp').style.display='flex';}
+const RIDDLES=[['麻屋子，紅帳子，\n裡面住個白胖子。\n（猜一種作物）',['花生','大蒜','地瓜']],['身穿綠衣裳，肚裡水汪汪，\n生的子兒多，個個黑臉膛。\n（猜一種水果）',['西瓜','芭樂','葡萄']],
+  ['紅公雞，綠尾巴，\n一頭鑽到地底下。\n（猜一種作物）',['蘿蔔','番茄','洋蔥']],['兄弟七八個，圍著柱子坐，\n只要一分開，衣服就扯破。\n（猜一種作物）',['大蒜','玉米','芋頭']],
+  ['一物生來真稀奇，身穿七八件綠衣，\n頭上長出紅鬍鬚，肚裡藏著珍珠粒。\n（猜一種作物）',['玉米','竹筍','高麗菜']],['一口咬掉牛尾巴。\n（猜一個字）',['告','生','午']],
+  ['十五天。\n（猜一個字）',['胖','朋','晴']],['一人一張口，口下長隻手。\n（猜一個字）',['拿','合','哈']],['千里相逢。\n（猜一個字）',['重','逢','里']],
+  ['小小諸葛亮，獨坐中軍帳，\n擺下八卦陣，專捉飛來將。\n（猜一種動物）',['蜘蛛','螞蟻','蜜蜂']]];
+const GRILL=['corn','sweetpotato','potato','taro','onion','garlic','cabbage','pumpkin','bamboo','meat_p','meat_b','meat_c','meat_s','fish_s','fish_m','fish_saury','fish_milk','fish_tila','fish_hair','fish_mullet','clam','egg'];
+const FEST_ACT={
+  riddle(){const F=G.festOn,pool=[...RIDDLES].sort(()=>Math.random()-.5).slice(0,3);F.score=0;
+    const ask=i=>{if(i>=pool.length){if(F.score>G.cal.riddle)G.cal.riddle=F.score;festSay('guide',F.score===3?'全部猜中！你是燈謎王！':'猜中 '+F.score+' 題，很厲害喔！',200);festResume();return;}
+      const[q,opts]=pool[i],ans=opts[0];festPop('猜燈謎　'+(i+1)+' / '+pool.length,q,[...opts].sort(()=>Math.random()-.5).map(o=>[o,()=>{const ok=o===ans;if(ok){F.score++;G.gold+=300;G.today.earn+=300;updHUD();}sfx(ok?'right':'wrong');
+        festPop(ok?'答對了！':'可惜～',ok?'答案就是「'+ans+'」！\n獲得 300G':'正確答案是「'+ans+'」',[['下一個',()=>ask(i+1)]],ok?'#8cff9a':'#ff8a80');}]),'#ffcf40');};ask(0);},
+  race(){const F=G.festOn;startRace(r=>{F.rank=r;const g=[0,1500,800,400][r];G.gold+=g;G.today.earn+=g;if(r===1)G.cal.boatWin=(G.cal.boatWin||0)+1;updHUD();festSay('ak',r===1?'冠軍是'+(G.pname||'小農夫')+'隊！':'第 '+r+' 名！划得很棒喔！',200);festResume();});},
+  grill(){const F=G.festOn;F.grilled=0;
+    const pick=()=>{const opts=GRILL.filter(k=>ITEM[k]&&have(k)>0).sort((a,b)=>have(b)-have(a)).slice(0,6);
+      if(F.grilled>=3||!opts.length){if(!F.grilled)festSay('rancher','沒帶食材也沒關係，我們的肉夠吃！',200);festResume();return;}
+      festPop('中秋烤肉　'+F.grilled+' / 3','要拿什麼上烤架，分給大家吃？\n（每烤一樣，全村好感都會上升）',[...opts.map(k=>[ITEM[k].n+'（有 '+have(k)+'）',()=>{addHave(k,-1);F.grilled++;sfx('cook');updTB();
+        let fan=null;for(const id in LOVES){addRel(id,2);if(LOVES[id].includes(k)){addRel(id,6);fan=fan||id;}}
+        festSay(fan||'fruit',fan?'我最喜歡'+ITEM[k].n+'了！':'好香喔～',180);pick();}]),['不烤了',()=>{festResume();},'bc']],'#ffcf40');};pick();},
+  count(){const F=G.festOn;F.count=10;F.countT=F.t+60;festSay('clerk','倒數開始！十──',120);}};
+// 端午龍舟賽：連點畫面（或按空白鍵）划船，和兩隊比賽
+function startRace(done){const me=G.pname||'小農夫',ov=document.createElement('div');ov.style.cssText='position:fixed;inset:0;z-index:9999;background:#06223a;display:flex;flex-direction:column;align-items:center;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none;font-family:Cubic11,"Noto Sans TC",sans-serif;color:#fff3c4';
+  const tt=el('div',null,'端午龍舟賽');tt.style.cssText='font-size:22px;color:#ffcf40;margin-bottom:6px';const hint=el('div',null,'準備好了嗎？');hint.style.cssText='font-size:14px;margin-bottom:8px;min-height:20px';
+  const cv2=document.createElement('canvas');cv2.width=320;cv2.height=360;cv2.style.cssText='width:min(92vw,360px);image-rendering:pixelated;border:3px solid #c8a050;border-radius:6px;background:#0d4a7a';
+  const foot=el('div',null,'連點畫面划船！（電腦可以按空白鍵）');foot.style.cssText='font-size:12px;color:#9fc8e8;margin-top:8px';ov.append(tt,hint,cv2,foot);document.body.appendChild(ov);
+  const x=cv2.getContext('2d'),L=3000,B=[{n:me+'隊',c:'#d8402c',p:1,d:0,v:0},{n:'海伯隊',c:'#2e9d5a',d:0,v:0,base:3.95},{n:'饅頭隊',c:'#2a6ad0',d:0,v:0,base:3.6}];
+  let t=0,phase='count',fin=[],raf=0,strokes=0;
+  const tap=e=>{if(e){e.preventDefault();}if(phase!=='go')return;B[0].v=Math.min(7,B[0].v+1.1);strokes++;if(SND.ctx&&SND.on)noiseHit(.08,.07,160,'lowpass');};
+  const key=e=>{if(e.key===' '||e.key==='z'||e.key==='Z'){tap(e);}};ov.addEventListener('pointerdown',tap);window.addEventListener('keydown',key);
+  const draw=()=>{x.fillStyle='#0d4a7a';x.fillRect(0,0,320,360);for(let i=0;i<40;i++){x.fillStyle='rgba(255,255,255,.08)';x.fillRect(Math.round((hash(i,1,1)*360-t*1.5)%360+360)%360-20,Math.round(hash(i,2,1)*360),10,1);}
+    x.fillStyle='#fff';for(let yy=40;yy<340;yy+=12)x.fillRect(290,yy,4,6);
+    B.forEach((b,i)=>{const ly=70+i*100;x.fillStyle='rgba(255,255,255,.12)';x.fillRect(0,ly+34,320,2);const bx=Math.round(14+(b.d/L)*262);
+      x.fillStyle='#5a3416';x.fillRect(bx,ly+8,46,10);x.fillStyle=b.c;x.fillRect(bx,ly+4,46,6);x.fillRect(bx+44,ly-2,6,10);x.fillStyle='#ffcf40';x.fillRect(bx+48,ly,3,3);x.fillStyle='#fff';x.fillRect(bx+46,ly+1,1,1);
+      const pa=Math.sin((t+i*7)*(b.v>.3?.4:0))*4;x.fillStyle='#ffe0b0';for(let k=0;k<4;k++){x.fillRect(bx+6+k*10,ly-2,4,6);x.fillStyle='#c8a050';x.fillRect(bx+7+k*10,ly+4+Math.round(pa),2,10);x.fillStyle='#ffe0b0';}
+      x.font='12px Cubic11,"Noto Sans TC",sans-serif';x.fillStyle=i===0?'#ffcf40':'#e8f0ff';x.fillText(b.n,8,ly-12);});
+    if(phase==='count'){const n=3-Math.floor(t/60);x.font='bold 48px Cubic11,"Noto Sans TC",sans-serif';x.textAlign='center';x.fillStyle='#ffcf40';x.fillText(n>0?String(n):'開始！',160,200);x.textAlign='left';}};
+  const step=()=>{t++;if(phase==='count'){if(t%60===0&&t<180)sfx('click');if(t>=180){phase='go';hint.textContent='快划！快划！';sfx('catch');}}
+    else if(phase==='go'){B[0].v*=.97;for(const b of B.slice(1)){const tg=b.base+Math.sin(t*.03+b.base)*.35;b.v+=(tg-b.v)*.05;}
+      for(const b of B){if(b.d<L){b.d+=b.v;if(b.d>=L){b.d=L;fin.push(b);}}}if(fin.includes(B[0])){phase='end';const r=fin.indexOf(B[0])+1;hint.textContent='第 '+r+' 名！';sfx(r===1?'catch':'right');
+        const ok=el('button','bp',r===1?'冠軍！太厲害了':'好可惜～下次再加油');ok.style.marginTop='10px';ok.onclick=()=>{cancelAnimationFrame(raf);window.removeEventListener('keydown',key);ov.remove();done(r);};ov.appendChild(ok);}}
+    draw();if(phase!=='end')raf=requestAnimationFrame(step);};raf=requestAnimationFrame(step);}
 const FEST_MEL=[72,null,74,76,79,null,76,74,72,null,69,null,67,null,null,null,69,72,74,null,76,74,72,null,74,null,null,null,null,null,null,null,76,null,79,81,79,null,76,74,76,null,74,72,69,null,null,null,67,69,72,74,76,74,72,69,72,null,null,null,null,null,null,null],
   FEST_CH=[[48,52,55],[45,48,52],[41,45,48],[43,47,50],[48,52,55],[45,48,52],[41,45,48],[43,47,50]];
 function schedFest(){const c=SND.ctx,spb=60/132/2;if(SND.next<c.currentTime)SND.next=c.currentTime+.05;
@@ -3003,7 +3097,7 @@ function openGift(n){
   box.appendChild(el('div','ot','送禮物給'+SHORT[n.id]));
   const items=giftItems();if(!items.length)box.appendChild(el('div','msgtxt','背包裡沒有可以送的東西…'));
   for(const[k,nm,src,q]of items){const b=el('button','bb','送');b.type='button';b.style.cssText='background:#7a2040;border-color:#ff7aa0';
-    b.onclick=()=>{G[src][k]--;G.gifted[n.id]=G.day;G.stats.gifts++;const love=LOVES[n.id].includes(k),v=(love?15:8)*(evIs('bday')&&n.id==='yu'?2:1);addRel(n.id,v);sfx('heart');G.fx.push({kind:'heart',x:n.x,y:n.y-40,t:0});closeOm();updTB();
+    b.onclick=()=>{G[src][k]--;G.gifted[n.id]=G.day;G.stats.gifts++;const love=LOVES[n.id].includes(k),v=(love?15:8)*((evIs('bday')&&n.id==='yu')||bdayToday(n.id)?2:1);addRel(n.id,v);sfx('heart');G.fx.push({kind:'heart',x:n.x,y:n.y-40,t:0});closeOm();updTB();
       const extra=giftBack(n);msg(SHORT[n.id]+'：'+(love?'哇！這是我最喜歡的'+nm+'！':'謝謝你的'+nm+'！')+extra);saveGame();};
     box.appendChild(bagRow(k,nm+' ×'+q,LOVES[n.id].includes(k)?'（看起來會很喜歡）':'',b));}
   const c=el('button','bc','算了');c.type='button';c.onclick=closeOm;box.appendChild(c);
@@ -3560,7 +3654,7 @@ function seen(cat,k){if(!G.seen[cat][k]){G.seen[cat][k]=1;}}
 // ===== 任務樹（製圖桌・成就）：主線一路往下，支線從主線分岔；前一個完成才能挑戰下一個 =====
 const FISH_ALL=['fish_s','fish_m','fish_l','fish_x','fish_hair','fish_mullet','fish_mahi','fish_milk','fish_tila','fish_saury','fish_grouper'];
 const qn=o=>Object.keys(o||{}).length,qFriends=h=>Object.values(G.rel).filter(v=>v>=h).length,qTools=()=>['hoe','water','axe'].map(tlv);
-const QBR={main:['主線','#ffcf40'],farm:['農耕','#9ccc65'],cook:['料理','#ffb74d'],fish:['釣魚','#7ec8e8'],friend:['交友','#f48fb1'],explore:['探索','#b39ddb'],ranch:['畜牧','#e0c080'],market:['市集','#ffd54f'],tool:['工具','#bcaaa4'],req:['委託','#90caf9']};
+const QBR={main:['主線','#ffcf40'],farm:['農耕','#9ccc65'],cook:['料理','#ffb74d'],fish:['釣魚','#7ec8e8'],friend:['交友','#f48fb1'],explore:['探索','#b39ddb'],ranch:['畜牧','#e0c080'],market:['市集','#ffd54f'],tool:['工具','#bcaaa4'],req:['委託','#90caf9'],fest:['節慶','#ef8a7a']};
 // [id, 名稱, 說明, 圖示, 分支, 前一關, 進度/條件, 獎勵G]
 const QUESTS=[
   ['first_h','第一次收成','收成任何一種作物','turnip','main',null,()=>[G.stats.harvest,1],100],
@@ -3627,6 +3721,13 @@ const QUESTS=[
   ['wood100','木材大王','累積砍到 100 根木材','wood','tool','toolcu',()=>[G.stats.wood||0,100],500],
   ['toolau','金光閃閃','任一工具升到金級','tool:axe','tool','wood100',()=>[Math.max(...qTools()),3],800],
   ['toolall','工具大師','三樣工具都升到金級','ui:hammer','tool','toolau',()=>[qTools().filter(v=>v>=3).length,3],2000],
+  // 節慶
+  ['fe_lantern','元宵燈會','參加春天的元宵燈會','ui:lantern','fest','talk5',()=>!!G.cal.att.lantern,300],
+  ['fe_boat','端午龍舟賽','參加夏天的端午龍舟賽','ui:boat','fest','fe_lantern',()=>!!G.cal.att.boat,300],
+  ['fe_moon','中秋烤肉','參加秋天的中秋烤肉','steak','fest','fe_boat',()=>!!G.cal.att.moon,300],
+  ['fe_ny','跨年倒數','參加冬天的跨年倒數','cake','fest','fe_moon',()=>!!G.cal.att.newyear,300],
+  ['fe_riddle','燈謎王','在元宵燈會一次猜中 3 個燈謎','ui:quiz','fest','fe_ny',()=>[G.cal.riddle||0,3],500],
+  ['fe_boatwin','龍舟冠軍','在端午龍舟賽拿到第 1 名','ui:boat','fest','fe_riddle',()=>[G.cal.boatWin||0,1],800],
   // 委託
   ['req10','熱心村民','完成 10 件委託','basket','req','req5',()=>[G.stats.reqs,10],300],
   ['req30','村子的依靠','完成 30 件委託','ui:chart','req','req10',()=>[G.stats.reqs,30],600],
@@ -3635,7 +3736,7 @@ const QUESTS=[
 const QMAP=Object.fromEntries(QUESTS.map(q=>[q[0],q]));
 const ACHS=QUESTS.map(q=>[q[0],q[1],q[2],()=>qMet(q)]);
 // 主線的哪一關長出哪些支線
-const QSPROUT={first_h:['farm','cook'],talk5:['fish','friend','explore'],earn1k:['ranch','market','tool'],req5:['req']};
+const QSPROUT={first_h:['farm','cook'],talk5:['fish','friend','explore','fest'],earn1k:['ranch','market','tool'],req5:['req']};
 function qProg(q){const v=q[6]();return Array.isArray(v)?[Math.min(v[0]||0,v[1]),v[1]]:null;}
 function qMet(q){const v=q[6]();return Array.isArray(v)?(v[0]||0)>=v[1]:!!v;}
 function qState(q){return G.ach[q[0]]?'done':(!q[5]||G.ach[q[5]])?'av':'lock';}
@@ -3643,9 +3744,9 @@ function qIcon(ic){return ic.startsWith('ui:')?uiIconURL(ic.slice(3)):ic.startsW
 let achT=0;
 function checkAch(){if(++achT<120)return;achT=0;for(const q of QUESTS){if(G.ach[q[0]]||(q[5]&&!G.ach[q[5]])||!qMet(q))continue;G.ach[q[0]]=G.day;if(q[7]){G.gold+=q[7];updHUD();}msg('★ 達成'+(q[4]==='main'?'主線':QBR[q[4]][0]+'任務')+'：'+q[1]+(q[7]?'\n獎勵 '+q[7]+'G':''));sfx('catch');saveGame();return;}}
 function openAlmanac(tab){
-  tab=tab||'fish';G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';
+  tab=tab||'fish';if(tab==='cal'){openCalendar();return;}G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';
   box.appendChild(el('div','ot','製圖桌・農場圖鑑'));
-  const tabs=el('div','tabs');for(const[k,n]of[['fish','魚類'],['crops','作物'],['dishes','料理'],['animals','動物'],['ach','成就']]){const b=el('button','tab'+(k===tab?' act':''),n);b.type='button';b.onclick=()=>openAlmanac(k);tabs.appendChild(b);}box.appendChild(tabs);
+  const tabs=el('div','tabs');for(const[k,n]of[['fish','魚類'],['crops','作物'],['dishes','料理'],['animals','動物'],['ach','成就'],['cal','月曆']]){const b=el('button','tab'+(k===tab?' act':''),n);b.type='button';b.onclick=()=>openAlmanac(k);tabs.appendChild(b);}box.appendChild(tabs);
   if(tab==='ach')drawQuestTree(box);
   else{const keys=tab==='fish'?['fish_s','fish_m','fish_l','fish_x','fish_hair','fish_mullet','fish_mahi','fish_milk','fish_tila','fish_saury','fish_grouper']:tab==='crops'?Object.keys(CROPS).filter(k=>k!=='grass'):tab==='dishes'?Object.keys(FOOD).filter(k=>FOOD[k].rec):Object.keys(ANIMAL_DATA);
     const nm=k=>tab==='fish'?PRODUCT_DATA[k].n:tab==='crops'?CROPS[k].n:tab==='dishes'?FOOD[k].n:ANIMAL_DATA[k].n;
@@ -3674,6 +3775,30 @@ function showQuest(q){const st=qState(q),br=QBR[q[4]],pr=qProg(q),par=q[5]&&QMAP
   lines.push(st==='done'?'✔ 第 '+G.ach[q[0]]+' 天達成':st==='av'?'挑戰中！':'🔒 先完成「'+par[1]+'」才能挑戰');
   const nx=QUESTS.filter(c=>c[5]===q[0]);if(nx.length)lines.push('完成後解鎖：'+nx.map(c=>c[1]).join('、'));
   popInfo(q[1],lines.filter(Boolean).join('\n'),'好',null,st==='done'?'#ffcf40':st==='av'?br[1]:'#8a7a66');}
+
+// ===== 月曆：節日與村民生日 =====
+const BDAY={yu:[0,3],mickey:[0,4],fang:[0,10],clerk:[0,12],mei:[1,2],chen:[1,8],ak:[1,11],kai:[1,13],fruit:[2,3],guide:[2,6],camper:[2,12],rancher:[2,14],song:[3,2],jie:[3,5],lin:[3,8],fish:[3,11]};
+function bdayToday(id){const b=BDAY[id];return!!b&&b[0]===season()&&b[1]===dayOfSeason();}
+// 在換日前被呼叫，所以延後到新的一天開始後再判斷
+function calMorning(){setTimeout(()=>{const k=festTodayKey(),bs=Object.keys(BDAY).filter(bdayToday);
+  if(k)msg('今天是'+FESTS[k].n+'！\n傍晚 6 點後到市集廣場參加吧');
+  if(bs.length)setTimeout(()=>msg('今天是'+bs.map(id=>SHORT[id]).join('、')+'的生日！\n送禮物好感加倍'),k?3000:0);},5200);}
+function openCalendar(si){si=si==null?season():si;G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';
+  box.appendChild(el('div','ot','月曆・第 '+(yearNo()+1)+' 年'));
+  const tabs=el('div','tabs');SEASONS.forEach((n,i)=>{const b=el('button','tab'+(i===si?' act':''),n+'季');b.type='button';b.onclick=()=>openCalendar(i);tabs.appendChild(b);});box.appendChild(tabs);
+  const grid=el('div','calg'),now=season(),td=dayOfSeason(),evs=[];
+  for(let d=1;d<=SEASON_LEN;d++){const c=el('button','calc'+(si===now&&d===td?' today':'')+(si<now||(si===now&&d<td)?' past':''));c.type='button';c.appendChild(el('span','cn',String(d)));
+    const fk=Object.keys(FESTS).find(k=>FESTS[k].s===si&&FESTS[k].d===d),bs=Object.keys(BDAY).filter(id=>BDAY[id][0]===si&&BDAY[id][1]===d);
+    if(fk){const im=document.createElement('img');im.src=qIcon(FESTS[fk].ic);im.alt='';c.appendChild(im);c.appendChild(el('span','cf',FESTS[fk].n.slice(0,2)));c.classList.add('fest');}
+    else if(bs.length){const im=document.createElement('img');im.src=uiIconURL('gift');im.alt='';c.appendChild(im);}
+    for(const id of bs)c.appendChild(el('span','cb',SHORT[id]));
+    const lines=[];if(fk){const f=FESTS[fk],done=G.cal.done[fk]===yearNo();lines.push('🎉 '+f.n+'\n'+f.desc+'\n傍晚 6 點後・市集廣場'+(done?'\n（今年已經參加過了）':''));}
+    for(const id of bs)lines.push('🎂 '+SHORT[id]+'的生日\n送禮物好感加倍\n喜歡：'+LOVES[id].slice(0,4).map(k=>(ITEM[k]&&ITEM[k].n)||(FOOD[k]&&FOOD[k].n)||(k==='wood'?'木材':k)).join('、'));
+    if(lines.length)evs.push(d+' 日　'+(fk?FESTS[fk].n:'')+(fk&&bs.length?'・':'')+bs.map(id=>SHORT[id]+'生日').join('・'));
+    c.onclick=()=>{sfx('click');popInfo(SEASONS[si]+'季 '+d+' 日',lines.length?lines.join('\n\n'):'這天沒有特別的活動，\n好好照顧農場吧！','好',null,fk?'#ffcf40':bs.length?'#f48fb1':null);};grid.appendChild(c);}
+  box.appendChild(grid);box.appendChild(el('div','calev',evs.join('\n')));
+  const sw=el('button','bc','頂端改顯示'+(DATE_MODE==='day'?'季節日期':'第幾天'));sw.type='button';sw.onclick=()=>{toggleDate();openCalendar(si);};box.appendChild(sw);
+  const cl=el('button','bc','關閉');cl.type='button';cl.onclick=closeOm;box.appendChild(cl);document.getElementById('om').style.display='flex';}
 
 function spendE(n){if(G.full<=0)n*=2;G.en=Math.max(0,G.en-n);updHUD();}
 function nextDay(){tutEvent('sleep');wishIntro();G.day++;{const o=npcOff('su');G.day--;const pv=npcOff('su');G.day++;if(o&&!pv)setTimeout(()=>msg(OFF_MSG[o]),1800);}if(G.saplings)for(const k in G.saplings){if(G.day-G.saplings[k]>=3){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.SPROUT){G.map[y][x]=T.TREE;if(!G.planted)G.planted=[];G.planted.push(k);if(G.cleared)G.cleared=G.cleared.filter(v=>v!==k);}delete G.saplings[k];}}if(G.stumps)for(const k in G.stumps){if(--G.stumps[k]<=0){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.STUMP)G.map[y][x]=T.TREE;delete G.stumps[k];}}if(G.orders&&G.orders.length){const got=G.orders.map(k=>{G.owned.push(k);return lookName(k);});G.orders=[];setTimeout(()=>msg('叮咚！線上商城的包裹送到了\n'+got.join('、')+'\n可以到家裡的衣櫃換上喔'),4000);}let rev=0;{if(!G.tdays)G.tdays={};for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const t=G.map[y][x],k=x+','+y;if((t===T.TI||t===T.WA)&&!G.cr[y][x]){G.tdays[k]=(G.tdays[k]||0)+1;if(G.tdays[k]>=3){G.map[y][x]=T.D;delete G.tdays[k];rev++;}}else delete G.tdays[k];}}G.time=330;G.log=[];G.logSeen=0;G.logNew=false;updLogBtn();let seasonMsg='';if((G.day-1)%SEASON_LEN===0){const sc=seasonCrops();let w=0,sl=0;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c||c.type==='grass')continue;if(sc.includes(c.type)){c.slow=false;continue;}if(Math.random()<.35){G.cr[y][x]=null;w++;G.drops.push({x:(x+.5)*TILE+Math.random()*10-5,y:(y+.5)*TILE+6,crop:c.type,qty:1+Math.floor(Math.random()*2)});}else{c.slow=true;sl++;}}buildTools();{const sc2=seasonCrops(),q=[5,3,1,1];sc2.forEach((k,i)=>G.seeds[k]=(+G.seeds[k]||0)+q[i]);G.drop={t:0,txt:sc2.map((k,i)=>CROPS[k].n+'×'+q[i]).join('、')};}seasonMsg='\n'+SEASONS[season()]+'天到了！'+(w?'\n'+w+' 株作物不耐季節枯萎了，種子掉在田邊':'')+(sl?'\n'+sl+' 株非當季作物會長得比較慢':'')+(!w&&!sl?'商店有新的種子喔':'');}for(const r of G.reqs)r.days--;genRequests();G.today=newToday();G.campGuest=Math.random()<.45?(Math.random()<.5?'guide':'rancher'):null;G.campGuestDay=G.day;G.campStay=Math.random()<.5;G.helper=Math.random()<.45?['yu','guide','song','song'][Math.floor(Math.random()*4)]:null;if(G.cat&&G.cat.adopted&&G.cat.fishDay===G.day-1&&Math.random()<.6){const r=Math.random();let txt;if(r<.5){const sc3=seasonCrops(),k=sc3[Math.floor(Math.random()*sc3.length)];G.seeds[k]=(+G.seeds[k]||0)+2;txt=CROPS[k].n+'種子 ×2';}else{const g=30+Math.floor(Math.random()*5)*10;G.gold+=g;txt=g+'G';}setTimeout(()=>msg('阿喵叼了禮物回來：'+txt+'！'),5200);}rollEvent();announceEvent();setTimeout(()=>msg('村子入口旁的委託告示板\n有 '+G.reqs.length+' 件委託'),2600);G.en=MAX_E;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c)continue;if((c.watered||c.type==='grass')&&!(c.slow&&(c.sk=!c.sk))){c.daysLeft--;if(c.daysLeft<=0&&c.stage<3){c.stage++;c.daysLeft=CROPS[c.type].d;}}c.watered=false;if(G.map[y][x]===T.WA)G.map[y][x]=T.TI;}let hungry=0;for(const a of G.animals){if(G.trough>0){G.trough--;a.fed=true;if(a.petDay===G.day-1)a.love=Math.min(5,a.love+1);if(a.baby>0){a.baby--;}else if(!a.readyProduct){a.daysLeft--;if(a.daysLeft<=0){a.readyProduct=true;a.bonus=a.love>=4&&Math.random()<.4;a.daysLeft=ANIMAL_DATA[a.type].days;}}}else{a.fed=false;a.love=Math.max(0,a.love-1);hungry++;}}
