@@ -228,6 +228,26 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 .logx{color:var(--ink);font-size:11px;line-height:1.7;white-space:pre-line;min-width:0}
 .tabs{display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap}.tab{flex:1;min-width:52px;padding:7px 4px;font-family:var(--font-ui);font-size:11px;color:var(--muted);background:#2a1a0a;border:2px solid #4a3520;border-radius:6px;cursor:pointer}.tab.act{color:#2a1a00;background:var(--gold);border-color:var(--gold)}
 .almgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:6px}.almcount{justify-content:center}.almc{min-width:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;background:#2a1a0a;border:1px solid #4a3520;border-radius:6px;font-size:11px;text-align:center}.almc img{width:32px;height:32px;image-rendering:pixelated}.almc.unk img{filter:brightness(0);opacity:.35}.almc.unk{color:#6a5a48}
+.qsum{text-align:center;color:#d8c49a;font-size:12px;line-height:1.7;margin:6px 0 4px}
+.qwrap{overflow-x:auto;margin:0 -4px 8px;padding:4px 4px 8px}
+.qtree{display:inline-flex;flex-direction:column;min-width:100%}
+.qrow{display:flex;align-items:center;min-height:62px}
+.qtk{width:60px;align-self:stretch;position:relative;display:flex;align-items:center;justify-content:center;flex:none}
+.qtk::before{content:'';position:absolute;left:28px;width:4px;top:0;bottom:0;background:#6b4f2e}
+.qtk.top::before{top:50%}.qtk.end::before{bottom:50%}
+.qtk.br::after{content:'';position:absolute;left:30px;right:0;top:50%;height:3px;margin-top:-1px;background:#6b4f2e}
+.qbl{font-size:10px;line-height:1.15;padding:3px 4px;border-radius:4px;margin:0 4px 0 2px;writing-mode:vertical-rl;letter-spacing:1px;flex:none;color:#1a1008;font-weight:700}
+.qn{width:42px;height:42px;border:2px solid #4a3826;background:#21160d;border-radius:7px;display:flex;align-items:center;justify-content:center;position:relative;flex:none;padding:0;cursor:pointer;z-index:1}
+.qn img{width:30px;height:30px;image-rendering:pixelated;pointer-events:none}
+.qn.main{width:50px;height:50px;border-width:3px;border-radius:10px}.qn.main img{width:34px;height:34px}
+.qn.lock img{filter:grayscale(1) brightness(.32)}.qn.lock{border-color:#33261a;background:#18100a}
+.qn.lock::after{content:'?';position:absolute;color:#7a6650;font-size:16px;font-weight:700}
+.qn.av{border-color:#f0d27a;box-shadow:0 0 0 2px rgba(240,210,122,.28);animation:qpulse 1.6s ease-in-out infinite}
+.qn.done{border-color:#ffcf40;background:#4a3514}
+.qn.done::after{content:'✓';position:absolute;right:-5px;bottom:-5px;background:#3f9a42;color:#fff;font-size:10px;width:15px;height:15px;border-radius:8px;line-height:15px;text-align:center;font-weight:700}
+.qc{width:9px;height:3px;background:#4a3826;flex:none}.qc.on{background:#ffcf40}
+.qleg{font-size:11px;color:#a89070;line-height:1.7;text-align:center;margin-bottom:6px;white-space:pre-line}
+@keyframes qpulse{50%{box-shadow:0 0 0 4px rgba(240,210,122,.12)}}
 .achrow{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid #2a1a0a;opacity:.55}.achrow.got{opacity:1}.achic{font-size:22px;color:var(--gold);width:24px;text-align:center}
 .qfb{font-size:11px;line-height:1.7;margin-top:10px;padding:10px 12px;border-radius:8px;white-space:pre-line}
 #fd{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .7s;z-index:50}
@@ -3537,23 +3557,96 @@ function updateRanch(){for(const a of G.ranch){a.anim++;if(--a.moveTimer<=0){if(
 
 // ===== 圖鑑與成就（製圖桌）=====
 function seen(cat,k){if(!G.seen[cat][k]){G.seen[cat][k]=1;}}
-const ACHS=[
-  ['first_h','第一次收成','收成任何作物',()=>G.stats.harvest>=1],['h100','豐收達人','累積收成 100 次',()=>G.stats.harvest>=100],
-  ['first_f','第一條魚','釣到第一條魚',()=>G.stats.fish>=1],['f30','釣魚高手','累積釣到 30 條魚',()=>G.stats.fish>=30],['bigfish','大物獵人','在碼頭釣到旗魚',()=>!!G.seen.fish.fish_x],
-  ['cook1','小廚師','煮出第一道料理',()=>G.stats.cook>=1],['cook10','大廚','煮過 10 種不同料理',()=>Object.keys(G.seen.dishes).length>=10],
-  ['earn1k','市集新手','累積賺到 1,000G',()=>G.stats.earned>=1000],['earn10k','市集之星','累積賺到 10,000G',()=>G.stats.earned>=10000],
-  ['req10','熱心村民','完成 10 件委託',()=>G.stats.reqs>=10],['hike3','登山通','領過 3 次阿山的獎勵',()=>G.stats.quizH>=3],['fishq3','釣魚通','領過 3 次海伯的獎勵',()=>G.stats.quizF>=3],
-  ['friend','好朋友','和任一位村民達到 5 顆心',()=>Object.values(G.rel).some(v=>v>=100)],['gift20','送禮達人','送出 20 份禮物',()=>G.stats.gifts>=20],
-  ['zoo','牧場主人','同時養 10 隻動物',()=>G.animals.length>=10],['allanimal','動物之友','養過全部 4 種動物',()=>Object.keys(G.seen.animals).length>=4],
-  ['year','四季輪迴','度過一整年（56 天）',()=>G.day>56],['allfish','魚類收藏家','釣過全部 4 種魚',()=>['fish_s','fish_m','fish_l','fish_x'].every(k=>G.seen.fish[k])],['fest','豐收祭','和全村一起在豐收祭乾杯',()=>!!(G.wish&&G.wish.fest)]];
+// ===== 任務樹（製圖桌・成就）：主線一路往下，支線從主線分岔；前一個完成才能挑戰下一個 =====
+const FISH_ALL=['fish_s','fish_m','fish_l','fish_x','fish_hair','fish_mullet','fish_mahi','fish_milk','fish_tila','fish_saury','fish_grouper'];
+const qn=o=>Object.keys(o||{}).length,qFriends=h=>Object.values(G.rel).filter(v=>v>=h).length,qTools=()=>['hoe','water','axe'].map(tlv);
+const QBR={main:['主線','#ffcf40'],farm:['農耕','#9ccc65'],cook:['料理','#ffb74d'],fish:['釣魚','#7ec8e8'],friend:['交友','#f48fb1'],explore:['探索','#b39ddb'],ranch:['畜牧','#e0c080'],market:['市集','#ffd54f'],tool:['工具','#bcaaa4'],req:['委託','#90caf9']};
+// [id, 名稱, 說明, 圖示, 分支, 前一關, 進度/條件, 獎勵G]
+const QUESTS=[
+  ['first_h','第一次收成','收成任何一種作物','turnip','main',null,()=>[G.stats.harvest,1],100],
+  ['talk5','結識鄰居','和 5 位不同的村民聊天','ui:talk','main','first_h',()=>[qn(G.talked),5],150],
+  ['earn1k','市集新手','累積賺到 1,000G','coin','main','talk5',()=>[G.stats.earned,1000],200],
+  ['req5','村子的好幫手','完成 5 件村民委託','basket','main','earn1k',()=>[G.stats.reqs,5],300],
+  ['wish1','第一個心願','實現村莊心願簿上的 1 個心願','strawberry','main','req5',()=>[wishDone(),1],500],
+  ['wish4','心願過半','實現村莊心願簿上的 4 個心願','pumpkin','main','wish1',()=>[wishDone(),4],800],
+  ['fest','豐收祭','實現全部心願，和全村一起在豐收祭乾杯','ui:lantern','main','wish4',()=>!!(G.wish&&G.wish.fest),0],
+  ['year','四季輪迴','在農場度過一整年（56 天）','sun','main','fest',()=>[Math.min(56,G.day-1),56],2000],
+  // 農耕
+  ['h10','小農夫','累積收成 10 次','potato','farm','first_h',()=>[G.stats.harvest,10],100],
+  ['crop5','作物新手','收穫過 5 種不同的作物','tomato','farm','h10',()=>[qn(G.seen.crops),5],150],
+  ['h100','豐收達人','累積收成 100 次','corn','farm','crop5',()=>[G.stats.harvest,100],300],
+  ['crop12','作物專家','收穫過 12 種不同的作物','grape','farm','h100',()=>[qn(G.seen.crops),12],500],
+  ['h300','大地主','累積收成 300 次','watermelon','farm','crop12',()=>[G.stats.harvest,300],800],
+  ['cropall','作物大全','收穫過全部 '+(Object.keys(CROPS).length-1)+' 種作物','wheat','farm','h300',()=>[qn(G.seen.crops),Object.keys(CROPS).length-1],1500],
+  // 料理
+  ['cook1','小廚師','煮出第一道料理','omelette','cook','first_h',()=>[G.stats.cook,1],100],
+  ['cook5','家常菜','煮過 5 種不同的料理','friedrice','cook','cook1',()=>[qn(G.seen.dishes),5],200],
+  ['cook10','大廚','煮過 10 種不同的料理','bento','cook','cook5',()=>[qn(G.seen.dishes),10],400],
+  ['cook30','灶腳常客','累積下廚 30 次','soup','cook','cook10',()=>[G.stats.cook,30],500],
+  ['cook18','美食家','煮過 18 種不同的料理','cake','cook','cook30',()=>[qn(G.seen.dishes),18],800],
+  ['cookall','食譜大全','煮過全部 '+Object.keys(FOOD).filter(k=>FOOD[k].rec).length+' 種料理','teppan','cook','cook18',()=>[qn(G.seen.dishes),Object.keys(FOOD).filter(k=>FOOD[k].rec).length],1500],
+  // 釣魚
+  ['rod','學會釣魚','從海伯那裡拿到釣竿','rod','fish','talk5',()=>!!G.rod,100],
+  ['first_f','第一條魚','釣到第一條魚','fish_s','fish','rod',()=>[G.stats.fish,1],100],
+  ['f30','釣魚高手','累積釣到 30 條魚','fish_m','fish','first_f',()=>[G.stats.fish,30],300],
+  ['allfish','魚類收藏家','釣過沙丁魚、鯛魚、鮪魚、旗魚','fish_l','fish','f30',()=>[['fish_s','fish_m','fish_l','fish_x'].filter(k=>G.seen.fish[k]).length,4],400],
+  ['bigfish','大物獵人','在碼頭釣到旗魚','fish_x','fish','allfish',()=>!!G.seen.fish.fish_x,600],
+  ['fish11','魚類圖鑑','釣過全部 11 種魚','fish_grouper','fish','bigfish',()=>[FISH_ALL.filter(k=>G.seen.fish[k]).length,11],1000],
+  ['f100','海上傳說','累積釣到 100 條魚','ui:boat','fish','fish11',()=>[G.stats.fish,100],1500],
+  // 交友
+  ['gift1','一點心意','送出第一份禮物','ui:gift','friend','talk5',()=>[G.stats.gifts,1],100],
+  ['heart3','談得來','和任一位村民達到 3 顆心','ui:heart','friend','gift1',()=>[qFriends(60),1],200],
+  ['friend','好朋友','和任一位村民達到 5 顆心','ui:heart','friend','heart3',()=>[qFriends(100),1],300],
+  ['gift20','送禮達人','累積送出 20 份禮物','ui:gift','friend','friend',()=>[G.stats.gifts,20],400],
+  ['friends3','人緣王','和 3 位村民達到 5 顆心','ui:heart','friend','gift20',()=>[qFriends(100),3],800],
+  ['friends8','全村的好朋友','和 8 位村民達到 5 顆心','ui:heart','friend','friends3',()=>[qFriends(100),8],1500],
+  // 探索
+  ['hike1','上山囉','跟阿山去登山一次','hikehat','explore','talk5',()=>G.lastHike>0,100],
+  ['sea1','出海去','跟海伯出海一次','ui:boat','explore','hike1',()=>G.lastSea>0,100],
+  ['ride1','馳騁','去騎馬一次','ui:horse','explore','sea1',()=>G.lastRide>0,100],
+  ['camp1','星空露營','跟阿野去露營一次','ui:tent','explore','ride1',()=>G.lastCampTrip!=null&&G.lastCampTrip>0,150],
+  ['hike3','登山通','領過 3 次阿山的問答獎勵','ui:mount','explore','camp1',()=>[G.stats.quizH,3],300],
+  ['fishq3','釣魚通','領過 3 次海伯的問答獎勵','ui:quiz','explore','hike3',()=>[G.stats.quizF,3],300],
+  ['catfam','阿喵的家','收養在村子裡遇到的貓','fish_saury','explore','fishq3',()=>!!(G.cat&&G.cat.adopted),300],
+  // 畜牧
+  ['ani1','第一隻動物','在畜欄養第一隻動物','chicken','ranch','earn1k',()=>[qn(G.seen.animals),1],100],
+  ['allanimal','動物之友','養過豬、牛、雞、羊全部 4 種','sheep','ranch','ani1',()=>[qn(G.seen.animals),4],300],
+  ['pen1','擴建畜欄','擴建畜欄一次','hay','ranch','allanimal',()=>[G.penLv,1],300],
+  ['zoo','牧場主人','同時養 10 隻動物','cow','ranch','pen1',()=>[G.animals.length,10],600],
+  ['pen2','大牧場','擴建畜欄兩次','pig','ranch','zoo',()=>[G.penLv,2],800],
+  // 市集
+  ['earn10k','市集之星','累積賺到 10,000G','coin','market','earn1k',()=>[G.stats.earned,10000],500],
+  ['star3','人氣攤位','攤位聲望達到 3 顆星','ui:shop','market','earn10k',()=>[stars(),3],400],
+  ['earn50k','生意興隆','累積賺到 50,000G','coin','market','star3',()=>[G.stats.earned,50000],1000],
+  ['star5','排隊名攤','攤位聲望達到 5 顆星','ui:shop','market','earn50k',()=>[stars(),5],1000],
+  ['earn200k','富甲一方','累積賺到 200,000G','coin','market','star5',()=>[G.stats.earned,200000],3000],
+  // 工具
+  ['wood1','伐木工','砍倒第一棵樹','wood','tool','earn1k',()=>[(G.stats.wood||0)||((G.mat&&G.mat.wood)?1:0),1],100],
+  ['tool1','新工具','第一次升級工具','tool:hoe','tool','wood1',()=>[qTools().reduce((a,b)=>a+b,0),1],200],
+  ['toolcu','全面升級','鋤頭、水壺、斧頭都升到銅級以上','tool:water','tool','tool1',()=>[qTools().filter(v=>v>=1).length,3],400],
+  ['wood100','木材大王','累積砍到 100 根木材','wood','tool','toolcu',()=>[G.stats.wood||0,100],500],
+  ['toolau','金光閃閃','任一工具升到金級','tool:axe','tool','wood100',()=>[Math.max(...qTools()),3],800],
+  ['toolall','工具大師','三樣工具都升到金級','ui:hammer','tool','toolau',()=>[qTools().filter(v=>v>=3).length,3],2000],
+  // 委託
+  ['req10','熱心村民','完成 10 件委託','basket','req','req5',()=>[G.stats.reqs,10],300],
+  ['req30','村子的依靠','完成 30 件委託','ui:chart','req','req10',()=>[G.stats.reqs,30],600],
+  ['req60','有求必應','完成 60 件委託','ui:bag','req','req30',()=>[G.stats.reqs,60],1200],
+];
+const QMAP=Object.fromEntries(QUESTS.map(q=>[q[0],q]));
+const ACHS=QUESTS.map(q=>[q[0],q[1],q[2],()=>qMet(q)]);
+// 主線的哪一關長出哪些支線
+const QSPROUT={first_h:['farm','cook'],talk5:['fish','friend','explore'],earn1k:['ranch','market','tool'],req5:['req']};
+function qProg(q){const v=q[6]();return Array.isArray(v)?[Math.min(v[0]||0,v[1]),v[1]]:null;}
+function qMet(q){const v=q[6]();return Array.isArray(v)?(v[0]||0)>=v[1]:!!v;}
+function qState(q){return G.ach[q[0]]?'done':(!q[5]||G.ach[q[5]])?'av':'lock';}
+function qIcon(ic){return ic.startsWith('ui:')?uiIconURL(ic.slice(3)):ic.startsWith('tool:')?toolIconURL(ic.slice(5)):iconDataURL(ic,32);}
 let achT=0;
-function checkAch(){if(++achT<120)return;achT=0;for(const[id,n,,f]of ACHS){if(!G.ach[id]&&f()){G.ach[id]=G.day;msg('★ 達成成就：'+n);sfx('catch');}}}
+function checkAch(){if(++achT<120)return;achT=0;for(const q of QUESTS){if(G.ach[q[0]]||(q[5]&&!G.ach[q[5]])||!qMet(q))continue;G.ach[q[0]]=G.day;if(q[7]){G.gold+=q[7];updHUD();}msg('★ 達成'+(q[4]==='main'?'主線':QBR[q[4]][0]+'任務')+'：'+q[1]+(q[7]?'\n獎勵 '+q[7]+'G':''));sfx('catch');saveGame();return;}}
 function openAlmanac(tab){
   tab=tab||'fish';G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';
   box.appendChild(el('div','ot','製圖桌・農場圖鑑'));
   const tabs=el('div','tabs');for(const[k,n]of[['fish','魚類'],['crops','作物'],['dishes','料理'],['animals','動物'],['ach','成就']]){const b=el('button','tab'+(k===tab?' act':''),n);b.type='button';b.onclick=()=>openAlmanac(k);tabs.appendChild(b);}box.appendChild(tabs);
-  if(tab==='ach'){const got=ACHS.filter(a=>G.ach[a[0]]).length;box.appendChild(el('div','mtop almcount','已達成 '+got+' / '+ACHS.length));
-    for(const[id,n,d]of ACHS){const r=el('div','achrow'+(G.ach[id]?' got':''));r.appendChild(el('span','achic',G.ach[id]?'★':'☆'));const tx=el('div');tx.appendChild(el('div','on',n));tx.appendChild(el('div','oi',d+(G.ach[id]?'｜第 '+G.ach[id]+' 天達成':'')));r.appendChild(tx);box.appendChild(r);}}
+  if(tab==='ach')drawQuestTree(box);
   else{const keys=tab==='fish'?['fish_s','fish_m','fish_l','fish_x','fish_hair','fish_mullet','fish_mahi','fish_milk','fish_tila','fish_saury','fish_grouper']:tab==='crops'?Object.keys(CROPS).filter(k=>k!=='grass'):tab==='dishes'?Object.keys(FOOD).filter(k=>FOOD[k].rec):Object.keys(ANIMAL_DATA);
     const nm=k=>tab==='fish'?PRODUCT_DATA[k].n:tab==='crops'?CROPS[k].n:tab==='dishes'?FOOD[k].n:ANIMAL_DATA[k].n;
     const got=keys.filter(k=>G.seen[tab][k]).length;box.appendChild(el('div','mtop almcount','已收集 '+got+' / '+keys.length));
@@ -3561,6 +3654,26 @@ function openAlmanac(tab){
   const cl=el('button','bc','關閉');cl.type='button';cl.onclick=closeOm;box.appendChild(cl);
   document.getElementById('om').style.display='flex';
 }
+
+function drawQuestTree(box){
+  const got=QUESTS.filter(q=>G.ach[q[0]]).length,mains=QUESTS.filter(q=>q[4]==='main'),mg=mains.filter(q=>G.ach[q[0]]).length;
+  box.appendChild(el('div','qsum','已達成 '+got+' / '+QUESTS.length+'　｜　主線 '+mg+' / '+mains.length));
+  box.appendChild(el('div','qleg','金框＝可以挑戰　灰色＝還沒解鎖　✓＝已完成\n點圖示看任務內容'));
+  const wrap=el('div','qwrap'),tree=el('div','qtree');wrap.appendChild(tree);
+  const node=q=>{const st=qState(q),b=el('button','qn '+st+(q[4]==='main'?' main':''));b.type='button';b.setAttribute('aria-label',q[1]);if(q[4]!=='main')b.style.borderColor=st==='lock'?'':st==='done'?'':QBR[q[4]][1];const im=document.createElement('img');im.src=qIcon(q[3]);im.alt='';b.appendChild(im);b.onclick=()=>{sfx('click');showQuest(q);};return b;};
+  const chain=(row,br)=>{const qs=QUESTS.filter(q=>q[4]===br);const tag=el('span','qbl',QBR[br][0]);tag.style.background=QBR[br][1];row.appendChild(tag);
+    qs.forEach((q,i)=>{if(i)row.appendChild(el('span','qc'+(G.ach[qs[i-1][0]]?' on':'')));row.appendChild(node(q));});};
+  mains.forEach((m,i)=>{const r=el('div','qrow'),tk=el('div','qtk'+(i===0?' top':'')+(i===mains.length-1?' end':''));tk.appendChild(node(m));r.appendChild(tk);tree.appendChild(r);
+    for(const br of QSPROUT[m[0]]||[]){const r2=el('div','qrow'),t2=el('div','qtk br'+(i===mains.length-1?' end':''));r2.appendChild(t2);chain(r2,br);tree.appendChild(r2);}});
+  box.appendChild(wrap);
+}
+function showQuest(q){const st=qState(q),br=QBR[q[4]],pr=qProg(q),par=q[5]&&QMAP[q[5]];
+  const lines=['【'+(q[4]==='main'?'主線':'支線・'+br[0])+'】',q[2]];
+  if(pr&&st!=='done')lines.push('進度：'+pr[0].toLocaleString()+' / '+pr[1].toLocaleString());
+  lines.push(q[0]==='fest'?'獎勵：豐收祭紀念獎金 5,000G':q[7]?'獎勵：'+q[7].toLocaleString()+'G':'');
+  lines.push(st==='done'?'✔ 第 '+G.ach[q[0]]+' 天達成':st==='av'?'挑戰中！':'🔒 先完成「'+par[1]+'」才能挑戰');
+  const nx=QUESTS.filter(c=>c[5]===q[0]);if(nx.length)lines.push('完成後解鎖：'+nx.map(c=>c[1]).join('、'));
+  popInfo(q[1],lines.filter(Boolean).join('\n'),'好',null,st==='done'?'#ffcf40':st==='av'?br[1]:'#8a7a66');}
 
 function spendE(n){if(G.full<=0)n*=2;G.en=Math.max(0,G.en-n);updHUD();}
 function nextDay(){tutEvent('sleep');wishIntro();G.day++;{const o=npcOff('su');G.day--;const pv=npcOff('su');G.day++;if(o&&!pv)setTimeout(()=>msg(OFF_MSG[o]),1800);}if(G.saplings)for(const k in G.saplings){if(G.day-G.saplings[k]>=3){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.SPROUT){G.map[y][x]=T.TREE;if(!G.planted)G.planted=[];G.planted.push(k);if(G.cleared)G.cleared=G.cleared.filter(v=>v!==k);}delete G.saplings[k];}}if(G.stumps)for(const k in G.stumps){if(--G.stumps[k]<=0){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.STUMP)G.map[y][x]=T.TREE;delete G.stumps[k];}}if(G.orders&&G.orders.length){const got=G.orders.map(k=>{G.owned.push(k);return lookName(k);});G.orders=[];setTimeout(()=>msg('叮咚！線上商城的包裹送到了\n'+got.join('、')+'\n可以到家裡的衣櫃換上喔'),4000);}let rev=0;{if(!G.tdays)G.tdays={};for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const t=G.map[y][x],k=x+','+y;if((t===T.TI||t===T.WA)&&!G.cr[y][x]){G.tdays[k]=(G.tdays[k]||0)+1;if(G.tdays[k]>=3){G.map[y][x]=T.D;delete G.tdays[k];rev++;}}else delete G.tdays[k];}}G.time=330;G.log=[];G.logSeen=0;G.logNew=false;updLogBtn();let seasonMsg='';if((G.day-1)%SEASON_LEN===0){const sc=seasonCrops();let w=0,sl=0;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c||c.type==='grass')continue;if(sc.includes(c.type)){c.slow=false;continue;}if(Math.random()<.35){G.cr[y][x]=null;w++;G.drops.push({x:(x+.5)*TILE+Math.random()*10-5,y:(y+.5)*TILE+6,crop:c.type,qty:1+Math.floor(Math.random()*2)});}else{c.slow=true;sl++;}}buildTools();{const sc2=seasonCrops(),q=[5,3,1,1];sc2.forEach((k,i)=>G.seeds[k]=(+G.seeds[k]||0)+q[i]);G.drop={t:0,txt:sc2.map((k,i)=>CROPS[k].n+'×'+q[i]).join('、')};}seasonMsg='\n'+SEASONS[season()]+'天到了！'+(w?'\n'+w+' 株作物不耐季節枯萎了，種子掉在田邊':'')+(sl?'\n'+sl+' 株非當季作物會長得比較慢':'')+(!w&&!sl?'商店有新的種子喔':'');}for(const r of G.reqs)r.days--;genRequests();G.today=newToday();G.campGuest=Math.random()<.45?(Math.random()<.5?'guide':'rancher'):null;G.campGuestDay=G.day;G.campStay=Math.random()<.5;G.helper=Math.random()<.45?['yu','guide','song','song'][Math.floor(Math.random()*4)]:null;if(G.cat&&G.cat.adopted&&G.cat.fishDay===G.day-1&&Math.random()<.6){const r=Math.random();let txt;if(r<.5){const sc3=seasonCrops(),k=sc3[Math.floor(Math.random()*sc3.length)];G.seeds[k]=(+G.seeds[k]||0)+2;txt=CROPS[k].n+'種子 ×2';}else{const g=30+Math.floor(Math.random()*5)*10;G.gold+=g;txt=g+'G';}setTimeout(()=>msg('阿喵叼了禮物回來：'+txt+'！'),5200);}rollEvent();announceEvent();setTimeout(()=>msg('村子入口旁的委託告示板\n有 '+G.reqs.length+' 件委託'),2600);G.en=MAX_E;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c)continue;if((c.watered||c.type==='grass')&&!(c.slow&&(c.sk=!c.sk))){c.daysLeft--;if(c.daysLeft<=0&&c.stage<3){c.stage++;c.daysLeft=CROPS[c.type].d;}}c.watered=false;if(G.map[y][x]===T.WA)G.map[y][x]=T.TI;}let hungry=0;for(const a of G.animals){if(G.trough>0){G.trough--;a.fed=true;if(a.petDay===G.day-1)a.love=Math.min(5,a.love+1);if(a.baby>0){a.baby--;}else if(!a.readyProduct){a.daysLeft--;if(a.daysLeft<=0){a.readyProduct=true;a.bonus=a.love>=4&&Math.random()<.4;a.daysLeft=ANIMAL_DATA[a.type].days;}}}else{a.fed=false;a.love=Math.max(0,a.love-1);hungry++;}}
@@ -3873,7 +3986,7 @@ function chopTree(x,y){const t=G.map[y][x];if(t===T.STUMP){if(!choppable(x,y))re
   if(G.en<axeE()){msg('太累了，先休息一下吧…');return;}if(bagRoom('mat','wood')<1){bagFullMsg();return;}playAct('axe');sfx('hoe');spendE(axeE());G.shake={x,y,t:14};if(!G.treeHP)G.treeHP={};const k=x+','+y;G.treeHP[k]=(G.treeHP[k]||0)+1;
   for(let i=0;i<4;i++)G.fx.push({kind:'chip',x:(x+.5)*TILE,y:(y+.6)*TILE,vx:(Math.random()-.5)*3,vy:-2-Math.random()*2,t:0});
   G.fx.push({x:(x+.5)*TILE,y:(y-.4)*TILE,text:'砍樹 +1',t:0});
-  if(G.treeHP[k]>=axeHits()){delete G.treeHP[k];G.map[y][x]=T.STUMP;if(!G.stumps)G.stumps={};G.stumps[k]=3;if(!G.mat)G.mat={};const w=3+Math.floor(Math.random()*2);G.mat.wood=(G.mat.wood||0)+w;
+  if(G.treeHP[k]>=axeHits()){delete G.treeHP[k];G.map[y][x]=T.STUMP;if(!G.stumps)G.stumps={};G.stumps[k]=3;if(!G.mat)G.mat={};const w=3+Math.floor(Math.random()*2);G.mat.wood=(G.mat.wood||0)+w;G.stats.wood=(G.stats.wood||0)+w;
     if(!G.falls)G.falls=[];G.falls.push({x,y,t:0,dir:G.px<(x+.5)*TILE?1:-1});
     for(let i=0;i<w;i++){const a=(i/w)*Math.PI*2;G.fx.push({kind:'log',sx:(x+.5)*TILE,sy:(y+.3)*TILE,lx:(x+.5)*TILE+Math.cos(a)*22,ly:(y+.8)*TILE+Math.sin(a)*10,t:-20-i*3});}
     const sp=Math.random()<.35;if(sp)G.mat.sapling=(G.mat.sapling||0)+1;setTimeout(()=>{sfx('harvest');G.fx.push({x:G.px,y:G.py-56,text:'木材 +'+w,t:0});if(sp)setTimeout(()=>G.fx.push({x:G.px,y:G.py-56,text:'樹苗 +1',t:0}),450);},1100);updTB();saveGame();}}
