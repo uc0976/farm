@@ -1870,7 +1870,7 @@ function render(){
   const insideShop=curT===T.SF||(ptx===22&&pty===5);const insideBarn=curT===T.BF||(ptx===12&&pty===21);G.indoor=insideHouse||insideShop||insideBarn||zoneOf(G.px)===2;
   if(y0===0)for(let tx=x0;tx<=x1;tx++)if(G.map[0][tx]===T.TREE)drawTree(Math.round(tx*TILE-cam.x),Math.round(-cam.y));
   if(!insideShop){[...NPCS.filter(n=>!n.away&&isInStore(n)),...G.cust.filter(isInStore)].sort((a,b)=>a.y-b.y).forEach(e=>e.id==='cust'?drawCust(e):drawNPC(e));drawShopFacade(19*TILE-cam.x,1*TILE-cam.y);}
-  const ents=NPCS.filter(n=>!n.away&&(insideShop||!isInStore(n))&&(insideBarn||!isInBarn(n))).map(n=>({y:n.y,f:()=>{if(n.bike&&n.moving&&!n.trip)drawBike(n);drawNPC(n);if(n.trip==='fishing')drawRod(n.x,n.y,n.dir);}}));
+  const ents=NPCS.filter(n=>!G.festOn&&!n.away&&(insideShop||!isInStore(n))&&(insideBarn||!isInBarn(n))).map(n=>({y:n.y,f:()=>{if(n.bike&&n.moving&&!n.trip)drawBike(n);drawNPC(n);if(n.trip==='fishing')drawRod(n.x,n.y,n.dir);}}));
   ents.push({y:G.sitting!=null?(typeof G.sitting==='object'?sitSortY():15*TILE):G.py,f:()=>{if(!(G.lying&&G.lyingAt))drawPlayer();}});if(G.lying&&G.lyingAt)ents.push({y:lyingSortY(G.lyingAt.s),f:()=>drawLying(G.lyingAt.s,'hero',0,G.lyingAt.col)});if(G.lying&&!G.lyingAt)ents.push({y:G.py+2,f:()=>{const bx=Math.round(Math.floor(G.px/TILE)*TILE-cam.x),by=Math.round(G.py-cam.y-2);ctx.fillStyle='#d94848';ctx.fillRect(bx+2,by,TILE-4,20);ctx.fillStyle='#f0f0f0';ctx.fillRect(bx+2,by,TILE-4,3);ctx.fillStyle='rgba(0,0,0,.15)';ctx.fillRect(bx+2,by+17,TILE-4,3);ctx.fillStyle='rgba(255,255,255,.14)';ctx.fillRect(bx+6,by+8,TILE-12,2);}});
   for(const[sx0,kind]of[[17,'fruit'],[20,'mine'],[24,'fish']]){ents.push({y:11*TILE-20,f:()=>drawStallBack(sx0,11,kind)});ents.push({y:12*TILE-4,f:()=>drawStallFront(sx0,11,kind)});}
   for(const c of G.cust)if(insideShop||!isInStore(c))ents.push({y:c.state==='sit'&&c.seat?(c.seat[1]+1)*TILE:c.y,f:()=>{drawCust(c);if(c.state==='buddy'&&!c.path.length)drawRod(c.x,c.y,c.dir);}});
@@ -1890,7 +1890,7 @@ function render(){
   if(G.cat)ents.push({y:G.cat.y,f:drawCat});for(const L of G.loot||[])ents.push({y:L.y,f:()=>drawLoot(L)});for(const d of G.drops)ents.push({y:d.y,f:()=>drawSeedDrop(d)});if(G.event&&G.event.obj)ents.push({y:G.event.obj.y,f:drawEventObj});
   ents.push({y:11*TILE+30,f:drawTrough});for(const a of G.animals)ents.push({y:a.y+14,f:()=>drawFarmAnimal(a)});
   if(!insideBarn)ents.push({y:17*TILE+1,f:drawBarn});
-  villageEnts(ents);roomEnts(ents);
+  festEnts(ents);villageEnts(ents);roomEnts(ents);
   const inRoomZ=zoneOf(G.px)===2;if(inRoomZ){const[a1,b1,a2,b2]=zoneRect();ctx.save();ctx.beginPath();ctx.rect(a1-cam.x,b1-cam.y,a2-a1,b2-b1);ctx.clip();}
   ents.sort((a,b)=>a.y-b.y).forEach(e=>e.f());if(inRoomZ)ctx.restore();
   for(const a of G.animals)if(a.readyProduct){const sx=Math.round(a.x-cam.x),sy=Math.round(a.y-cam.y);if(sx>-50&&sy>-50&&sx<W2+50&&sy<H2+50){const b=Math.sin(Date.now()/380)*4;drawIcon(ctx,ANIMAL_DATA[a.type].product,sx,sy-24+b,.9);}}
@@ -1898,7 +1898,7 @@ function render(){
   drawFishing();
   drawDrop();
   drawFx();
-  drawTint();
+  drawTint();drawFestNight();drawFestDeco();drawFestSky();
   drawRain();
   if(G.zfade>0){ctx.fillStyle=`rgba(10,6,2,${Math.min(1,G.zfade).toFixed(2)})`;ctx.fillRect(0,0,W2,H2);G.zfade-=.05;}
   const nearA=getNearbyAnimal();
@@ -2529,7 +2529,7 @@ function tickClock(now){
   if(cross(22))msg('已經晚上 10 點了，\n該回家睡覺囉！');
   if(cross(24))msg('半夜 12 點了，6-TWELVE 也打烊了…\n快回家睡覺吧！');
   if(G.time>=26*60){G.time=26*60;passOut();}
-  updClock();tutTick();
+  updClock();tutTick();festCheck();
 }
 function passOut(){if(G.ph==='busy')return;G.time=26*60;endDay(true);}
 const TINT=[[0,[15,18,55,.6]],[5.5,[30,30,80,.5]],[6.5,[255,170,110,.14]],[7.5,[0,0,0,0]],[16.5,[0,0,0,0]],[17.8,[255,140,60,.2]],[19,[80,50,120,.36]],[20.5,[20,25,70,.52]],[24,[15,18,55,.6]],[26,[12,14,48,.64]]];
@@ -2828,11 +2828,11 @@ const WISHES=[
   {id:'grain',n:'五穀豐收',npc:'clerk',why:'要做豐收祭的米糕和麵包，穀子越多越好',need:{wheat:10,rice:10},gold:2000},
 ];
 function wishDone(){return WISHES.filter(w=>G.wish.d&&G.wish.d[w.id]).length;}
-function wishIntro(){if(G.wish.intro||(G.tut!=null&&G.tut>=0))return;G.wish.intro=1;setTimeout(()=>msg('罐罐：村子好多年沒辦豐收祭了……\n廣場告示板上多了一本「村莊心願簿」，\n去看看大家許了什麼願吧！'),4500);}
+function wishIntro(){G.festNag=0;if(festPending())setTimeout(()=>msg('今晚 6 點，市集廣場要辦豐收祭！\n大家都在等你喔'),4500);if(G.wish.intro||(G.tut!=null&&G.tut>=0))return;G.wish.intro=1;setTimeout(()=>msg('罐罐：村子好多年沒辦豐收祭了……\n廣場告示板上多了一本「村莊心願簿」，\n去看看大家許了什麼願吧！'),4500);}
 function openWishes(){
   G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';const W=G.wish;if(!W.p)W.p={};if(!W.d)W.d={};
   box.appendChild(el('div','ot','村莊心願簿'));
-  const intro=el('div','oi',W.fin?'第 '+W.fin+' 天，村子重新辦起了豐收祭！\n謝謝你，大家的心願都實現了。':'村子好多年沒辦「豐收祭」了。\n大家各自許了一個心願，把需要的東西交進來，\n全部實現的那天，廣場就會重新熱鬧起來！\n（可以分好幾次慢慢交）');intro.style.cssText='line-height:1.8;white-space:pre-line;margin-bottom:6px';box.appendChild(intro);
+  const intro=el('div','oi',W.fest?'第 '+W.fest+' 天，村子重新辦起了豐收祭！\n謝謝你，大家的心願都實現了。':W.fin?'大家的心願都實現了！\n豐收祭在傍晚 6 點後的市集廣場舉行，快去吧！':'村子好多年沒辦「豐收祭」了。\n大家各自許了一個心願，把需要的東西交進來，\n全部實現的那天，廣場就會重新熱鬧起來！\n（可以分好幾次慢慢交）');intro.style.cssText='line-height:1.8;white-space:pre-line;margin-bottom:6px';box.appendChild(intro);
   box.appendChild(el('div','shdr','── 已實現 '+wishDone()+' / '+WISHES.length+' ──'));
   for(const w of WISHES){const p=W.p[w.id]||(W.p[w.id]={});
     if(W.d[w.id]){box.appendChild(bagRow(Object.keys(w.need)[0],'✔ '+w.n,SHORT[w.npc]+'的心願・第 '+W.d[w.id]+' 天實現'));continue;}
@@ -2848,13 +2848,78 @@ function openWishes(){
 }
 function giveWish(w,k){const p=G.wish.p[w.id],n=Math.min(have(k)||0,w.need[k]-(p[k]||0));if(n<=0)return;addHave(k,-n);p[k]=(p[k]||0)+n;sfx('click');
   if(Object.entries(w.need).every(([kk,q])=>(p[kk]||0)>=q)){G.wish.d[w.id]=G.day;G.gold+=w.gold;G.today.earn+=w.gold;G.stats.earned+=w.gold;addRel(w.npc,20);sfx('coin');
-    if(wishDone()===WISHES.length&&!G.wish.fin){G.wish.fin=G.day;G.gold+=5000;updHUD();updTB();saveGame();closeOm();setTimeout(harvestFest,300);return;}
+    if(wishDone()===WISHES.length&&!G.wish.fin){G.wish.fin=G.day;updHUD();updTB();saveGame();closeOm();setTimeout(festAnnounce,300);return;}
     msg(SHORT[w.npc]+'：「'+w.n+'」實現了！謝謝你～\n獲得 '+w.gold+'G，好感上升（'+wishDone()+' / '+WISHES.length+'）');}
   updHUD();updTB();saveGame();openWishes();}
-function harvestFest(){sfx('catch');const me=G.pname||'小農夫';
-  popInfo('豐收祭','村莊心願簿上的 '+WISHES.length+' 個心願，全部實現了！\n\n消息一下子傳遍整個村子，\n大家決定今晚就在廣場重新辦起豐收祭。','繼續',()=>
-  popInfo('豐收祭','阿梅端出滿桌的春季家常菜，\n林奶奶擺好了秋收供桌，\n海伯烤起剛上岸的漁獲，\n阿牧帶來了新鮮的牛奶和雞蛋……\n\n罐罐舉起飲料：「敬我們的'+me+'！」','繼續',()=>
-  popInfo('謝謝你！','你讓這個小村子重新熱鬧起來了。\n\n獲得豐收祭紀念獎金 5000G\n\n農場的日子還會繼續，慢慢來就好。','好',null,'#ffcf40')));}
+function festAnnounce(){sfx('catch');const now=G.time>=18*60;
+  popInfo('豐收祭','村莊心願簿上的 '+WISHES.length+' 個心願，全部實現了！\n\n消息一下子傳遍整個村子，\n大家決定今晚就在市集廣場，\n重新辦起睽違多年的豐收祭！'+(now?'':'\n\n傍晚 6 點開始，記得過來喔！'),now?'現在就去廣場！':'好期待！',()=>{if(now)startFest();else msg('豐收祭傍晚 6 點開始！\n時間到了記得來市集廣場');});}
+// ===== 豐收祭之夜：廣場掛燈籠、擺長桌，全村村民到齊，乾杯後放煙火 =====
+const FEST_AREA=[15,9,27,17];
+const FEST_SEATS=[['clerk',18,12,'down'],['fruit',19,12,'down'],['yu',20,12,'down'],['fish',21,12,'down'],['guide',22,12,'down'],['rancher',23,12,'down'],['camper',24,12,'down'],
+  ['le',17,13,'right'],['lu',25,13,'left'],
+  ['mickey',17,15,'up'],['song',18,15,'up'],['ak',19,15,'up'],['chen',20,15,'up'],['mei',22,15,'up'],['ted',23,15,'up'],['sony',24,15,'up'],['su',25,15,'up']];
+const FEST_FOOD=['strawberry','tomato','watermelon','grape','corn','pumpkin','guava','cabbage','egg','milk','fish_l','rice'];
+const FEST_CHEER=['哇～好漂亮！','好大一朵！','再來一個！','明年也要辦！','乾杯～！','好熱鬧喔！'];
+const FW_COL=['#ffd54f','#ff6b6b','#7ee0ff','#b388ff','#8cff9a','#ffffff','#ff9ecf','#ffb74d'];
+function festPending(){return!!(G.wish&&G.wish.fin&&!G.wish.fest);}
+function inFestArea(){const x=G.px/TILE,y=G.py/TILE;return x>=FEST_AREA[0]&&x<FEST_AREA[2]&&y>=FEST_AREA[1]&&y<FEST_AREA[3];}
+function festCheck(){if(!festPending()||G.festOn||G.ph!=='play'||G.time<18*60||zoneOf(G.px)!==0||G.sitting!=null||G.lying)return;
+  if(inFestArea())startFest();else if(!G.festNag){G.festNag=1;msg('豐收祭開始了！\n快到市集廣場和大家會合吧');}}
+function startFest(){if(G.festOn)return;clearPath();G.ph='fest';G.act=null;G.cust.length=0;
+  G.px=21.5*TILE;G.py=15.5*TILE;G.dir='up';G.zfade=1;if(G.time<20.5*60)G.time=20.5*60;updClock();
+  const me=G.pname||'小農夫';
+  G.festOn={t:0,i:-1,next:50,cheer:0,flash:0,fwOn:false,fw:[],lastTap:0,
+    guests:FEST_SEATS.map(([id,x,y,dir])=>{const n=NPCS.find(v=>v.id===id);return n?Object.assign({},n,{x:(x+.5)*TILE,y:(y+.5)*TILE,by:(y+.5)*TILE,dir,sit:null,chat:null,trip:null,path:null,moving:false,away:false,bike:false,bubble:null,say:'',sayT:0}):null;}).filter(Boolean),
+    lines:[['clerk','各位！睽違好多年的豐收祭，開始囉！'],['fruit','春天的家常菜來囉～趁熱吃！'],['yu','夏天的冰品攤，我也搬來了！'],['guide','林奶奶的秋收供桌、阿宇的火鍋都擺好了'],['rancher','牛奶跟雞蛋，都是今天早上剛收的。'],['fish','烤魚好囉！剛上岸的，保證新鮮！'],['mickey','這一年，村子真的熱鬧起來了！'],['clerk','這一切都要謝謝'+me+'！大家，乾杯！'],['*','乾杯！']]};}
+function festTap(){const F=G.festOn;if(!F||F.done||F.t-F.lastTap<12)return;F.lastTap=F.t;if(F.i<F.lines.length)F.next=F.t;else F.next=Math.min(F.next,F.t+150);}
+function festAdvance(){const F=G.festOn;F.i++;
+  if(F.i<F.lines.length){const[id,txt]=F.lines[F.i];for(const g of F.guests)if(g.sayT>20)g.sayT=20;
+    if(id==='*'){for(const g of F.guests){g.say=txt;g.sayT=150+Math.floor(Math.random()*40);}F.cheer=150;F.fwOn=true;sfx('catch');F.next=F.t+200;}
+    else{const g=F.guests.find(v=>v.id===id);if(g){g.say=txt;g.sayT=210;}sfx('click');F.next=F.t+190;}return;}
+  if(F.i===F.lines.length){F.next=F.t+520;return;}
+  if(!F.done){F.done=1;popInfo('謝謝你！','煙火一朵接一朵在夜空綻放，\n大家一直聊到深夜才散。\n\n你讓這個小村子重新熱鬧起來了。\n獲得豐收祭紀念獎金 5000G\n\n廣場的燈籠會一直掛著，\n農場的日子還會繼續，慢慢來就好。','好',endFest,'#ffcf40');}}
+function endFest(){G.festOn=null;G.wish.fest=G.day;G.gold+=5000;G.today.earn+=5000;G.stats.earned+=5000;G.ph='play';G.time=Math.max(G.time,22*60);updClock();updHUD();updTB();saveGame();setTimeout(()=>msg('豐收祭圓滿落幕！\n獲得 5000G'),300);}
+function festTick(){const F=G.festOn;F.t++;if(F.cheer>0)F.cheer--;
+  for(const g of F.guests){if(g.sayT>0)g.sayT--;g.y=g.by-(F.cheer>0?Math.round(Math.abs(Math.sin((F.t+g.by*.7)*.16))*6):0);}
+  if(F.fwOn&&F.t%120===60){const g=F.guests[Math.floor(Math.random()*F.guests.length)];if(!g.sayT){g.say=FEST_CHEER[Math.floor(Math.random()*FEST_CHEER.length)];g.sayT=110;}}
+  if(F.t>=F.next)festAdvance();}
+function festEnts(ents){if(!G.festOn)return;festTick();ents.push({y:13*TILE+30,f:drawFestTable});for(const g of G.festOn.guests)ents.push({y:g.by,f:()=>drawNPC(g)});}
+function drawFestTable(){const x0=Math.round(18*TILE-cam.x),y0=Math.round(13*TILE+4-cam.y),w=7*TILE;
+  ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(x0+4,y0+30,w-8,5);ctx.fillStyle='#5a3a1e';ctx.fillRect(x0+6,y0+20,4,13);ctx.fillRect(x0+w-10,y0+20,4,13);
+  ctx.fillStyle='#b83a2e';ctx.fillRect(x0,y0,w,22);ctx.fillStyle='#d8574a';ctx.fillRect(x0,y0,w,4);ctx.fillStyle='#8e2a20';ctx.fillRect(x0,y0+18,w,4);
+  ctx.fillStyle='#f4e0b8';for(let k=0;k<w;k+=12)ctx.fillRect(x0+k,y0+22,6,3);
+  FEST_FOOD.forEach((k,i)=>{const cx=x0+12+i*(w-24)/(FEST_FOOD.length-1);ctx.fillStyle='#f4f0e6';ctx.fillRect(Math.round(cx-9),y0+9,18,6);drawIcon(ctx,k,cx,y0+6,1);});}
+function drawFestDeco(){if(!(G.festOn||(G.wish&&G.wish.fest))||zoneOf(G.px)!==0)return;
+  const xa=16.3*TILE,xb=26.6*TILE,glow=lampsOn();if(xb-cam.x<-20||xa-cam.x>W2+20)return;
+  ctx.fillStyle=glow?'#24160c':'#4a2e18';for(const px of[xa,xb])ctx.fillRect(Math.round(px-cam.x-2),Math.round(9.8*TILE-cam.y),4,Math.round(6.9*TILE));
+  for(const[yy,sag,n]of[[10,16,13],[16.3,12,13]]){const y0=yy*TILE-cam.y;ctx.strokeStyle=glow?'#1c120a':'#3a2a1a';ctx.lineWidth=1;ctx.beginPath();
+    for(let k=0;k<=24;k++){const t=k/24,x=xa+(xb-xa)*t-cam.x,y=y0+sag*4*t*(1-t);k?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();
+    for(let i=0;i<n;i++){const t=(i+.5)/n,lx=Math.round(xa+(xb-xa)*t-cam.x),ly=Math.round(y0+sag*4*t*(1-t)),c=i%3===1?'#f0a030':'#d8402c',sw=G.festOn?Math.round(Math.sin(G.festOn.t*.05+i)*1):0;
+      ctx.fillStyle='#2a1a0e';ctx.fillRect(lx-1+sw,ly,2,3);ctx.fillRect(lx-3+sw,ly+3,6,1);ctx.fillStyle=c;ctx.fillRect(lx-4+sw,ly+4,8,8);ctx.fillStyle=glow?'#ffe08a':'rgba(255,255,255,.35)';ctx.fillRect(lx-2+sw,ly+5,2,6);ctx.fillStyle='#2a1a0e';ctx.fillRect(lx-3+sw,ly+12,6,1);ctx.fillStyle='#ffcf40';ctx.fillRect(lx+sw,ly+13,1,3);
+      if(glow){ctx.fillStyle='rgba(255,190,90,.13)';ctx.fillRect(lx-9+sw,ly+1,18,14);ctx.fillRect(lx-6+sw,ly-2,12,20);}}}}
+function drawFestNight(){if(!G.festOn)return;const gr=ctx.createLinearGradient(0,0,0,H2);gr.addColorStop(0,'rgba(6,8,30,.62)');gr.addColorStop(.42,'rgba(6,8,30,.32)');gr.addColorStop(1,'rgba(6,8,30,.3)');ctx.fillStyle=gr;ctx.fillRect(0,0,W2,H2);
+  const cx=21.5*TILE-cam.x,cy=13.6*TILE-cam.y;ctx.fillStyle='rgba(255,170,80,.07)';for(const k of[1,.75,.5])ctx.fillRect(Math.round(cx-5*TILE*k),Math.round(cy-2.4*TILE*k),Math.round(10*TILE*k),Math.round(4.8*TILE*k));
+  G.bub=[];for(const g of[...G.festOn.guests].sort((a,b)=>a.by-b.by))if(g.sayT>0&&g.say)drawSay(Math.round(g.x-cam.x),Math.round(g.y+15-cam.y),g.say,Math.min(1,g.sayT/20));}
+function festRocket(){const F=G.festOn;F.fw.push({r:1,x:W2*(.15+Math.random()*.7),y:H2*.55,vy:-(4.2+Math.random()*1.4),ty:H2*(.07+Math.random()*.2),c:FW_COL[Math.floor(Math.random()*FW_COL.length)]});}
+function drawFestSky(){const F=G.festOn;if(!F||!F.fwOn)return;
+  if(F.t%34===0||(F.t%34===17&&Math.random()<.5))festRocket();
+  if(F.flash>0){ctx.fillStyle=`rgba(255,240,210,${(F.flash*.07).toFixed(3)})`;ctx.fillRect(0,0,W2,H2);F.flash--;}
+  for(let i=F.fw.length-1;i>=0;i--){const p=F.fw[i];
+    if(p.r){p.y+=p.vy;p.vy*=.985;ctx.fillStyle='#fff6d0';ctx.fillRect(Math.round(p.x),Math.round(p.y),2,3);ctx.fillStyle='rgba(255,200,120,.5)';ctx.fillRect(Math.round(p.x),Math.round(p.y+4),2,4);
+      if(p.y<=p.ty){F.fw.splice(i,1);F.flash=3;const n=30+Math.floor(Math.random()*16),c2=Math.random()<.4?FW_COL[Math.floor(Math.random()*FW_COL.length)]:p.c;
+        for(let k=0;k<n;k++){const a=k/n*Math.PI*2,sp=1.3+Math.random()*1.5;F.fw.push({x:p.x,y:p.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:60+Math.floor(Math.random()*25),max:85,c:k%3?p.c:c2});}
+        if(SND.ctx&&SND.on){noiseHit(.7,.16,260,'lowpass');noiseHit(.5,.035,4200,'highpass',.12);}}continue;}
+    p.x+=p.vx;p.y+=p.vy;p.vx*=.975;p.vy=p.vy*.975+.035;p.life--;if(p.life<=0){F.fw.splice(i,1);continue;}
+    ctx.globalAlpha=Math.min(1,p.life/40);ctx.fillStyle=p.c;const ps=p.life>50?3:2;ctx.fillRect(Math.round(p.x),Math.round(p.y),ps,ps);if(p.life>45){ctx.fillStyle='#fff';ctx.fillRect(Math.round(p.x),Math.round(p.y),1,1);}ctx.globalAlpha=1;}}
+const FEST_MEL=[72,null,74,76,79,null,76,74,72,null,69,null,67,null,null,null,69,72,74,null,76,74,72,null,74,null,null,null,null,null,null,null,76,null,79,81,79,null,76,74,76,null,74,72,69,null,null,null,67,69,72,74,76,74,72,69,72,null,null,null,null,null,null,null],
+  FEST_CH=[[48,52,55],[45,48,52],[41,45,48],[43,47,50],[48,52,55],[45,48,52],[41,45,48],[43,47,50]];
+function schedFest(){const c=SND.ctx,spb=60/132/2;if(SND.next<c.currentTime)SND.next=c.currentTime+.05;
+  while(SND.next<c.currentTime+.45){const st=SND.fstep||0,s=st%8,ch=FEST_CH[Math.floor(st/8)%8],tt=SND.next,m=FEST_MEL[st%64],d=tt-c.currentTime;
+    if(s===0)note(mtof(ch[0]-12),spb*3.5,'sine',.1,tt,'mus');if(s===4)note(mtof(ch[2]-12),spb*3.5,'sine',.08,tt,'mus');
+    if(s%2===1){note(mtof(ch[1]+12),spb*.5,'triangle',.022,tt,'mus');note(mtof(ch[2]+12),spb*.5,'triangle',.018,tt,'mus');}
+    if(m){note(mtof(m),spb*1.6,'square',.02,tt,'mus');note(mtof(m+12),spb*1.2,'sine',.015,tt,'mus');}
+    if(s%4===0)noiseHit(.12,.09,180,'lowpass',d);else if(s%4===2)noiseHit(.06,.04,3000,'highpass',d);
+    SND.fstep=st+1;SND.next+=spb;}}
 function openRequests(){
   G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';
   box.appendChild(el('div','ot','村子委託告示板'));{const wb=el('button','bp','村莊心願簿（'+wishDone()+' / '+WISHES.length+'）');wb.type='button';wb.style.marginBottom='8px';wb.onclick=openWishes;box.appendChild(wb);}
@@ -3237,7 +3302,7 @@ function schedXmas(night){const c=SND.ctx;const song=XMAS[SND.xs||0],u=song.unit
     SND.xstep=st+1;if(SND.xstep>=song.len){SND.xstep=0;SND.xs=((SND.xs||0)+1)%XMAS.length;}
     SND.next+=u;}}
 function schedMusic(){
-  const c=SND.ctx;if(!c||!SND.on||!started)return;if(season()===3){schedXmas(G.time>=19*60||G.time<6.5*60);return;}const night=G.time>=19*60||G.time<6.5*60,P=SMUS[season()]||SMUS[0],spb=60/(night?P.bpm[1]:P.bpm[0])/2;
+  const c=SND.ctx;if(!c||!SND.on||!started)return;if(G.festOn){schedFest();return;}if(season()===3){schedXmas(G.time>=19*60||G.time<6.5*60);return;}const night=G.time>=19*60||G.time<6.5*60,P=SMUS[season()]||SMUS[0],spb=60/(night?P.bpm[1]:P.bpm[0])/2;
   if(SND.next<c.currentTime)SND.next=c.currentTime+.05;
   while(SND.next<c.currentTime+.45){const st=SND.step,bar=Math.floor(st/8)%4,s=st%8,v=Math.floor(st/32)%2,ch=P.prog[bar],tt=SND.next;
     if(s===0)note(mtof(ch[0]-12),spb*7,'sine',.09,tt,'mus');if(s===4)note(mtof(ch[0]-5),spb*3,'sine',.05,tt,'mus');
@@ -3477,7 +3542,7 @@ const ACHS=[
   ['req10','熱心村民','完成 10 件委託',()=>G.stats.reqs>=10],['hike3','登山通','領過 3 次阿山的獎勵',()=>G.stats.quizH>=3],['fishq3','釣魚通','領過 3 次海伯的獎勵',()=>G.stats.quizF>=3],
   ['friend','好朋友','和任一位村民達到 5 顆心',()=>Object.values(G.rel).some(v=>v>=100)],['gift20','送禮達人','送出 20 份禮物',()=>G.stats.gifts>=20],
   ['zoo','牧場主人','同時養 10 隻動物',()=>G.animals.length>=10],['allanimal','動物之友','養過全部 4 種動物',()=>Object.keys(G.seen.animals).length>=4],
-  ['year','四季輪迴','度過一整年（56 天）',()=>G.day>56],['allfish','魚類收藏家','釣過全部 4 種魚',()=>['fish_s','fish_m','fish_l','fish_x'].every(k=>G.seen.fish[k])],['fest','豐收祭','實現村莊心願簿上的全部心願',()=>!!(G.wish&&G.wish.fin)]];
+  ['year','四季輪迴','度過一整年（56 天）',()=>G.day>56],['allfish','魚類收藏家','釣過全部 4 種魚',()=>['fish_s','fish_m','fish_l','fish_x'].every(k=>G.seen.fish[k])],['fest','豐收祭','和全村一起在豐收祭乾杯',()=>!!(G.wish&&G.wish.fest)]];
 let achT=0;
 function checkAch(){if(++achT<120)return;achT=0;for(const[id,n,,f]of ACHS){if(!G.ach[id]&&f()){G.ach[id]=G.day;msg('★ 達成成就：'+n);sfx('catch');}}}
 function openAlmanac(tab){
@@ -4162,6 +4227,7 @@ function addAnimal(type){if(G.seen)G.seen.animals[type]=1;G.animals.push({love:2
 window.addEventListener('keydown',e=>{keys[e.key]=true;if(!started)return;if(G.ph==='fish'&&(e.key===' '||e.key==='z'||e.key==='Z')){reelIn();e.preventDefault();return;}if(G.ph==='play'&&(e.key==='z'||e.key==='Z'||e.key===' ')){clearPath();useTool();}const n=parseInt(e.key);if(G.ph==='play'&&n>=1&&n<=TOOLS.length){if(TOOLS[n-1].id==='bag')openBag('bag');else{G.tool=n-1;updTB();}}if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();});
 window.addEventListener('keyup',e=>{keys[e.key]=false;});
 cv.addEventListener('pointerdown',e=>{
+  if(started&&G.ph==='fest'){e.preventDefault();festTap();return;}
   if(!started||G.ph!=='play')return;e.preventDefault();
   const r=cv.getBoundingClientRect();
   onTap((e.clientX-r.left)/Z+cam.x,(e.clientY-r.top)/Z+cam.y);
