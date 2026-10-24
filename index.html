@@ -2835,13 +2835,14 @@ function openWishes(){
   const intro=el('div','oi',W.fest?'第 '+W.fest+' 天，村子重新辦起了豐收祭！\n謝謝你，大家的心願都實現了。':W.fin?'大家的心願都實現了！\n豐收祭在傍晚 6 點後的市集廣場舉行，快去吧！':'村子好多年沒辦「豐收祭」了。\n大家各自許了一個心願，把需要的東西交進來，\n全部實現的那天，廣場就會重新熱鬧起來！\n（可以分好幾次慢慢交）');intro.style.cssText='line-height:1.8;white-space:pre-line;margin-bottom:6px';box.appendChild(intro);
   box.appendChild(el('div','shdr','── 已實現 '+wishDone()+' / '+WISHES.length+' ──'));
   for(const w of WISHES){const p=W.p[w.id]||(W.p[w.id]={});
-    if(W.d[w.id]){box.appendChild(bagRow(Object.keys(w.need)[0],'✔ '+w.n,SHORT[w.npc]+'的心願・第 '+W.d[w.id]+' 天實現'));continue;}
+    if(W.d[w.id])continue;
     box.appendChild(el('div','shdr','── '+w.n+'（'+SHORT[w.npc]+'）──'));
     const why=el('div','oi',w.why+'｜謝禮 '+w.gold+'G・好感↑');why.style.cssText='margin:2px 0 4px';box.appendChild(why);
     for(const[k,q]of Object.entries(w.need)){const got=p[k]||0,h=have(k)||0,left=q-got;let b=null;
       if(left>0){b=el('button','bb','交付');b.type='button';b.disabled=!h;b.style.cssText=h?'background:#1b5e20;border-color:#4caf50':'background:#2a2a2a;border-color:#444;opacity:.5';b.onclick=()=>giveWish(w,k);}
       box.appendChild(bagRow(k,ITEM[k].n+'　'+got+' / '+q,left>0?'背包有 '+h+(h?'，可以交 '+Math.min(h,left)+' 個':''):'已交齊',b));}
   }
+  const done=WISHES.filter(w=>W.d[w.id]);if(done.length){box.appendChild(el('div','shdr','── 已實現的心願 ──'));for(const w of done)box.appendChild(bagRow(Object.keys(w.need)[0],'✔ '+w.n,SHORT[w.npc]+'的心願・第 '+W.d[w.id]+' 天實現'));}
   const bk=el('button','bc','回到委託告示板');bk.type='button';bk.onclick=openRequests;box.appendChild(bk);
   const c=el('button','bc','關閉');c.type='button';c.onclick=closeOm;box.appendChild(c);
   document.getElementById('om').style.display='flex';
