@@ -1166,8 +1166,8 @@ function sportIcon(k){const c=document.createElement('canvas');c.width=c.height=
   if(k==='badminton'){x.imageSmoothingEnabled=false;pxT(x,SH_UP,SHC,6,4,2);}
   else ballPx(x,k==='volley'?'volley':'basket',0,0,2);
   return c.toDataURL();}
-const COURT_P={badminton:[['ak','跟饅頭打'],['jie','約阿宇打']],volley:[['mickey','排球三段・小鐘'],['le','接發球特訓・阿樂','pass'],['mickey','舉球特訓・小鐘','set'],['le','發球特訓・阿樂','serve']],basket:[['jie','跟阿宇練投籃'],['yu','跟小丁練投籃']]};
-const COURT_D={badminton:'羽球對打：球飛到你面前、黃圈亮起的時候點畫面回擊。\n連續回擊越多下越好！',volley:'排球三段：跟小鐘練接球 → 舉球 → 殺球。\n特訓：阿樂的接發球、發球，還有小鐘指導的舉球。',basket:'投籃練習：力道條跑到綠色區域時按「投籃！」，一共 10 球。\n阿宇或小丁會在旁邊幫你看姿勢。'};
+const COURT_P={badminton:[['ak','跟饅頭打'],['jie','約阿宇打']],volley:[['mickey','排球三段・小鐘'],['le','接發球特訓・阿樂','pass'],['mickey','舉球特訓・小鐘','set'],['le','發球特訓・阿樂','serve']],basket:[['jie','跟阿宇練投籃'],['yu','三分球大賽・小丁','three']]};
+const COURT_D={badminton:'羽球對打：球飛到你面前、黃圈亮起的時候點畫面回擊。\n連續回擊越多下越好！',volley:'排球三段：跟小鐘練接球 → 舉球 → 殺球。\n特訓：阿樂的接發球、發球，還有小鐘指導的舉球。',basket:'投籃練習：力道條跑到綠色區域時按「投籃！」，一共 10 球。\n阿宇會在旁邊幫你看姿勢。\n三分球大賽：45 秒內投完 5 個球架，每架最後一顆彩球算 2 分，跟小丁比分數！'};
 function openCourt(c){if(!c)return;const box=document.getElementById('mbox');box.innerHTML='';G.ph='market';clearPath();if(!G.sport)G.sport={};
   const played=false;
   box.appendChild(el('div','ot',c.n));box.appendChild(el('div','msgtxt',COURT_D[c.k]+(played?'\n\n今天已經打過了，明天再來吧！':'\n\n打一場會用掉 10 點體力，想打幾次都可以！')));
@@ -1182,10 +1182,10 @@ function tryPlay(k,id){if(G.en<10){msg('太累了，先休息一下吧…');retu
   closeOm();startMG(k,id);}
 let MG=null;
 function startMG(kind,pid){
-  const ov=document.createElement('div');ov.id='mgov';const b=ov;const tp=el('div','mgtop');tp.appendChild(el('div','mgttl',{badminton:'羽球對打',volley:'排球三段',basket:'投籃練習',pass:'接發球特訓',block:'攔網特訓',set:'舉球特訓',serve:'發球特訓'}[kind]+'・'+SHORT[pid]));b.appendChild(tp);const scb=el('div','mgscore','');b.appendChild(scb);
+  const ov=document.createElement('div');ov.id='mgov';const b=ov;const tp=el('div','mgtop');tp.appendChild(el('div','mgttl',{badminton:'羽球對打',volley:'排球三段',basket:'投籃練習',three:'三分球大賽',pass:'接發球特訓',block:'攔網特訓',set:'舉球特訓',serve:'發球特訓'}[kind]+'・'+SHORT[pid]));b.appendChild(tp);const scb=el('div','mgscore','');b.appendChild(scb);
   const cv2=document.createElement('canvas');cv2.width=320;cv2.height=200;cv2.className='mgcv';b.appendChild(cv2);
   const tl=el('div','mgtl','');b.appendChild(tl);const info=el('div','mginfo','');b.appendChild(info);
-  const hit=el('button','bp mghit',{badminton:'揮拍！',volley:'點！',basket:'投籃！',pass:'接！',block:'跳！',set:'舉！',serve:'點！'}[kind]);hit.type='button';b.appendChild(hit);
+  const hit=el('button','bp mghit',{badminton:'揮拍！',volley:'點！',basket:'投籃！',three:'出手！',pass:'接！',block:'跳！',set:'舉！',serve:'點！'}[kind]);hit.type='button';b.appendChild(hit);
   const q=el('button','mgx','× 退出');q.type='button';tp.appendChild(q);
   document.getElementById('G').appendChild(ov);G.ph='mg';
   const x=cv2.getContext('2d');x.imageSmoothingEnabled=false;
@@ -1193,7 +1193,7 @@ function startMG(kind,pid){
   const tap=e=>{e.preventDefault();e.stopPropagation();if(!MG)return;if(MG.done){mgQuit(MG);return;}if(MG.cd>0)return;MG.tap();};
   cv2.addEventListener('pointerdown',tap);hit.addEventListener('pointerdown',tap);hit.addEventListener('click',e=>e.stopPropagation());
   q.onclick=e=>{e.stopPropagation();if(MG)mgQuit(MG);};ov.addEventListener('click',e=>e.stopPropagation());
-  ({badminton:mgBadminton,volley:mgVolley,basket:mgBasket,pass:mgPass,block:mgBlock,set:mgSet,serve:mgServe})[kind](MG);
+  ({badminton:mgBadminton,volley:mgVolley,basket:mgBasket,three:mgThree,pass:mgPass,block:mgBlock,set:mgSet,serve:mgServe})[kind](MG);
   {const r=cv2.getBoundingClientRect();const hh=r.width>0?Math.round(320*r.height/r.width):200;cv2.height=Math.max(200,Math.min(600,hh));x.imageSmoothingEnabled=false;MG.oy=cv2.height-200;}
   const lp=()=>{if(!MG||MG.ov!==ov)return;MG.t++;MG.tq=[];if(MG.cd>0)mgCount(MG);else if(!MG.done)MG.step();x.setTransform(1,0,0,1,0,0);x.fillStyle='#b8e4f4';x.fillRect(0,0,320,cv2.height);x.fillStyle='#9fd8f0';x.fillRect(0,Math.max(0,MG.oy-60),320,60);x.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<4;i++){const cx=((i*97+MG.t*.15)%380)-40,cy=20+((i*53)%Math.max(30,MG.oy-40));x.fillRect(cx,cy,34,8);x.fillRect(cx+8,cy-6,18,6);}x.translate(0,MG.oy);MG.draw();if(MG.cdTxt)MG.tq.push([MG.cdTxt,160,MG.oy+40,'#f9c74f',1]);mgSync(MG);requestAnimationFrame(lp);};lp();}
 function mgEnd(M,title,body,rel,gift){M.done=true;spendE(10);addRel(M.pid,rel);if(gift)gift[1]();saveGame();updHUD();
@@ -1270,13 +1270,13 @@ function mgBasket(M){Object.assign(M,{shots:0,made:0,bar:0,dir:1,zone:[70,96],an
   const newZone=()=>{const h=Math.max(14,30-M.shots*1.6),y=40+Math.floor(Math.random()*(110-h));M.zone=[y,y+h];};newZone();
   M.info.textContent='投籃練習：力道條跑到綠色區域時按「投籃！」，一共 10 球。';
   const H={x:276,y:62},meX=92,yuX=168;
-  const Y=M.pid==='yu',CN=Y?'小丁':'阿宇',MAKE=Y?['好球！有 NBA 球星的感覺！','手感來了！再一球！','漂亮！這球我要錄下來！']:['漂亮！空心！','對，就是這個手感！','手腕放鬆，用推的，很好！'];
+  const MAKE=['漂亮！空心！','對，就是這個手感！','手腕放鬆，用推的，很好！'];
   M.step=()=>{if(M.anim){M.anim.f++;if(M.anim.f>46){M.anim=null;M.shots++;if(M.shots>=10)end();else newZone();}return;}
     M.bar+=M.dir*(2.2+M.shots*.25);if(M.bar>=150){M.bar=150;M.dir=-1;}if(M.bar<=0){M.bar=0;M.dir=1;}};
   M.tap=()=>{if(M.anim)return;const y=40+M.bar*110/150,ok=y>=M.zone[0]&&y<=M.zone[1];M.anim={ok,f:0};if(ok)M.made++;
-    M.coach=ok?MAKE[Math.floor(Math.random()*MAKE.length)]:Y?'沒關係！膝蓋再蹲低一點～':'就叫你不要用砸的吧！';M.flash={t:44,txt:ok?'進了！':'沒進……'};sfx(ok?'right':'wrong');
-    M.info.textContent='第 '+(M.shots+1)+'／10 球・進了 '+M.made+' 球\n'+CN+'：「'+M.coach+'」';};
-  const end=()=>{const m=M.made;mgEnd(M,'投籃練習結束・10 球進了 '+m+' 球',Y?(m>=8?'太強了吧！\n下次一起看 NBA 季後賽！':m>=5?'不錯喔！\n打完來喝杯西西里咖啡吧！':'多練幾次就會進了啦！\n我陪你練！'):m>=8?'你根本是〈鬥牛〉本人！\n下次換我跟你學。':m>=5?'不錯喔！多練幾次會更準！':'……總之，下次不要用砸的。',m>=8?3:m>=5?2:1,m>=8?(Y?['西西里咖啡 ×1',()=>{G.food.sicily=(G.food.sicily||0)+1;}]:['熱狗 ×1',()=>{G.food.hotdog=(G.food.hotdog||0)+1;}]):null);};
+    M.coach=ok?MAKE[Math.floor(Math.random()*MAKE.length)]:'就叫你不要用砸的吧！';M.flash={t:44,txt:ok?'進了！':'沒進……'};sfx(ok?'right':'wrong');
+    M.info.textContent='第 '+(M.shots+1)+'／10 球・進了 '+M.made+' 球\n阿宇：「'+M.coach+'」';};
+  const end=()=>{const m=M.made;mgEnd(M,'投籃練習結束・10 球進了 '+m+' 球',m>=8?'你根本是〈鬥牛〉本人！\n下次換我跟你學。':m>=5?'不錯喔！多練幾次會更準！':'……總之，下次不要用砸的。',m>=8?3:m>=5?2:1,m>=8?['熱狗 ×1',()=>{G.food.hotdog=(G.food.hotdog||0)+1;}]:null);};
   M.finish=()=>mgQuit(M);
   M.draw=()=>{const x=M.x;mgSky(x,'#c8743a');x.fillStyle='rgba(255,255,255,.8)';x.fillRect(0,170,320,3);
     x.fillStyle='#555';x.fillRect(298,40,6,132);x.fillStyle='#f4f4f0';x.fillRect(284,30,20,40);x.fillStyle='#e53935';x.fillRect(288,44,12,10);x.fillStyle='#f4f4f0';x.fillRect(290,46,8,6);
@@ -1290,6 +1290,41 @@ function mgBasket(M){Object.assign(M,{shots:0,made:0,bar:0,dir:1,zone:[70,96],an
     if(M.anim&&M.coach)mgText(x,M.coach,Math.min(250,yuX+10),66,M.anim.ok?'#6fdc74':'#ff8a80');
     if(M.flash&&M.flash.t>0){M.flash.t--;mgText(x,M.flash.txt,meX+20,92,'#fff');}};}
 
+
+// 三分球大賽（跟小丁比）：45 秒、5 個球架×5 球，每架最後一顆彩球 2 分；橫向準星停在綠區時出手才會進
+function mgThree(M){const T0=45*60,opp=14+Math.floor(Math.random()*6);
+  Object.assign(M,{rack:0,ball:0,score:0,made:0,time:T0,mark:0,dir:1,anim:null,move:0,flash:null,cheer:'',zone:[0,0]});
+  const newZone=()=>{const w=Math.max(22,46-M.rack*5),c=70+Math.floor(Math.random()*(180-w));M.zone=[c,c+w];};newZone();
+  M.info.textContent='小丁先投：拿下 '+opp+' 分！換你了～\n準星跑到綠色區域時按「出手！」，越快投完越好。';
+  const H={x:276,y:62},meX=80,yuX=196,CH=['加油加油！','手感很燙喔！','彩球！彩球！','快快快，時間不多了！','好像 NBA 明星賽！'];
+  const end=()=>{const s=M.score,win=s>opp;mgEnd(M,'三分球大賽結束・你拿下 '+s+' 分（小丁 '+opp+' 分）',win?'你贏了！太扯了吧！\n下次 NBA 明星賽一起看！':s===opp?'平手耶！\n再來一場決勝負？':s>=opp-3?'差一點點！\n下次換你贏啦～':'我可是 NBA 迷耶，哈哈！\n多練幾次一定會進步！',win?3:s>=opp-3?2:1,win?['西西里咖啡 ×2',()=>{G.food.sicily=(G.food.sicily||0)+2;}]:null);};
+  M.step=()=>{if(M.time>0)M.time--;if(M.time===0&&!M.anim){end();return;}
+    if(M.move>0){M.move--;if(M.move===0)newZone();return;}
+    if(M.anim){M.anim.f++;if(M.anim.f>20){M.anim=null;M.ball++;if(M.ball>=5){M.ball=0;M.rack++;if(M.rack>=5){end();return;}M.move=36;M.cheer=CH[Math.floor(Math.random()*CH.length)];}}}
+    M.mark+=M.dir*(3+M.rack*.6);if(M.mark>=250){M.mark=250;M.dir=-1;}if(M.mark<=0){M.mark=0;M.dir=1;}};
+  M.tap=()=>{if(M.anim||M.move>0||M.time<=0)return;const ok=M.mark>=M.zone[0]&&M.mark<=M.zone[1],money=M.ball===4;M.anim={ok,f:0,money};
+    if(ok){M.made++;M.score+=money?2:1;}sfx(ok?'right':'wrong');M.flash={t:24,txt:ok?(money?'彩球 +2！':'+1'):'沒進'};};
+  M.finish=()=>mgQuit(M);
+  M.draw=()=>{const x=M.x;mgSky(x,'#c8743a');x.fillStyle='rgba(255,255,255,.8)';x.fillRect(0,170,320,3);
+    x.fillStyle='#555';x.fillRect(298,40,6,132);x.fillStyle='#f4f4f0';x.fillRect(284,30,20,40);x.fillStyle='#e53935';x.fillRect(288,44,12,10);x.fillStyle='#f4f4f0';x.fillRect(290,46,8,6);
+    x.fillStyle='#e53935';x.fillRect(H.x-12,H.y,20,3);x.fillStyle='rgba(255,255,255,.85)';for(let k=0;k<5;k++)x.fillRect(H.x-10+k*4,H.y+3,2,12);
+    // 小地圖：三分線上的 5 個球架
+    x.fillStyle='rgba(0,0,0,.35)';x.fillRect(6,6,62,36);x.strokeStyle='#fff';x.lineWidth=1;x.beginPath();x.arc(37,40,26,Math.PI,0);x.stroke();
+    for(let i=0;i<5;i++){const a=Math.PI+i*Math.PI/4,dx=37+Math.cos(a)*26,dy=40+Math.sin(a)*26;x.fillStyle=i<M.rack?'#6fdc74':i===M.rack?'#ffcf40':'#888';x.fillRect(Math.round(dx)-3,Math.round(dy)-3,6,6);}
+    // 球架
+    x.fillStyle='#6a6a6a';x.fillRect(meX-58,148,30,3);x.fillRect(meX-56,151,2,19);x.fillRect(meX-32,151,2,19);
+    for(let i=M.ball+(M.anim?1:0);i<5;i++){const bx2=meX-56+i*6;if(i===4){x.fillStyle='#ff5a8a';x.fillRect(bx2,141,6,6);x.fillStyle='#4fc3f7';x.fillRect(bx2+3,141,3,3);x.fillStyle='#fff';x.fillRect(bx2,144,3,3);}else{x.fillStyle='#e07a2a';x.fillRect(bx2,141,6,6);x.fillStyle='#5a2a10';x.fillRect(bx2+2,141,1,6);}}
+    const walk=M.move>0?Math.round(Math.sin(M.move*.5)*2):0;mgHero(x,meX+walk,170,false,0);mgNpc(x,M.row,yuX,170,true);
+    if(M.anim){const a=M.anim,u=Math.min(1,a.f/16),sx=meX+12,tx=a.ok?H.x-2:H.x-20,ty=a.ok?H.y+6:H.y-6,bx=sx+(tx-sx)*u,by=150+(ty-150)*u-4*100*u*(1-u);
+      ballPx(x,'basket8',Math.round(bx)-8,Math.round(by)-8,2);if(a.money){x.fillStyle='#ff5a8a';x.fillRect(Math.round(bx)-3,Math.round(by)-3,3,3);x.fillStyle='#4fc3f7';x.fillRect(Math.round(bx),Math.round(by),3,3);}}
+    // 準星（橫向）
+    x.fillStyle='#1a0e06';x.fillRect(34,180,256,12);x.fillStyle='#5a3a20';x.fillRect(36,182,252,8);x.fillStyle=M.ball===4?'#ff8fb0':'#4caf50';x.fillRect(36+M.zone[0],182,M.zone[1]-M.zone[0],8);
+    if(!M.anim&&M.move===0){x.fillStyle='#fff';x.fillRect(36+Math.round(M.mark)-1,177,3,18);}
+    // 時間條
+    x.fillStyle='rgba(0,0,0,.35)';x.fillRect(76,8,200,8);x.fillStyle=M.time<10*60?'#ff6b6b':'#ffcf40';x.fillRect(76,8,Math.round(200*M.time/T0),8);
+    M.scb.textContent=M.score+' 分 vs 小丁 '+opp+' 分｜剩 '+Math.ceil(M.time/60)+' 秒';
+    if(M.move>0)mgText(x,'換下一個球架！',140,96,'#fff');if(M.cheer&&M.move>0)mgText(x,M.cheer,Math.min(250,yuX+10),66,'#ffe08a');
+    if(M.flash&&M.flash.t>0){M.flash.t--;mgText(x,M.flash.txt,meX+20,92,M.flash.txt==='沒進'?'#ff8a80':'#fff');}};}
 
 const cv=document.getElementById('c');
 let ctx=cv.getContext('2d');const ctx0=ctx;
@@ -1991,7 +2026,7 @@ const PAIR_LINES={"ak|jie":[["ak", "嗨～我是饅頭。", "饅頭？你那麼�
  'rancher|yu':[['yu','阿牧叔叔，牛寶寶今天好嗎？','好得很！吃了一大捆牧草呢。'],['yu','我可以摸摸小羊嗎？','輕輕的喔，牠很怕癢。']],
  'guide|rancher':[['guide','阿牧，山上有野生的山羊耶！','真的？牠們爬山比你還厲害吧！'],['guide','今天的牛奶給我一瓶帶上山！','好，冰的比較好喝喔。']],
  'clerk|rancher':[['clerk','阿牧，今天的鮮奶到貨了嗎？','剛擠好的，等等就送過去！'],['clerk','最近店裡牧草賣得很好喔。','那我多準備一點給你！']],
- 'clerk|yu':[['yu','罐罐叔叔，今天有新的布丁嗎？','明天才會到貨喔～'],['yu','罐罐叔叔，西西里咖啡還有嗎？','幫你留了一瓶，知道你每天都要喝！']],
+ 'clerk|yu':[['yu','罐罐，今天有新的布丁嗎？','明天才會到貨喔～'],['yu','罐罐，西西里咖啡還有嗎？','幫你留了一瓶，知道你每天都要喝！']],
  'fish|rancher':[['rancher','海伯，今天有沒有多的小魚？','給你家的貓吃嗎？拿去吧！'],['rancher','你的船該上漆了。','你的穀倉也是啊！']],
  'camper|yu':[['yu','阿野哥，今天煮什麼？','烤地瓜！要不要先吃一個？'],['yu','晚上可以來看星星嗎？','好啊，我泡熱可可等你！']],
  'camper|rancher':[['camper','阿牧，今晚的牛奶可以煮熱可可嗎？','當然！我帶了一大瓶來。'],['camper','你的馬今天乖嗎？','乖得很，還想跟來露營呢！']],
@@ -4763,7 +4798,7 @@ LINES.yu[0].push('我跟小路是研究所同學喔！\n……他的論文進度
 LINES.yu[1].push('我論文已經寫到第三章了，\n小路好像還在想題目……','每次 meeting 前一天，\n小路都會跑來問我老師說了什麼。哈哈。');
 LINES.yu[2].push('等我們兩個都畢業，\n一起去慶祝好不好？\n……要等小路就是了。');
 LINES.lu[0].push('小丁是我研究所同學，\n她進度比我快超多……\n哈哈笑死。');
-LINES.lu[1].push('老師交代的事，\n我都是聽小丁轉述的。\n……安捏唷，這樣比較省時間。');
+LINES.lu[1].push('老師交代的事，\n我都是聽小丁轉述的。\n反正她都會記得，哈哈笑死。');
 HOME_LINES.yu.push('今天論文進度：多寫了兩頁。\n明天再幫小路看一下大綱好了。');
 LOVES.lu=['greentea','twriceball','hotdog','riceball','milktea','matcha'];
 if(typeof GIFTBACK!=='undefined')GIFTBACK.lu={2:['food','teaegg',2],4:['food','tomatoegg',1]};
