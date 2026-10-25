@@ -1309,8 +1309,9 @@ function mgThree(M){const T0=45*60,opp=14+Math.floor(Math.random()*6);
     x.fillStyle='#555';x.fillRect(298,40,6,132);x.fillStyle='#f4f4f0';x.fillRect(284,30,20,40);x.fillStyle='#e53935';x.fillRect(288,44,12,10);x.fillStyle='#f4f4f0';x.fillRect(290,46,8,6);
     x.fillStyle='#e53935';x.fillRect(H.x-12,H.y,20,3);x.fillStyle='rgba(255,255,255,.85)';for(let k=0;k<5;k++)x.fillRect(H.x-10+k*4,H.y+3,2,12);
     // 小地圖：三分線上的 5 個球架
-    x.fillStyle='rgba(0,0,0,.35)';x.fillRect(6,6,62,36);x.strokeStyle='#fff';x.lineWidth=1;x.beginPath();x.arc(37,40,26,Math.PI,0);x.stroke();
-    for(let i=0;i<5;i++){const a=Math.PI+i*Math.PI/4,dx=37+Math.cos(a)*26,dy=40+Math.sin(a)*26;x.fillStyle=i<M.rack?'#6fdc74':i===M.rack?'#ffcf40':'#888';x.fillRect(Math.round(dx)-3,Math.round(dy)-3,6,6);}
+    const TY=8-M.oy;// 畫在畫布最上方的藍天（球場是往下平移 oy 畫的）
+    x.fillStyle='#3a6a8a';x.fillRect(6,TY,62,36);x.fillStyle='#2a5070';x.fillRect(6,TY+34,62,2);x.strokeStyle='#fff';x.lineWidth=1;x.beginPath();x.arc(37,TY+34,26,Math.PI,0);x.stroke();
+    for(let i=0;i<5;i++){const a=Math.PI+i*Math.PI/4,dx=37+Math.cos(a)*26,dy=TY+34+Math.sin(a)*26;x.fillStyle=i<M.rack?'#6fdc74':i===M.rack?'#ffcf40':'#888';x.fillRect(Math.round(dx)-3,Math.round(dy)-3,6,6);}
     // 球架
     x.fillStyle='#6a6a6a';x.fillRect(meX-58,148,30,3);x.fillRect(meX-56,151,2,19);x.fillRect(meX-32,151,2,19);
     for(let i=M.ball+(M.anim?1:0);i<5;i++){const bx2=meX-56+i*6;if(i===4){x.fillStyle='#ff5a8a';x.fillRect(bx2,141,6,6);x.fillStyle='#4fc3f7';x.fillRect(bx2+3,141,3,3);x.fillStyle='#fff';x.fillRect(bx2,144,3,3);}else{x.fillStyle='#e07a2a';x.fillRect(bx2,141,6,6);x.fillStyle='#5a2a10';x.fillRect(bx2+2,141,1,6);}}
@@ -1321,8 +1322,9 @@ function mgThree(M){const T0=45*60,opp=14+Math.floor(Math.random()*6);
     x.fillStyle='#1a0e06';x.fillRect(34,180,256,12);x.fillStyle='#5a3a20';x.fillRect(36,182,252,8);x.fillStyle=M.ball===4?'#ff8fb0':'#4caf50';x.fillRect(36+M.zone[0],182,M.zone[1]-M.zone[0],8);
     if(!M.anim&&M.move===0){x.fillStyle='#fff';x.fillRect(36+Math.round(M.mark)-1,177,3,18);}
     // 時間條
-    x.fillStyle='rgba(0,0,0,.35)';x.fillRect(76,8,200,8);x.fillStyle=M.time<10*60?'#ff6b6b':'#ffcf40';x.fillRect(76,8,Math.round(200*M.time/T0),8);
-    M.scb.textContent=M.score+' 分 vs 小丁 '+opp+' 分｜剩 '+Math.ceil(M.time/60)+' 秒';
+    x.fillStyle='rgba(0,0,0,.35)';x.fillRect(76,TY+24,236,10);x.fillStyle=M.time<10*60?'#ff6b6b':'#ffcf40';x.fillRect(76,TY+24,Math.round(236*M.time/T0),10);
+    mgText(x,'第 '+Math.min(5,M.rack+1)+'／5 架',112,TY+8,'#fff');mgText(x,'剩 '+Math.ceil(M.time/60)+' 秒',262,TY+8,M.time<10*60?'#ff8a80':'#fff');
+    M.scb.textContent=M.score+' 分 vs 小丁 '+opp+' 分';
     if(M.move>0)mgText(x,'換下一個球架！',140,96,'#fff');if(M.cheer&&M.move>0)mgText(x,M.cheer,Math.min(250,yuX+10),66,'#ffe08a');
     if(M.flash&&M.flash.t>0){M.flash.t--;mgText(x,M.flash.txt,meX+20,92,M.flash.txt==='沒進'?'#ff8a80':'#fff');}};}
 
