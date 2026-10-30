@@ -2224,12 +2224,22 @@ function drawCrab(c){const cx=Math.round(c.x-cam.x),cy=Math.round(c.y-cam.y);if(
   R_(-3,-7,1,3,'#d84a32');R_(2,-7,1,3,'#d84a32');R_(-3,-8,1,1,'#111');R_(2,-8,1,1,'#111');
   const o=(c.anim>>3)%2;R_(-9,-5-o,4,3,'#e85a3a');R_(5,-5-o,4,3,'#e85a3a');R_(-9,-5-o,1,1,'#f89a7a');R_(8,-5-o,1,1,'#f89a7a');}
 
+// 每種物件各畫一份到暫存畫布，記下哪些像素有畫東西（半透明的影子不算）
+const BHIT={};
+function buildHitCanvas(b){const dir=b.dir||defDir(b.k),key=b.k+'|'+dir;if(BHIT[key])return BHIT[key];
+  const cs=bCells(b.k,0,0,dir),w=Math.max(...cs.map(c=>c[0]))+1,h=Math.max(...cs.map(c=>c[1]))+1,PX=72,PY=144,c=document.createElement('canvas');c.width=w*TILE+PX*2;c.height=h*TILE+PY+48;
+  const x=c.getContext('2d');x.imageSmoothingEnabled=false;const o=ctx;ctx=x;try{drawBuildAt(x,b.k,PX,PY,dir);}finally{ctx=o;}
+  return BHIT[key]={d:x.getImageData(0,0,c.width,c.height).data,w:c.width,h:c.height,PX,PY};}
+function buildHidden(b){const B=BUILDS[b.k],t=G.map[b.y]&&G.map[b.y][b.x];return(b.k==='fence'&&t===T.WFENCE)||(b.k==='lamp'&&t===T.LAMP)||!!(B&&B.tile&&t===B.t&&b.x<RX);}
+// 從畫在最前面的物件開始找：點的位置有畫到東西就回傳那個物件
+function buildHitAt(wx,wy){const near=(G.builds||[]).filter(b=>BUILDS[b.k]&&Math.abs((b.x+.5)*TILE-wx)<5*TILE&&Math.abs((b.y+.5)*TILE-wy)<6*TILE&&!buildHidden(b)).sort((a,c)=>buildSortY(c)-buildSortY(a));
+  for(const b of near){const H=buildHitCanvas(b),px=Math.floor(wx-b.x*TILE+H.PX),py=Math.floor(wy-b.y*TILE+H.PY);if(px<0||py<0||px>=H.w||py>=H.h)continue;if(H.d[(py*H.w+px)*4+3]>60)return b;}return null;}
 function onTap(wx,wy){
   if(G.place==='floor'){paintFloor(Math.floor(wx/TILE),Math.floor(wy/TILE));return;}
   if(G.place){const tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(G.placeAt&&G.placeAt[0]===tx&&G.placeAt[1]===ty){doPlace(tx,ty);}else{G.placeAt=[tx,ty];updPlaceBar();}return;}
   if(G.sitting!=null)standUp();
   {const sx=Math.floor(wx/TILE),sy=Math.floor(wy/TILE);if(sy===MH-1&&G.map[sy]&&G.map[sy][sx]===T.TREE){G.secret=(G.secret||[]).concat(sx+1).slice(-4);if(G.secret.join()==='4,6,2,2'){G.secret=[];G.gold+=5000;updHUD();sfx('coin');msg('樹上掉下了一袋金幣…\n獲得 5000G！');saveGame();}return;}}
-  const tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);
+  let tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);
   if(tx<0||ty<0||tx>=MW||ty>=MH)return;
   const ptx=Math.floor(G.px/TILE),pty=Math.floor(G.py/TILE);
   let goals,act=null,mark={tx,ty};
@@ -2237,6 +2247,8 @@ function onTap(wx,wy){
   const eo=G.event&&G.event.obj,hitObj=eo&&Math.hypot(wx-eo.x,wy-eo.y)<22,hitCat=G.cat&&Math.hypot(wx-G.cat.x,wy-G.cat.y)<20;
   const inBarn=pcur===T.BF||(ptx===12&&pty===21);const hitNPC=NPCS.find(n=>(n.id!=='clerk'||inShop===isInStore(n))&&(n.id!=='rancher'||inBarn===isInBarn(n))&&!n.away&&n.x<RX*TILE&&(!npcBusy(n)||n.trip==='out')&&Math.abs(wx-n.x)<18&&wy>n.y+15-66&&wy<n.y+20);const hitCust=G.cust.find(c=>c.alpha>=1&&c.x<RX*TILE&&!['think','haggle','leave'].includes(c.state)&&inShop===isInStore(c)&&Math.abs(wx-c.x)<18&&wy>c.y+15-66&&wy<c.y+20);
   const an=G.animals.find(a=>Math.hypot(a.x-wx,a.y-wy)<24);const hitRes=resAtTap(wx,wy);
+  // 點到家具、物件「畫出來」的部分（床頭、冰箱上半部…）就算點到它，不是點到後面的格子
+  if(!hitObj&&!hitCat&&!hitNPC&&!hitCust&&!hitRes&&!an){const hb=buildHitAt(wx,wy);if(hb){const cs=cellsOf(hb);if(!cs.some(([a,c])=>a===tx&&c===ty)){const best=cs.reduce((p,c)=>Math.hypot((c[0]+.5)*TILE-wx,(c[1]+.5)*TILE-wy)<Math.hypot((p[0]+.5)*TILE-wx,(p[1]+.5)*TILE-wy)?c:p);tx=best[0];ty=best[1];mark={tx,ty};}}}
   if(hitObj){const ox=Math.floor(eo.x/TILE),oy=Math.floor(eo.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={evobj:true};mark={tx:ox,ty:oy};}
   else if(hitCat){const ox=Math.floor(G.cat.x/TILE),oy=Math.floor(G.cat.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={cat:true};mark={tx:ox,ty:oy};}
   else if(!hitNPC&&hitCust){const nx=Math.floor(hitCust.x/TILE),ny=Math.floor(hitCust.y/TILE);goals=neighborGoals(nx,ny);act={cust:hitCust};mark={tx:nx,ty:ny};}
@@ -2248,7 +2260,7 @@ function onTap(wx,wy){
   else if(G.map[ty][tx]===T.VB&&VDOOR[houseAt(tx,ty)]){const d=VDOOR[houseAt(tx,ty)];goals=new Set([d[1]*MW+d[0]]);act={tx:d[0],ty:d[1]-1};mark={tx:d[0],ty:d[1]-1};}
   else{
     const hint=getHint(tx,ty),walk=isWalk(tx,ty);
-    if(hint){const bb=buildAt(tx,ty);if(bb&&BUILDS[bb.k].front&&TOOLS[G.tool].id!=='axe'){goals=new Set();for(const[,f]of frontCells(bb))if(isWalk(f[0],f[1]))goals.add(f[1]*MW+f[0]);act={tx,ty};}else if(bb&&BUILDS[bb.k].sit&&(BUILDS[bb.k].home||BUILDS[bb.k].room)&&TOOLS[G.tool].id!=='axe'){goals=new Set();for(const c of cellsOf(bb))for(const q of neighborGoals(c[0],c[1]))goals.add(q);act={tx,ty};}else if(bb&&(bb.k==='bench'||BUILDS[bb.k].sit)&&TOOLS[G.tool].id!=='axe'){goals=new Set();const tf=benchFront(bb,[tx,ty]);if(isWalk(tf[0],tf[1]))goals.add(tf[1]*MW+tf[0]);else for(const c of cellsOf(bb)){const[fx2,fy2]=benchFront(bb,c);if(isWalk(fx2,fy2))goals.add(fy2*MW+fx2);}const cl=cellsOf(bb).map(c=>[c,benchFront(bb,c)]);act={tx,ty,benchPick:cl};}else{goals=G.map[ty][tx]===T.VEND?new Set([(ty+1)*MW+tx]):neighborGoals(tx,ty);act={tx,ty};}}
+    if(hint){const bb=buildAt(tx,ty);if(bb&&BUILDS[bb.k].front&&TOOLS[G.tool].id!=='axe'){goals=new Set();for(const[,f]of frontCells(bb))if(isWalk(f[0],f[1]))goals.add(f[1]*MW+f[0]);act={tx,ty};}else if(bb&&BUILDS[bb.k].sit&&(BUILDS[bb.k].home||BUILDS[bb.k].room)&&TOOLS[G.tool].id!=='axe'){goals=new Set();for(const c of cellsOf(bb))for(const q of neighborGoals(c[0],c[1]))goals.add(q);act={tx,ty};}else if(bb&&(bb.k==='bench'||BUILDS[bb.k].sit)&&TOOLS[G.tool].id!=='axe'){goals=new Set();const tf=benchFront(bb,[tx,ty]);if(isWalk(tf[0],tf[1]))goals.add(tf[1]*MW+tf[0]);else for(const c of cellsOf(bb)){const[fx2,fy2]=benchFront(bb,c);if(isWalk(fx2,fy2))goals.add(fy2*MW+fx2);}const cl=cellsOf(bb).map(c=>[c,benchFront(bb,c)]);act={tx,ty,benchPick:cl};}else if(bb&&cellsOf(bb).length>1){goals=new Set();for(const c of cellsOf(bb))for(const q of neighborGoals(c[0],c[1]))goals.add(q);act={tx,ty,bld:bb};}else{goals=G.map[ty][tx]===T.VEND?new Set([(ty+1)*MW+tx]):neighborGoals(tx,ty);act={tx,ty};}}
     else if(walk){goals=new Set([ty*MW+tx]);}
     else{goals=neighborGoals(tx,ty);act={tx,ty,faceOnly:true};}
   }
@@ -2268,6 +2280,7 @@ function arrive(){
   if(a.animal){faceTo(a.animal.x,a.animal.y);interactAnimal(a.animal);return;}
   if(a.item){const it=a.item,r=ROOMS[it[0]];faceTo((r.x0+it[1]+it[3]/2)*TILE,(r.y0+it[2]+it[4]/2)*TILE);roomAct(it,a.tx,a.ty);return;}
   if(a.benchPick){const ptx=Math.floor(G.px/TILE),pty=Math.floor(G.py/TILE),hit=a.benchPick.find(([c,f])=>f[0]===ptx&&f[1]===pty&&c[0]===a.tx&&c[1]===a.ty)||a.benchPick.find(([c,f])=>f[0]===ptx&&f[1]===pty),bb=buildAt(a.tx,a.ty);if(hit&&bb){sitBench(bb,hit[0][0],hit[0][1]);return;}}
+  if(a.bld){const ptx=Math.floor(G.px/TILE),pty=Math.floor(G.py/TILE),adj=cellsOf(a.bld).find(([x,y])=>Math.abs(x-ptx)+Math.abs(y-pty)===1);if(adj){a.tx=adj[0];a.ty=adj[1];}}
   faceTo((a.tx+.5)*TILE,(a.ty+.5)*TILE);
   if(!a.faceOnly)useTool();
 }
