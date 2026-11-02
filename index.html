@@ -1953,7 +1953,7 @@ function render(){
   ents.push({y:20*TILE-4,f:drawTent});ents.push({y:21*TILE-6,f:drawCampFire});ents.push({y:19*TILE-4,f:drawCampTable});
   for(const bx of[18,21]){if(G.map[14][bx]!==T.BENCH)continue;ents.push({y:14*TILE+2,f:()=>drawBenchBack(bx)});ents.push({y:15*TILE-6,f:()=>drawBench(bx)});}
   if(insideBarn)for(const ra of G.ranch)ents.push({y:ra.y,f:()=>drawAnimal(ra)});
-  if(G.cat)ents.push({y:G.cat.y,f:drawCat});for(const L of G.loot||[])ents.push({y:L.y,f:()=>drawLoot(L)});for(const d of G.drops)ents.push({y:d.y,f:()=>drawSeedDrop(d)});if(G.event&&G.event.obj)ents.push({y:G.event.obj.y,f:drawEventObj});if(G.sobj)ents.push({y:G.sobj.y,f:drawStoryObj});
+  if(G.cat)ents.push({y:G.cat.y,f:drawCat});for(const L of G.loot||[])ents.push({y:L.y,f:()=>drawLoot(L)});for(const d of G.drops)ents.push({y:d.y,f:()=>drawSeedDrop(d)});if(G.event&&G.event.obj)ents.push({y:G.event.obj.y,f:drawEventObj});for(const o of storyObjs())ents.push({y:o.y,f:()=>drawStoryObj(o)});
   ents.push({y:11*TILE+30,f:drawTrough});for(const a of G.animals)ents.push({y:a.y+14,f:()=>drawFarmAnimal(a)});
   if(!insideBarn)ents.push({y:17*TILE+1,f:drawBarn});
   festEnts(ents);villageEnts(ents);roomEnts(ents);
@@ -2246,12 +2246,12 @@ function onTap(wx,wy){
   const ptx=Math.floor(G.px/TILE),pty=Math.floor(G.py/TILE);
   let goals,act=null,mark={tx,ty};
   const pcur=G.map[pty]?.[ptx],inShop=pcur===T.SF||(ptx===21&&pty===5);
-  const so=G.sobj,hitS=so&&Math.hypot(wx-so.x,wy-so.y)<22,eo=G.event&&G.event.obj,hitObj=eo&&Math.hypot(wx-eo.x,wy-eo.y)<22,hitCat=G.cat&&Math.hypot(wx-G.cat.x,wy-G.cat.y)<20;
+  const so=storyObjs().find(o=>Math.hypot(wx-o.x,wy-o.y)<22),hitS=!!so,eo=G.event&&G.event.obj,hitObj=eo&&Math.hypot(wx-eo.x,wy-eo.y)<22,hitCat=G.cat&&Math.hypot(wx-G.cat.x,wy-G.cat.y)<20;
   const inBarn=pcur===T.BF||(ptx===12&&pty===21);const hitNPC=NPCS.find(n=>(n.id!=='clerk'||inShop===isInStore(n))&&(n.id!=='rancher'||inBarn===isInBarn(n))&&!n.away&&n.x<RX*TILE&&(!npcBusy(n)||n.trip==='out')&&Math.abs(wx-n.x)<18&&wy>n.y+15-66&&wy<n.y+20);const hitCust=G.cust.find(c=>c.alpha>=1&&c.x<RX*TILE&&!['think','haggle','leave'].includes(c.state)&&inShop===isInStore(c)&&Math.abs(wx-c.x)<18&&wy>c.y+15-66&&wy<c.y+20);
   const an=G.animals.find(a=>Math.hypot(a.x-wx,a.y-wy)<24);const hitRes=resAtTap(wx,wy);
   // 點到家具、物件「畫出來」的部分（床頭、冰箱上半部…）就算點到它，不是點到後面的格子
   if(!hitS&&!hitObj&&!hitCat&&!hitNPC&&!hitCust&&!hitRes&&!an){const hb=buildHitAt(wx,wy);if(hb){const cs=cellsOf(hb);if(!cs.some(([a,c])=>a===tx&&c===ty)){const best=cs.reduce((p,c)=>Math.hypot((c[0]+.5)*TILE-wx,(c[1]+.5)*TILE-wy)<Math.hypot((p[0]+.5)*TILE-wx,(p[1]+.5)*TILE-wy)?c:p);tx=best[0];ty=best[1];mark={tx,ty};}}}
-  if(hitS){const ox=Math.floor(so.x/TILE),oy=Math.floor(so.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={sobj:true};mark={tx:ox,ty:oy};}
+  if(hitS){const ox=Math.floor(so.x/TILE),oy=Math.floor(so.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={sobj:so};mark={tx:ox,ty:oy};}
   else if(hitObj){const ox=Math.floor(eo.x/TILE),oy=Math.floor(eo.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={evobj:true};mark={tx:ox,ty:oy};}
   else if(hitCat){const ox=Math.floor(G.cat.x/TILE),oy=Math.floor(G.cat.y/TILE);goals=new Set([oy*MW+ox,...neighborGoals(ox,oy)]);act={cat:true};mark={tx:ox,ty:oy};}
   else if(!hitNPC&&hitCust){const nx=Math.floor(hitCust.x/TILE),ny=Math.floor(hitCust.y/TILE);goals=neighborGoals(nx,ny);act={cust:hitCust};mark={tx:nx,ty:ny};}
@@ -2278,7 +2278,7 @@ function arrive(){
   if(a.npc){faceTo(a.npc.x,a.npc.y);openTalk(a.npc);return;}
   if(a.res){resTalk(a.res);return;}
   if(a.cust){if(!G.cust.includes(a.cust)||a.cust.state==='leave'){msg('他已經走掉了…');return;}faceTo(a.cust.x,a.cust.y);const pr=custProxy(a.cust);openTalk(pr);a.cust.dir=pr.dir;a.cust.line=pr.line;return;}
-  if(a.sobj){pickStoryObj();return;}
+  if(a.sobj){pickStoryObj(a.sobj);return;}
   if(a.evobj){pickEventObj();return;}
   if(a.cat){if(G.cat)faceTo(G.cat.x,G.cat.y);openCatTalk();return;}
   if(a.animal){faceTo(a.animal.x,a.animal.y);interactAnimal(a.animal);return;}
@@ -2613,7 +2613,7 @@ function tickClock(now){
   if(cross(22))msg('已經晚上 10 點了，\n該回家睡覺囉！');
   if(cross(24))msg('半夜 12 點了，6-TWELVE 也打烊了…\n快回家睡覺吧！');
   if(G.time>=26*60){G.time=26*60;passOut();}
-  updClock();tutTick();festCheck();storyTick();
+  updClock();tutTick();festCheck();storyTick();thiefTick();
 }
 function passOut(){if(G.ph==='busy')return;G.time=26*60;endDay(true);}
 const TINT=[[0,[15,18,55,.6]],[5.5,[30,30,80,.5]],[6.5,[255,170,110,.14]],[7.5,[0,0,0,0]],[16.5,[0,0,0,0]],[17.8,[255,140,60,.2]],[19,[80,50,120,.36]],[20.5,[20,25,70,.52]],[24,[15,18,55,.6]],[26,[12,14,48,.64]]];
@@ -3789,6 +3789,8 @@ const QUESTS=[
   // 劇情
   ['st_lu','論文救援','幫小路度過論文大危機（不管結果如何）','ui:bulb','story','talk5',()=>!!(G.story.lu&&G.story.lu.st==='done'),300],
   ['st_lu_a','完美口試','找齊隨身碟和筆電，讓小路完美通過口試','ui:chart','story','st_lu',()=>!!(G.story.lu&&G.story.lu.grade==='A'),1000],
+  ['st_thief','偷菜真相','查出半夜偷菜的犯人','sweetpotato','story','st_lu',()=>!!(G.story.thief&&G.story.thief.st==='done'),500],
+  ['st_thief_a','當場抓到','半夜埋伏，親眼看到犯人','ui:bulb','story','st_thief',()=>!!(G.story.thief&&G.story.thief.end==='A'),1000],
   // 委託
   ['req10','熱心村民','完成 10 件委託','basket','req','req5',()=>[G.stats.reqs,10],300],
   ['req30','村子的依靠','完成 30 件委託','ui:chart','req','req10',()=>[G.stats.reqs,30],600],
@@ -3871,8 +3873,8 @@ const LU_GRADE={
   D:['延畢了……','小路兩手空空去口試。\n老師：「那我們下學期見。」\n\n晚上小路傳訊息給你：\n「延畢了，哈哈笑死。\n……下學期我會記得先備份。」',0,{lu:5}]};
 function luGrade(){const L=stLu(),g=L.got;if(!L.delivered)return'D';if(g.usb&&g.laptop)return'A';if(g.usb)return'B';if(g.draft)return'C';return'D';}
 function luGotText(){const g=stLu().got,a=[];if(g.usb)a.push('隨身碟');if(g.laptop)a.push('筆電');if(g.draft)a.push('第一章初稿');return a.length?a.join('、'):'還沒有';}
-function storyNight(){const L=stLu();if(L.st==='hunt'||L.st==='wait'){L.grade=luGrade();L.st='result';G.sobj=null;}setTimeout(storyMorning,5800);}
-function storyMorning(){if(!started)return;const L=stLu();
+function storyNight(){const L=stLu();if(L.st==='hunt'||L.st==='wait'){L.grade=luGrade();L.st='result';}thiefNight();setTimeout(storyMorning,5800);}
+function storyMorning(){if(!started)return;thiefMorning();const L=stLu();
   if(L.st==='result'){const[t,body,gold,rel]=LU_GRADE[L.grade];L.st='done';L.doneDay=G.day;G.gold+=gold;if(G.today)G.today.earn+=gold;for(const id in rel)addRel(id,rel[id]);updHUD();saveGame();sfx(L.grade==='A'?'catch':'click');popInfo('小路的論文大危機｜'+t,body,'好',null,L.grade==='D'?'#ff8a80':'#ffcf40');return;}
   if(L.st==='none'&&G.day>=6&&(G.rel.lu||0)>=40)L.pend=G.day;}
 // 每分鐘檢查：小路起床（6:30）後才傳訊息求救
@@ -3882,25 +3884,71 @@ function luStart(){const L=stLu();closeTalk();L.st='hunt';L.day=G.day;L.got={};L
   popInfo('小路的論文大危機','小路抱著筆電，臉色發白：\n「筆電藍屏了……論文檔案全部不見了。\n明天早上九點就要口試……哈哈……笑不出來。」\n\n今晚睡覺前，幫小路把論文找回來！\n・饅頭好像有幫他備份\n・阿翔有一台筆電\n・小丁是他的研究所同學','我來想辦法！',null,'#e86a8a');}
 function luDeliver(){const L=stLu();closeTalk();L.delivered=true;L.st='wait';saveGame();updStoryBar();const g=L.got;
   popInfo('交給小路',g.usb&&g.laptop?'小路：「隨身碟加筆電……全部都在！\n連參考文獻都在！你是神吧！」':g.usb?'小路：「隨身碟裡有檔案！\n雖然沒有筆電……我跟小丁借電腦好了。」':g.draft?'小路：「這是……小丁的初稿？\n……只有第一章耶。\n沒關係，總比沒有好！」':'小路：「筆電借到了！\n……可是裡面沒有我的論文耶。」','明天口試加油！',null,'#e86a8a');}
-function spawnUsb(){const c=[];for(let y=1;y<MH-1;y++)for(let x=1;x<FARMW;x++)if(G.map[y][x]===T.SAND&&isWalk(x,y))c.push([x,y]);if(!c.length)return;const[x,y]=c[(G.day*7)%c.length];G.sobj={kind:'usb',x:(x+.5)*TILE,y:(y+.6)*TILE};}
-function pickStoryObj(){const o=G.sobj;if(!o)return;if(o.kind==='usb'){stLu().got.usb=1;G.sobj=null;sfx('harvest');msg('在沙灘上撿到一支隨身碟！\n上面貼著：「小路 論文 最終版(3)」');saveGame();updStoryBar();}}
-function drawStoryObj(){const o=G.sobj;if(!o)return;const sx=Math.round(o.x-cam.x),sy=Math.round(o.y-cam.y);if(sx<-20||sy<-20||sx>W2+20||sy>H2+20)return;const R_=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(sx+x,sy+y,w,h);};
+function spawnUsb(){const c=[];for(let y=1;y<MH-1;y++)for(let x=1;x<FARMW;x++)if(G.map[y][x]===T.SAND&&isWalk(x,y))c.push([x,y]);if(!c.length)return;const[x,y]=c[(G.day*7)%c.length];stLu().usbPos=[(x+.5)*TILE,(y+.6)*TILE];}
+function pickStoryObj(o){if(!o)return;if(o.kind==='clue'){pickClue();return;}if(o.kind==='usb'){stLu().got.usb=1;sfx('harvest');msg('在沙灘上撿到一支隨身碟！\n上面貼著：「小路 論文 最終版(3)」');saveGame();updStoryBar();}}
+function drawStoryObj(o){if(!o)return;if(o.kind==='clue'){drawClue(o);return;}const sx=Math.round(o.x-cam.x),sy=Math.round(o.y-cam.y);if(sx<-20||sy<-20||sx>W2+20||sy>H2+20)return;const R_=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(sx+x,sy+y,w,h);};
   R_(-7,5,14,2,'rgba(0,0,0,.2)');R_(-6,-1,9,6,'#9aa4b0');R_(-6,-1,9,1,'#d0d8e0');R_(3,0,4,4,'#3a7ad8');R_(-4,1,4,2,'#f4f4f0');
   if((frameCount>>3)%6<3){R_(5,-7,1,5,'#fff6a0');R_(3,-5,5,1,'#fff6a0');}}
-function storyTalk(n,btns,m){const L=stLu(),add=(b)=>btns.splice(Math.max(0,btns.length-1),0,b);
+function storyTalk(n,btns,m){thiefTalk(n,btns);const L=stLu(),add=(b)=>btns.splice(Math.max(0,btns.length-1),0,b);
   if(n.id==='lu'){if(L.st==='call'){m.textContent='（小路抱著筆電，臉色發白）\n……你終於來了。';btns.unshift(['小路怎麼了？','bp',luStart,'bolt']);}
     else if(L.st==='hunt'){m.textContent='……找到了嗎？\n明天早上九點就要口試了……\n\n目前找到：'+luGotText();if(L.got.usb||L.got.laptop||L.got.draft)btns.unshift(['把找到的東西交給小路','bp',luDeliver,'gift']);}
     else if(L.st==='wait')m.textContent='東西都收好了！\n今晚……先睡一下好了。\n哈哈笑死，睡得著才怪。';return;}
   if(L.st!=='hunt')return;
-  if(n.id==='ak'&&!L.got.usb)btns.unshift(['問饅頭有沒有備份','bp',()=>{closeTalk();L.usbHint=1;if(!G.sobj)spawnUsb();saveGame();updStoryBar();popInfo('饅頭','我有幫他備份到隨身碟啊！\n……欸？隨身碟呢？\n\n……剛剛那隻小貓，\n叼著一個亮亮的東西往海邊跑了。\n\n……不是我弄丟的。','去海邊找找',null,'#e86a8a');},'bulb']);
+  if(n.id==='ak'&&!L.got.usb)btns.unshift(['問饅頭有沒有備份','bp',()=>{closeTalk();L.usbHint=1;if(!L.usbPos)spawnUsb();saveGame();updStoryBar();popInfo('饅頭','我有幫他備份到隨身碟啊！\n……欸？隨身碟呢？\n\n……剛剛那隻小貓，\n叼著一個亮亮的東西往海邊跑了。\n\n……不是我弄丟的。','去海邊找找',null,'#e86a8a');},'bulb']);
   if(n.id==='ted'&&!L.got.laptop)btns.unshift(['跟阿翔借筆電','bp',()=>{closeTalk();festPop('阿翔','筆電借你？OK！\n不過今天是 leg day，\n陪我練完腿就借你，right？',[['陪他練腿（體力 -30）',()=>{if(G.en<30){msg('太累了，練不動……\n先吃點東西再來吧');return;}spendE(30);L.got.laptop=1;sfx('heart');addRel('ted',5);msg('練完腿，腳一直在抖……\n不過借到阿翔的筆電了！');saveGame();updStoryBar();}],['用便當收買他'+((G.food.bento||0)>0?'':'（沒有便當）'),()=>{if(!((G.food.bento||0)>0)){msg('你身上沒有便當……\n6-TWELVE 的熟食櫃台有賣喔');return;}G.food.bento--;L.got.laptop=1;sfx('coin');msg('阿翔：「Deal！筆電拿去！」\n（借到阿翔的筆電了）');updTB();saveGame();updStoryBar();}],['等等再說',null,'bc']],'#e86a8a');},'bag']);
   if(n.id==='yu'&&!L.got.draft)btns.unshift(['問小丁有沒有小路的論文','bp',()=>{closeTalk();L.got.draft=1;sfx('click');saveGame();updStoryBar();popInfo('小丁','又是小路……\n我只有他上次寄給我看的初稿，\n不過只有第一章喔。\n\n……他到底寫了幾章啊？\n\n（拿到小路的第一章初稿）','謝謝小丁！',null,'#e86a8a');},'bulb']);}
-function updStoryBar(){const g=document.getElementById('G');if(!g||!G.story)return;let b=document.getElementById('storyb');const L=G.story.lu,on=started&&L&&(L.st==='call'||L.st==='hunt'||L.st==='wait');
-  if(!on){if(b)b.remove();return;}
-  if(!b){b=document.createElement('div');b.id='storyb';b.className='storyb';b.onclick=e=>{e.stopPropagation();const L2=stLu();popInfo('小路的論文大危機',L2.st==='call'?'小路傳訊息求救，去找他看看吧！':L2.st==='wait'?'東西已經交給小路了，\n明天早上就知道口試結果！':'今晚睡覺前，幫小路把論文找回來！\n\n・饅頭好像有幫他備份'+(L2.got.usb?'　✔ 隨身碟':L2.usbHint?'　→ 去海邊找隨身碟':'')+'\n・阿翔有一台筆電'+(L2.got.laptop?'　✔ 筆電':'')+'\n・小丁是他的研究所同學'+(L2.got.draft?'　✔ 初稿':'')+'\n\n找到的東西記得拿去給小路。','好',null,'#e86a8a');};g.appendChild(b);}
-  if(L.st==='hunt'&&L.usbHint&&!L.got.usb&&!G.sobj)spawnUsb();
-  const tb=document.getElementById('top');b.style.top=((tb?tb.offsetTop+tb.offsetHeight:44)+6)+'px';
-  const wh='\n小路在：'+luWhere(),txt=L.st==='call'?'<b>小路的論文大危機</b>\n小路傳訊息求救，去找他！'+wh:L.st==='wait'?'<b>小路的論文大危機</b>\n已交件，明天早上看結果':'<b>小路的論文大危機</b>\n找到：'+luGotText()+'\n睡覺前交給小路！'+wh;if(b.innerHTML!==txt)b.innerHTML=txt;}
+function updStoryBar(){const g=document.getElementById('G');if(!g||!G.story)return;let b=document.getElementById('storyb');
+  const L=G.story.lu,lo=started&&L&&(L.st==='call'||L.st==='hunt'||L.st==='wait'),T_=G.story.thief,to=started&&T_&&T_.st==='active';
+  if(!lo&&!to){if(b)b.remove();return;}
+  if(!b){b=document.createElement('div');b.id='storyb';b.className='storyb';b.onclick=e=>{e.stopPropagation();const parts=[];const L2=G.story.lu,T2=G.story.thief;
+    if(L2&&/^(call|hunt|wait)$/.test(L2.st))parts.push('【小路的論文大危機】\n'+(L2.st==='call'?'小路傳訊息求救，去找他看看吧！':L2.st==='wait'?'東西已經交給小路了，\n明天早上就知道口試結果！':'今晚睡覺前，幫小路把論文找回來！\n・饅頭好像有幫他備份'+(L2.got.usb?'　✔ 隨身碟':L2.usbHint?'　→ 去海邊找隨身碟':'')+'\n・阿翔有一台筆電'+(L2.got.laptop?'　✔ 筆電':'')+'\n・小丁是他的研究所同學'+(L2.got.draft?'　✔ 初稿':'')+'\n找到的東西記得拿去給小路。')+'\n小路在：'+luWhere());
+    if(T2&&T2.st==='active')parts.push('【半夜偷菜事件】\n'+thiefDetail());
+    popInfo('劇情任務',parts.join('\n\n'),'好',null,'#e86a8a');};g.appendChild(b);}
+  if(lo&&L.st==='hunt'&&L.usbHint&&!L.got.usb&&!L.usbPos)spawnUsb();
+  const tb=document.getElementById('top');b.style.top=((tb?tb.offsetTop+tb.offsetHeight:44)+6)+'px';const out=[];
+  if(lo){const wh='\n小路在：'+luWhere();out.push(L.st==='call'?'<b>小路的論文大危機</b>\n小路傳訊息求救，去找他！'+wh:L.st==='wait'?'<b>小路的論文大危機</b>\n已交件，明天早上看結果':'<b>小路的論文大危機</b>\n找到：'+luGotText()+'\n睡覺前交給小路！'+wh);}
+  if(to)out.push('<b>半夜偷菜事件</b>\n被偷 '+T_.stolen+' 棵・線索 '+T_.clues.length+'/3\n'+(T_.clues.length?'晚上 11 點後到田裡埋伏！':'田邊好像掉了什麼……'));
+  const txt=out.join('\n');if(b.innerHTML!==txt)b.innerHTML=txt;}
+
+// ===== 半夜偷菜事件：作物每晚被偷，找線索、問嫌疑犯、半夜埋伏 =====
+function stTh(){if(!G.story)G.story={};return G.story.thief||(G.story.thief={st:'none',stolen:0,clues:[],wrong:[]});}
+const TH_CLUE={peel:['地瓜皮','田邊有幾片烤過的地瓜皮……\n還帶著一點炭火的味道。'],print:['泥巴腳印','一串泥巴腳印從田裡出去，\n歪歪扭扭的，往農場南邊的露營區延伸。'],ash:['葉子上的炭灰','被拔掉的作物旁邊，葉子上沾著黑黑的炭灰。\n……附近有誰會生火？']};
+const TH_ORDER=['peel','print','ash'];
+// 被偷的作物：挑長得最大的
+function thiefSteal(n){const c=[];for(let y=0;y<MH;y++)for(let x=0;x<FARMW;x++){const cr=G.cr[y]&&G.cr[y][x];if(cr&&cr.type!=='grass')c.push([x,y,cr.stage]);}
+  c.sort((a,b)=>b[2]-a[2]);let k=0;for(const[x,y]of c.slice(0,n)){G.cr[y][x]=null;if(G.map[y][x]===T.WA)G.map[y][x]=T.TI;k++;}return k;}
+function cropCount(){let n=0;for(let y=0;y<MH;y++)for(let x=0;x<FARMW;x++){const cr=G.cr[y]&&G.cr[y][x];if(cr&&cr.type!=='grass')n++;}return n;}
+function thiefNight(){const T_=stTh();
+  if(T_.st==='none'&&G.day>=12&&cropCount()>=5){const k=thiefSteal(2);if(k){T_.st='active';T_.start=G.day+1;T_.stolen=k;T_.news=1;T_.clueDay=G.day+1;}return;}
+  if(T_.st!=='active')return;
+  if(G.day+1-T_.start>=6){T_.st='result';T_.end='C';return;}
+  const k=thiefSteal(1);T_.stolen+=k;if(k)T_.news=1;if(T_.clues.length+(T_.clueAt?1:0)<3)T_.clueDay=G.day+1;}
+function thiefMorning(){const T_=stTh();
+  if(T_.st==='result'){T_.st='done';T_.doneDay=G.day;const E={A:['當場抓到！',''],B:['真相大白',''],C:['田邊的一鍋燉菜','某天早上，田邊放著一鍋還溫溫的燉菜，\n旁邊壓著一張紙條：\n\n「對不起，我好像會夢遊……\n醒來鍋子裡都是你的菜。\n——阿野」\n\n獲得蘿蔔湯 ×2・500G']};if(T_.end==='C'){G.food.soup=(G.food.soup||0)+2;G.gold+=500;addRel('camper',5);updHUD();updTB();saveGame();popInfo('半夜偷菜事件｜'+E.C[0],E.C[1],'原來如此……',null,'#ffcf40');}return;}
+  if(T_.st!=='active')return;
+  if(T_.clueDay===G.day&&!T_.clueAt&&T_.clues.length<3){const kind=TH_ORDER.find(k=>!T_.clues.includes(k));const spots=[];for(let y=1;y<17;y++)for(let x=1;x<17;x++)if(isWalk(x,y)&&[[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>[T.TI,T.WA,T.D].includes(G.map[y+b]&&G.map[y+b][x+a])))spots.push([x,y]);
+    if(spots.length){const[x,y]=spots[(G.day*13)%spots.length];T_.clueAt={kind,x:(x+.5)*TILE,y:(y+.6)*TILE};}}
+  if(T_.news){T_.news=0;saveGame();updStoryBar();msg(T_.stolen<=2?'咦？田裡的作物少了 '+T_.stolen+' 棵！\n昨晚好像有人來過……田邊掉了什麼東西？':'田裡又少了一棵作物！\n（已經被偷了 '+T_.stolen+' 棵）');sfx('wrong');}}
+function pickClue(){const T_=stTh(),o=T_.clueAt;if(!o)return;T_.clues.push(o.kind);T_.clueAt=null;sfx('harvest');saveGame();updStoryBar();const[n,d]=TH_CLUE[o.kind];popInfo('找到線索：'+n,d+'\n\n（線索 '+T_.clues.length+'/3）','記下來',null,'#e86a8a');}
+function drawClue(o){const sx=Math.round(o.x-cam.x),sy=Math.round(o.y-cam.y);if(sx<-20||sy<-20||sx>W2+20||sy>H2+20)return;const R_=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(sx+x,sy+y,w,h);};
+  R_(-7,5,14,2,'rgba(0,0,0,.2)');if(o.kind==='peel'){R_(-6,0,6,3,'#8a4a6a');R_(1,-1,5,3,'#a85a7a');R_(-2,2,4,2,'#f0c080');}else if(o.kind==='print'){for(let i=0;i<3;i++){R_(-7+i*5,(i%2)*3-1,3,4,'#5a3a1a');}}else{R_(-5,-1,9,4,'#3a8a3a');R_(-3,0,4,2,'#222');R_(2,1,2,1,'#333');}
+  if((frameCount>>3)%6<3){R_(5,-8,1,5,'#fff6a0');R_(3,-6,5,1,'#fff6a0');}}
+function storyObjs(){const o=[],L=G.story&&G.story.lu,T_=G.story&&G.story.thief;
+  if(L&&L.st==='hunt'&&L.usbHint&&!L.got.usb&&L.usbPos)o.push({kind:'usb',x:L.usbPos[0],y:L.usbPos[1]});
+  if(T_&&T_.st==='active'&&T_.clueAt)o.push({kind:'clue',x:T_.clueAt.x,y:T_.clueAt.y});return o;}
+function thiefDetail(){const T_=stTh();return'田裡的作物每天晚上都會少一棵（已經被偷了 '+T_.stolen+' 棵）。\n\n線索：'+(T_.clues.length?T_.clues.map(k=>TH_CLUE[k][0]).join('、'):'還沒有')+(T_.clueAt?'\n→ 田邊好像掉了什麼，去看看！':'')+'\n\n嫌疑犯：阿野、小鐘、阿宇\n跟他們說話時可以直接問「是你偷的嗎？」\n（問錯人，好感會下降）\n\n或是晚上 11 點後，到田裡埋伏……';}
+function thiefEnd(end){const T_=stTh();T_.end=end;T_.st='done';T_.doneDay=G.day;updStoryBar();
+  const g=end==='A'?2000:1000;G.gold+=g;if(G.today)G.today.earn+=g;G.food.lambstew=(G.food.lambstew||0)+(end==='A'?2:1);addRel('camper',end==='A'?20:10);updHUD();updTB();saveGame();
+  popInfo('半夜偷菜事件｜'+(end==='A'?'當場抓到！':'真相大白'),(end==='A'?'阿野抱著一鍋燉菜，被你叫醒後一臉茫然：\n「……咦？我怎麼在這裡？」\n\n原來阿野有夢遊的毛病，\n半夜會跑去田裡拔菜，回營火邊燉湯，\n醒來什麼都不記得。\n\n阿野：「對不起對不起！\n這些賠給你，以後我睡覺前會把自己綁在睡袋裡！」':'阿野沉默了很久：\n「……其實，我常常醒來發現鍋子裡有菜，\n手上都是泥巴。我一直以為是作夢……」\n\n原來阿野會夢遊，半夜跑去你的田裡拔菜。\n\n阿野：「對不起！這些賠給你。」')+'\n\n獲得 '+g+'G・羊肉爐 ×'+(end==='A'?2:1)+'\n阿野好感上升，作物不會再被偷了','好',null,'#ffcf40');}
+function thiefTick(){const T_=G.story&&G.story.thief;if(!T_||T_.st!=='active'||!T_.clues.length||G.ph!=='play'||T_.watchDay===G.day||G.time<23*60)return;
+  const tx=Math.floor(G.px/TILE),ty=Math.floor(G.py/TILE);if(zoneOf(G.px)!==0||tx>17||ty>17)return;
+  if(![[0,0],[1,0],[-1,0],[0,1],[0,-1]].some(([a,b])=>[T.TI,T.WA,T.D].includes(G.map[ty+b]&&G.map[ty+b][tx+a])))return;
+  T_.watchDay=G.day;sfx('bite');festPop('半夜偷菜事件','你躲在田邊等著……\n\n沙沙……沙沙……\n一個黑影搖搖晃晃地走進田裡，\n蹲下來開始拔菜。',[['大喊「抓到你了！」',()=>{if(!T_.clues.includes('ash'))T_.clues.push('ash');else if(!T_.clues.includes('print'))T_.clues.push('print');saveGame();updStoryBar();popInfo('黑影跑掉了！','黑影嚇了一跳，抱著菜往南邊跑走了，\n地上掉了一根燒焦的木柴……\n\n看起來是從露營區的營火來的。\n（得到一個線索）','可惡……',null,'#ff8a80');}],['悄悄跟上去',()=>{popInfo('跟蹤','你躡手躡腳地跟在黑影後面，\n一路走到農場南邊的露營區。\n\n黑影把菜丟進營火上的鍋子，\n開始……燉湯？\n\n你走近一看——是阿野！\n他的眼睛是閉著的。','叫醒他',()=>thiefEnd('A'),'#e86a8a');}]],'#e86a8a');}
+function thiefTalk(n,btns){const T_=stTh();if(T_.st!=='active'||!['camper','mickey','jie'].includes(n.id))return;
+  btns.splice(Math.max(0,btns.length-1),0,['問：是你偷的菜嗎？','bp',()=>{closeTalk();
+    if(n.id==='camper'){if(T_.clues.length>=2){thiefEnd('B');return;}popInfo('阿野','我？我每天晚上都睡得很熟啊。\n……不過說也奇怪，\n最近醒來常常在奇怪的地方。\n\n（證據還不夠……再找找線索吧）','嗯……',null,'#e86a8a');return;}
+    if(!T_.wrong.includes(n.id)){T_.wrong.push(n.id);addRel(n.id,-10);saveGame();}
+    popInfo(SHORT[n.id],n.id==='mickey'?'我泡麵裡的青菜是跟阿梅買的啦！\n收據給你看！\n……你居然懷疑教練？\n\n（小鐘有點受傷，好感下降）':'我偷菜？\n好啦我承認我說過很多次「下次一定」，\n但那是羽球！不是菜！\n\n（阿宇有點受傷，好感下降）','對不起……',null,'#ff8a80');},'bolt']);}
 
 function spendE(n){if(G.full<=0)n*=2;G.en=Math.max(0,G.en-n);updHUD();}
 function nextDay(){tutEvent('sleep');wishIntro();storyNight();G.day++;{const o=npcOff('su');G.day--;const pv=npcOff('su');G.day++;if(o&&!pv)setTimeout(()=>msg(OFF_MSG[o]),1800);}if(G.saplings)for(const k in G.saplings){if(G.day-G.saplings[k]>=3){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.SPROUT){G.map[y][x]=T.TREE;if(!G.planted)G.planted=[];G.planted.push(k);if(G.cleared)G.cleared=G.cleared.filter(v=>v!==k);}delete G.saplings[k];}}if(G.stumps)for(const k in G.stumps){if(--G.stumps[k]<=0){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.STUMP)G.map[y][x]=T.TREE;delete G.stumps[k];}}if(G.orders&&G.orders.length){const got=G.orders.map(k=>{G.owned.push(k);return lookName(k);});G.orders=[];setTimeout(()=>msg('叮咚！線上商城的包裹送到了\n'+got.join('、')+'\n可以到家裡的衣櫃換上喔'),4000);}let rev=0;{if(!G.tdays)G.tdays={};for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const t=G.map[y][x],k=x+','+y;if((t===T.TI||t===T.WA)&&!G.cr[y][x]){G.tdays[k]=(G.tdays[k]||0)+1;if(G.tdays[k]>=3){G.map[y][x]=T.D;delete G.tdays[k];rev++;}}else delete G.tdays[k];}}G.time=330;G.log=[];G.logSeen=0;G.logNew=false;updLogBtn();let seasonMsg='';if((G.day-1)%SEASON_LEN===0){const sc=seasonCrops();let w=0,sl=0;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c||c.type==='grass')continue;if(sc.includes(c.type)){c.slow=false;continue;}if(Math.random()<.35){G.cr[y][x]=null;w++;G.drops.push({x:(x+.5)*TILE+Math.random()*10-5,y:(y+.5)*TILE+6,crop:c.type,qty:1+Math.floor(Math.random()*2)});}else{c.slow=true;sl++;}}buildTools();{const sc2=seasonCrops(),q=[5,3,1,1];sc2.forEach((k,i)=>G.seeds[k]=(+G.seeds[k]||0)+q[i]);G.drop={t:0,txt:sc2.map((k,i)=>CROPS[k].n+'×'+q[i]).join('、')};}seasonMsg='\n'+SEASONS[season()]+'天到了！'+(w?'\n'+w+' 株作物不耐季節枯萎了，種子掉在田邊':'')+(sl?'\n'+sl+' 株非當季作物會長得比較慢':'')+(!w&&!sl?'商店有新的種子喔':'');}for(const r of G.reqs)r.days--;genRequests();G.today=newToday();G.campGuest=Math.random()<.45?(Math.random()<.5?'guide':'rancher'):null;G.campGuestDay=G.day;G.campStay=Math.random()<.5;G.helper=Math.random()<.45?['yu','guide','song','song'][Math.floor(Math.random()*4)]:null;if(G.cat&&G.cat.adopted&&G.cat.fishDay===G.day-1&&Math.random()<.6){const r=Math.random();let txt;if(r<.5){const sc3=seasonCrops(),k=sc3[Math.floor(Math.random()*sc3.length)];G.seeds[k]=(+G.seeds[k]||0)+2;txt=CROPS[k].n+'種子 ×2';}else{const g=30+Math.floor(Math.random()*5)*10;G.gold+=g;txt=g+'G';}setTimeout(()=>msg('阿喵叼了禮物回來：'+txt+'！'),5200);}rollEvent();announceEvent();setTimeout(()=>msg('村子入口旁的委託告示板\n有 '+G.reqs.length+' 件委託'),2600);G.en=MAX_E;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c)continue;if((c.watered||c.type==='grass')&&!(c.slow&&(c.sk=!c.sk))){c.daysLeft--;if(c.daysLeft<=0&&c.stage<3){c.stage++;c.daysLeft=CROPS[c.type].d;}}c.watered=false;if(G.map[y][x]===T.WA)G.map[y][x]=T.TI;}let hungry=0;for(const a of G.animals){if(G.trough>0){G.trough--;a.fed=true;if(a.petDay===G.day-1)a.love=Math.min(5,a.love+1);if(a.baby>0){a.baby--;}else if(!a.readyProduct){a.daysLeft--;if(a.daysLeft<=0){a.readyProduct=true;a.bonus=a.love>=4&&Math.random()<.4;a.daysLeft=ANIMAL_DATA[a.type].days;}}}else{a.fed=false;a.love=Math.max(0,a.love-1);hungry++;}}
