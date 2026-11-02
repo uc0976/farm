@@ -2613,7 +2613,7 @@ function tickClock(now){
   if(cross(22))msg('已經晚上 10 點了，\n該回家睡覺囉！');
   if(cross(24))msg('半夜 12 點了，6-TWELVE 也打烊了…\n快回家睡覺吧！');
   if(G.time>=26*60){G.time=26*60;passOut();}
-  updClock();tutTick();festCheck();
+  updClock();tutTick();festCheck();storyTick();
 }
 function passOut(){if(G.ph==='busy')return;G.time=26*60;endDay(true);}
 const TINT=[[0,[15,18,55,.6]],[5.5,[30,30,80,.5]],[6.5,[255,170,110,.14]],[7.5,[0,0,0,0]],[16.5,[0,0,0,0]],[17.8,[255,140,60,.2]],[19,[80,50,120,.36]],[20.5,[20,25,70,.52]],[24,[15,18,55,.6]],[26,[12,14,48,.64]]];
@@ -3874,7 +3874,9 @@ function luGotText(){const g=stLu().got,a=[];if(g.usb)a.push('隨身碟');if(g.l
 function storyNight(){const L=stLu();if(L.st==='hunt'||L.st==='wait'){L.grade=luGrade();L.st='result';G.sobj=null;}setTimeout(storyMorning,5800);}
 function storyMorning(){if(!started)return;const L=stLu();
   if(L.st==='result'){const[t,body,gold,rel]=LU_GRADE[L.grade];L.st='done';L.doneDay=G.day;G.gold+=gold;if(G.today)G.today.earn+=gold;for(const id in rel)addRel(id,rel[id]);updHUD();saveGame();sfx(L.grade==='A'?'catch':'click');popInfo('小路的論文大危機｜'+t,body,'好',null,L.grade==='D'?'#ff8a80':'#ffcf40');return;}
-  if(L.st==='none'&&G.day>=6&&(G.rel.lu||0)>=40&&!G.festOn){L.st='call';saveGame();updStoryBar();msg('小路傳來訊息：\n「救命！！！快來找我！！」');sfx('bite');}}
+  if(L.st==='none'&&G.day>=6&&(G.rel.lu||0)>=40)L.pend=G.day;}
+// 每分鐘檢查：小路起床（6:30）後才傳訊息求救
+function storyTick(){const L=G.story&&G.story.lu;if(!L||L.st!=='none'||L.pend!==G.day||G.time<6.5*60||G.festOn||G.ph!=='play')return;L.st='call';L.pend=null;saveGame();updStoryBar();msg('小路傳來訊息：\n「救命！！！我一起床筆電就藍屏了！！\n快來找我！！」');sfx('bite');}
 function luStart(){const L=stLu();closeTalk();L.st='hunt';L.day=G.day;L.got={};L.delivered=false;saveGame();updStoryBar();
   popInfo('小路的論文大危機','小路抱著筆電，臉色發白：\n「筆電藍屏了……論文檔案全部不見了。\n明天早上九點就要口試……哈哈……笑不出來。」\n\n今晚睡覺前，幫小路把論文找回來！\n・饅頭好像有幫他備份\n・阿翔有一台筆電\n・小丁是他的研究所同學','我來想辦法！',null,'#e86a8a');}
 function luDeliver(){const L=stLu();closeTalk();L.delivered=true;L.st='wait';saveGame();updStoryBar();const g=L.got;
@@ -4103,6 +4105,7 @@ function updateRes(){const vis=zoneOf(G.px)===2?roomAt(G.px,G.py):null,entered=v
       const cx=Math.floor(S.x/TILE),cy=Math.floor(S.y/TILE);if(cand.some(([a,b])=>a===cx&&b===cy)||S.bedTry>2){S.sleep=true;S.slot=sl;S.bedTry=0;const[hx,hy]=slotHead(sl);S.x=hx;S.y=hy;continue;}
       if(cand.length){const p=bfs(cx,cy,new Set(cand.map(([a,b])=>b*MW+a)),(x,y)=>resFree(S.at,x,y));S.bedTry=(S.bedTry||0)+1;if(p){S.path=p.map(c=>({x:(c.x+.5)*TILE,y:(c.y+.5)*TILE}));if(!S.sayT){S.say='好睏……去睡了。';S.sayT=110;}continue;}}
       S.sleep=true;continue;}
+    if(S.sleep&&!(W&&W.sleep)){wakeRes(S);if(!S.sayT){S.say='早安～';S.sayT=110;}continue;}
     if(S.sleep)continue;
     if(S.chatW){const o=RS[S.chatW];if(!o||o.at!==S.at||o.sleep){S.chatW=null;}else{const dx=o.x-S.x,dy=o.y-S.y;S.dir=Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up');continue;}}
     if(Math.hypot(S.x-G.px,S.y-G.py)<TILE*1.6){faceP(S);continue;}
@@ -4130,7 +4133,11 @@ function resAtTap(wx,wy){const vis=RSVIS;if(!vis)return null;for(const R of RESI
 function resGoal(S){if(S.sleep&&S.slot){const s=S.slot,g=new Set();for(let y=s.y;y<s.y+s.h;y++)for(let x=s.x;x<s.x+s.w;x++)for(const q of neighborGoals(x,y))g.add(q);return{goals:g,mark:{tx:s.x,ty:s.y}};}
   const x=Math.floor(S.x/TILE),y=Math.floor(S.y/TILE);return{goals:neighborGoals(x,y),mark:{tx:x,ty:y}};}
 const RES_SLEEP={ak:'饅頭睡得很熟……\n「……下次一定……」（說夢話）',jie:'阿宇睡得很熟，嘴裡還在哼〈晴天〉……',lin:'林奶奶睡得很安穩。\n……輕輕的，不要吵醒她。',mickey:'小鐘抱著演唱會手燈睡著了。',chen:'阿辰睡成一個大字形，\n被子又掉到地上了。'};
-function resTalk(S){if(S.sleep&&S.id==='lu'&&S.at==='ak'){msg('小路跟饅頭擠在同一張床上睡著了。\n被子……好像都被小路捲走了。');return;}if(S.sleep&&S.id==='ak'&&RS.lu&&RS.lu.at==='ak'&&RS.lu.sleep){msg('饅頭被擠到床邊睡著了，\n說夢話：「……床分你一半，棉被不准搶……」');return;}if(S.sleep){msg(RES_SLEEP[S.id]||(SHORT[S.id]+'睡得很熟……\nZzz…'));return;}
+// 從床上起來，站到床邊空著的格子
+function wakeRes(S){const sl=S.slot;S.sleep=false;S.slot=null;S.path=[];S.dir='down';S.wait=60;if(!sl)return;let best=null,bd=1e9;const[hx,hy]=slotHead(sl);
+  for(let y=sl.y-1;y<=sl.y+sl.h;y++)for(let x=sl.x-1;x<=sl.x+sl.w;x++){if(x>=sl.x&&x<sl.x+sl.w&&y>=sl.y&&y<sl.y+sl.h)continue;if(!resFree(S.at,x,y))continue;const d=Math.hypot((x+.5)*TILE-hx,(y+.5)*TILE-hy);if(d<bd){bd=d;best=[x,y];}}
+  if(best){S.x=(best[0]+.5)*TILE;S.y=(best[1]+.5)*TILE;}}
+function resTalk(S){if(S.sleep&&S.id==='lu'&&/^(call|hunt)$/.test(stLu().st)){wakeRes(S);msg('你把小路搖醒了……\n小路：「……嗯？論文！？」');}if(S.sleep&&S.id==='lu'&&S.at==='ak'){msg('小路跟饅頭擠在同一張床上睡著了。\n被子……好像都被小路捲走了。');return;}if(S.sleep&&S.id==='ak'&&RS.lu&&RS.lu.at==='ak'&&RS.lu.sleep){msg('饅頭被擠到床邊睡著了，\n說夢話：「……床分你一半，棉被不准搶……」');return;}if(S.sleep){msg(RES_SLEEP[S.id]||(SHORT[S.id]+'睡得很熟……\nZzz…'));return;}
   faceTo(S.x,S.y);const pr={id:S.id,name:S.name,row:S.row,x:S.x,y:S.y,dir:S.dir,line:S.line||0,res:S,home:true};openTalk(pr);S.line=pr.line;}
 function homeLine(n){const L=HOME_LINES[n.id];if(!L)return lineFor(n);n.hl=(n.hl||Math.floor(Math.random()*L.length))+1;return L[n.hl%L.length];}
 
