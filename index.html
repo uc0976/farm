@@ -4032,7 +4032,9 @@ function placeRes(S,R,W){S.path=[];S.moving=false;S.sleep=false;S.slot=null;
   const sp=resSpots(S.at).filter(([x,y])=>!(Math.floor(G.px/TILE)===x&&Math.floor(G.py/TILE)===y));if(sp.length){const[x,y]=sp[Math.floor(Math.random()*sp.length)];S.x=(x+.5)*TILE;S.y=(y+.5)*TILE;S.dir='down';}S.wait=60+Math.random()*200;}
 function resWalkIn(S){const sp=resSpots(S.at);if(!sp.length)return;const ex=Math.floor(S.x/TILE),ey=Math.floor(S.y/TILE);sp.sort((a,b)=>Math.hypot(b[0]-ex,b[1]-ey)-Math.hypot(a[0]-ex,a[1]-ey));const pick=sp[Math.floor(Math.random()*Math.min(5,sp.length))];const p=resPath(S,pick[0],pick[1]);if(p)S.path=p;S.wait=200;}
 function resVisible(id){const S=RS[id];return!!(S&&S.at&&S.at===RSVIS);}
-function updateRes(){const vis=zoneOf(G.px)===2?roomAt(G.px,G.py):null,entered=vis!==RSVIS;RSVIS=vis;
+// 小蘇回台東或去比賽時，走進她的房間會看到她留的紙條
+const SU_NOTE={fest:'小蘇不在房間……\n書桌上留了一張紙條：\n「我回台東參加部落的祭典囉！\n夏天結束前就回來～」',games:'小蘇不在房間……\n書桌上留了一張紙條：\n「我去參加全國原住民族運動會了！\n過幾天就回來，幫我加油喔！」'};
+function updateRes(){const vis=zoneOf(G.px)===2?roomAt(G.px,G.py):null,entered=vis!==RSVIS;RSVIS=vis;if(entered&&vis==='su'){const off=npcOff('su');if(off&&SU_NOTE[off])setTimeout(()=>msg(SU_NOTE[off]),400);}
   for(const R of RESIDENTS){let S=RS[R.id];if(!S)S=RS[R.id]={id:R.id,tall:(NPCS.find(v=>v.id===R.id)||{}).tall,row:resRow(R.id),name:resName(R.id),at:null,x:0,y:0,path:[],dir:'down',anim:0,wait:60,sayT:0,init:true};
     if(S.sayT>0)S.sayT--;const W=resWant(R,S),want=W?W.room:null;
     if(S.init){S.init=false;S.at=want;if(want)placeRes(S,R,W);continue;}
