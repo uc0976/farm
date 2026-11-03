@@ -4072,7 +4072,7 @@ function openSettings(){if(G.ph!=='play'&&G.ph!=='market')return;clearPath();G.p
   act('搬家用存檔碼（換手機、換瀏覽器）','bp',()=>openSaveCode());
   act('重新開始遊戲','bc',()=>{confirmRestart('第 '+G.day+' 天・'+G.gold+'G',()=>{try{localStorage.removeItem(SAVE_KEY);}catch(e){}started=false;location.reload();});});
   act('關閉','bc',closeOm);
-  {const c=el('div','qhint','版本 v'+GAME_VER+'（'+GAME_DATE+'）\n人物素材：Farming RPG Character by CrowCatcher');c.style.cssText='text-align:center;margin-top:10px';box.appendChild(c);}
+  {const c=el('div','qhint','版本 v'+GAME_VER+'（'+GAME_DATE+'）\n人物素材：Farming RPG Character by CrowCatcher');c.style.cssText='text-align:center;margin-top:10px;white-space:pre-line;line-height:1.8';box.appendChild(c);}
   document.getElementById('om').style.display='flex';}
 
 
