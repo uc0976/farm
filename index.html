@@ -296,10 +296,13 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
   <div style="font-size:11px;color:#ccc;line-height:2">種田、交朋友，在小村子過自己的慢生活<br>第一次玩會有新手教學一步一步帶你上手</div>
   <div id="st-go" style="margin-top:4px;font-size:11px;font-weight:700;color:var(--gold);border:2px solid var(--gold);padding:10px 26px;border-radius:8px">點擊開始遊戲</div>
   <button id="st-new" type="button" hidden style="font-family:var(--font-ui);font-size:11px;color:#ccc;background:transparent;border:1px solid #666;border-radius:6px;padding:6px 14px;cursor:pointer">重新開始新遊戲</button>
+  <div id="st-ver" style="font-size:10px;color:#888;margin-top:2px"></div>
 </div>
 </div>
 <script>
 'use strict';
+// 版本號：每次更新往上加，開始畫面和設定頁會顯示
+const GAME_VER='1.13',GAME_DATE='2026-11-03';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -3998,12 +4001,20 @@ function confirmRestart(info,onOK){const old=document.getElementById('rsov');if(
   h.addEventListener('click',e=>e.stopPropagation());h.addEventListener('contextmenu',e=>e.preventDefault());
   const c=el('button','bp','不要，我要繼續玩');c.type='button';c.onclick=e=>{e.stopPropagation();stop();ov.remove();};b.appendChild(c);
   ov.addEventListener('click',e=>e.stopPropagation());document.getElementById('G').appendChild(ov);}
+// 讀檔前再確認一次：顯示兩邊的進度，長按 3 秒才會覆蓋
+function confirmLoadCode(o,txt){const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn','確定要覆蓋存檔嗎？');t.style.color='#ff8a80';box.appendChild(t);
+  const info=s=>'第 '+(s.day||1)+' 天・'+(s.gold||0)+'G'+(s.pname?'・'+s.pname:'');
+  box.appendChild(el('div','dpd','要讀取的存檔：'+info(o)+'\n目前的存檔：'+info(G)+'\n\n目前的進度會被取代，而且無法復原！\n確定的話，長按下面的按鈕 3 秒。'));
+  const ok=el('button','bp','長按 3 秒覆蓋存檔');ok.type='button';ok.style.cssText='background:#5a1a10;border-color:#ff8a80;touch-action:none;user-select:none;-webkit-user-select:none';box.appendChild(ok);
+  holdToConfirm(ok,3000,()=>{ok.textContent='覆蓋中……';try{localStorage.setItem(SAVE_KEY,txt);}catch(e){msg('存檔失敗，請再試一次');return;}started=false;location.reload();});
+  const no=el('button','bc','取消，不要覆蓋');no.type='button';no.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(no);
+  document.getElementById('dp').style.display='flex';}
 function openSaveCode(){saveGame();const box=document.getElementById('mbox');box.innerHTML='';G.ph='market';box.appendChild(el('div','ot','存檔碼'));
   box.appendChild(el('div','qhint','存檔只會存在「這個瀏覽器」裡。換手機、換 App 或用 LINE 打開時，要用存檔碼把進度搬過去。\n① 在舊的地方按「複製存檔碼」\n② 到新的地方貼上，按「讀取存檔碼」'));
   let code='';try{code=btoa(unescape(encodeURIComponent(localStorage.getItem(SAVE_KEY)||'')));}catch(e){}
   const ta=document.createElement('textarea');ta.value=code;ta.rows=4;ta.style.cssText='width:100%;font-family:monospace;font-size:11px;background:#120a04;color:var(--ink);border:2px solid #4a3520;padding:6px;box-sizing:border-box';box.appendChild(ta);
   const cp=el('button','bp','複製存檔碼');cp.type='button';cp.onclick=()=>{ta.select();(navigator.clipboard?navigator.clipboard.writeText(ta.value):Promise.reject()).then(()=>{cp.textContent='已複製！';},()=>{try{document.execCommand('copy');cp.textContent='已選取，請長按複製';}catch(e){cp.textContent='請長按上面的文字複製';}});};box.appendChild(cp);
-  const ld=el('button','bp','讀取存檔碼（會取代目前進度）');ld.type='button';ld.onclick=()=>{const v=ta.value.trim();if(!v){msg('先把存檔碼貼到上面的框框裡喔');return;}try{const txt=decodeURIComponent(escape(atob(v)));const o=JSON.parse(txt);if(!o||!o.v)throw 0;localStorage.setItem(SAVE_KEY,txt);started=false;location.reload();}catch(e){msg('這個存檔碼看起來不對，\n再檢查一下有沒有貼完整');}};box.appendChild(ld);
+  const ld=el('button','bp','讀取存檔碼（會取代目前進度）');ld.type='button';ld.onclick=()=>{const v=ta.value.trim();if(!v){msg('先把存檔碼貼到上面的框框裡喔');return;}try{const txt=decodeURIComponent(escape(atob(v)));const o=JSON.parse(txt);if(!o||!o.v)throw 0;confirmLoadCode(o,txt);}catch(e){msg('這個存檔碼看起來不對，\n再檢查一下有沒有貼完整');}};box.appendChild(ld);
   const c=el('button','bc','關閉');c.type='button';c.onclick=closeOm;box.appendChild(c);document.getElementById('om').style.display='flex';}
 function openRename(){clearPath();G.ph='market';const box=document.getElementById('mbox');box.innerHTML='';box.appendChild(el('div','ot','改名字'));box.appendChild(el('div','qhint','最多 8 個字，改完村民就會用新名字叫你'));
   const inp=document.createElement('input');inp.type='text';inp.maxLength=8;inp.value=G.pname||'小農夫';inp.className='nameinp';inp.style.cssText='width:100%;box-sizing:border-box;font-size:22px;margin:8px 0';inp.setAttribute('aria-label','名字');box.appendChild(inp);
@@ -4022,7 +4033,7 @@ function openSettings(){if(G.ph!=='play'&&G.ph!=='market')return;clearPath();G.p
   act('搬家用存檔碼（換手機、換瀏覽器）','bp',()=>openSaveCode());
   act('重新開始遊戲','bc',()=>{confirmRestart('第 '+G.day+' 天・'+G.gold+'G',()=>{try{localStorage.removeItem(SAVE_KEY);}catch(e){}started=false;location.reload();});});
   act('關閉','bc',closeOm);
-  {const c=el('div','qhint','人物素材：Farming RPG Character by CrowCatcher');c.style.cssText='text-align:center;margin-top:10px';box.appendChild(c);}
+  {const c=el('div','qhint','版本 v'+GAME_VER+'（'+GAME_DATE+'）\n人物素材：Farming RPG Character by CrowCatcher');c.style.cssText='text-align:center;margin-top:10px';box.appendChild(c);}
   document.getElementById('om').style.display='flex';}
 
 
@@ -4638,6 +4649,7 @@ function startGame(fresh){
   ge.focus();saveGame();
 }
 document.getElementById('st').addEventListener('click',()=>startGame(false));
+document.getElementById('st-ver').textContent='版本 v'+GAME_VER;
 (function(){
   const go=document.getElementById('st-go'),rs=document.getElementById('st-new');
   if(SAVED){go.textContent='繼續遊戲（第 '+SAVED.day+' 天）';rs.hidden=false;}
