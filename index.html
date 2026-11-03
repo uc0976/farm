@@ -330,7 +330,8 @@ const SEASON_PAL=[{g:'#4a7c3f',gd:'#3d6b34',tree:['#2f5a2a','#3f7a36','#5a9a48',
   {g:'#d8e2e8',gd:'#b4c4d0',tree:['#3a5a4a','#e8f0f4','#ffffff','#2a4a3a'],fl:['#ffffff','#c8dce8','#ffffff']}];
 function SP(){return SEASON_PAL[season()];}
 let TOOLS=[];
-function curSeed(){let k=G.curSeed;if(!k||!CROPS[k]||(!inSeason(k)&&k!=='grass'&&!(G.seeds[k]>0))){const sc=seasonCrops();k=sc.find(c=>G.seeds[c]>0)||sc[0];G.curSeed=k;}return k;}
+// 手上的種子用完了：先換同一季還有的種子，再換全年作物、牧草，最後才是其他季的種子
+function curSeed(){let k=G.curSeed;if(!k||!CROPS[k]||!(G.seeds[k]>0)){const sc=seasonCrops(),n=[...sc,'wheat','rice','grass',...Object.keys(CROPS)].find(c=>G.seeds[c]>0);if(n)k=n;else if(!k||!CROPS[k]||(!inSeason(k)&&k!=='grass'))k=sc[0];G.curSeed=k;}return k;}
 // ===== 工具升級：普通 → 銅 → 鐵 → 金 =====
 const TOOL_LV=['','銅','鐵','金'],TOOL_LVC=['#ddd','#e0a070','#cfd8dc','#ffd54f'],WCAP=[20,40,60,100];
 const TOOL_COST=[null,[1000,10],[3000,25],[8000,50]];
@@ -2525,7 +2526,7 @@ function useTool(){if(G.ph!=='play'||G.act)return;const[fx,fy]=getFacing();if(fx
   if(tool==='hoe'&&(t===T.TI||t===T.WA)&&c){if(G.digArm&&G.digArm[0]===fx&&G.digArm[1]===fy&&frameCount-G.digArm[2]<300){G.digArm=null;G.cr[fy][fx]=null;G.map[fy][fx]=T.D;if(G.tdays)delete G.tdays[fx+','+fy];G.seeds[c.type]=(G.seeds[c.type]||0)+1;playAct('hoe');sfx('hoe');buildTools();updTB();msg('把'+CROPS[c.type].n+'鏟起來了\n種子 ×1 已經放回物品欄\n這格變回泥土，要再翻土才能種');saveGame();}else{G.digArm=[fx,fy,frameCount];msg('這裡種了'+CROPS[c.type].n+'。\n再用鋤頭點一次，就會鏟起來並歸還種子');}return;}
   if(tool==='hoe'){if(t!==T.D){msg('只能在農地使用鋤頭！');return;}const cs=toolArea(fx,fy,tlv('hoe')).filter(([x,y],i)=>!i||(G.map[y][x]===T.D&&!(G.cr[y]&&G.cr[y][x])&&!buildAt(x,y)));playAct('hoe');sfx('hoe');for(const[x,y]of cs){G.map[y][x]=T.TI;if(G.tdays)delete G.tdays[x+','+y];}spendE(1+cs.length);msg(cs.length>1?'翻土完成！×'+cs.length+' 格':'翻土完成！');tutEvent('till');}
   else if(tool==='water'){if(G.water<=0){msg('水桶空了！\n去水井裝水。');return;}const cs=toolArea(fx,fy,tlv('water')).filter(([x,y])=>(G.map[y][x]===T.TI||G.map[y][x]===T.WA)&&G.cr[y][x]&&!G.cr[y][x].watered).slice(0,G.water);if(!cs.length){if(t!==T.TI&&t!==T.WA){msg('先翻土再澆水！');return;}if(!c){msg('先種下種子！');return;}msg('已澆過水了。');return;}playAct('water');sfx('water');for(const[x,y]of cs){G.cr[y][x].watered=true;G.map[y][x]=T.WA;}G.water-=cs.length;spendE(1+cs.length);if(G.water<=0)msg('水桶的水用完了！\n去水井裝水吧。');else if(cs.length>1)msg('澆了 '+cs.length+' 格！');updTB();tutEvent('water');}
-  else if(!!CROPS[tool]){if(t!==T.TI&&t!==T.WA){msg('先翻土才能播種！');return;}if(c){msg('這裡已有作物了。');return;}if(G.seeds[tool]<=0){msg('沒有'+CROPS[tool].n+'種子了！');return;}G.seeds[tool]--;sfx('plant');G.cr[fy][fx]={type:tool,stage:0,watered:false,daysLeft:CROPS[tool].d,slow:!inSeason(tool)};if(!G.seeds[tool])buildTools();spendE(1);msg('種下'+CROPS[tool].n+'種子！');updTB();tutEvent('plant');}
+  else if(!!CROPS[tool]){if(t!==T.TI&&t!==T.WA){msg('先翻土才能播種！');return;}if(c){msg('這裡已有作物了。');return;}if(G.seeds[tool]<=0){msg('沒有'+CROPS[tool].n+'種子了！');return;}G.seeds[tool]--;sfx('plant');G.cr[fy][fx]={type:tool,stage:0,watered:false,daysLeft:CROPS[tool].d,slow:!inSeason(tool)};if(!G.seeds[tool]){buildTools();const nk=curSeed();if(nk!==tool&&G.seeds[nk]>0)setTimeout(()=>msg(CROPS[tool].n+'種子用完了，\n手上換成'+CROPS[nk].n+'種子（剩 '+G.seeds[nk]+' 包）'),900);}spendE(1);msg('種下'+CROPS[tool].n+'種子！');updTB();tutEvent('plant');}
 }
 // ===== 畜欄：飼料槽與照顧動物 =====
 // 長按確認：按住 ms 毫秒，卡片背景會慢慢填滿紅色；中途放開就重來
@@ -2863,7 +2864,7 @@ function openBag(focus){
   const box=document.getElementById('mbox');box.innerHTML='';box.appendChild(el('div','ot','背包'));{const nk=invKinds(bagInv());box.appendChild(el('div','qhint'+(nk>=BAG_KINDS?' bagfull':''),'已放 '+nk+'/'+BAG_KINDS+' 種・每種最多 '+STACK+' 個'+(nk>=BAG_KINDS?'｜滿了！放進木箱或賣掉吧':'')+'（種子和工具不佔空間）'));}
   const tabs=el('div','bagtabs');for(const[k,nm]of BAG_TABS){const b=el('button',k===tab?'act':'',nm);b.type='button';b.onclick=()=>openBag(k);tabs.appendChild(b);}box.appendChild(tabs);
   const rows=[];
-  if(tab==='seed'){const cur=curSeed(),list=[...seasonCrops(),'wheat','rice','grass',...Object.keys(CROPS).filter(k=>!inSeason(k)&&k!=='grass'&&G.seeds[k]>0)];
+  if(tab==='seed'){const cur=curSeed(),list=[...new Set([...seasonCrops(),'wheat','rice','grass',...Object.keys(CROPS)])].filter(k=>G.seeds[k]>0);
     for(const k of list){const d=CROPS[k],on=k===cur,b=el('button','bb',on?'手上':'拿著');b.type='button';b.style.cssText=on?'background:#3a2a10;border-color:#f9c74f;color:#f9c74f':'background:#1b4e6e;border-color:#4ab0e0';
       b.onclick=()=>{G.curSeed=k;buildTools(true);G.tool=TOOLS.findIndex(t=>t.id===k);closeOm();updTB();msg('手上拿著'+d.n+'種子（剩 '+G.seeds[k]+' 包）');};
       rows.push(bagRow('seed:'+k,d.n+'種子 ×'+G.seeds[k],k==='grass'?'牧草：割下來給動物吃，根還在會再長':CROPS[k].allYear?'全年都能種・'+d.d+' 天長一階・可以賣給阿牧':inSeason(k)?'當季作物・'+d.d+' 天長一階':'非當季・會長得比較慢',b));}}
