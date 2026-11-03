@@ -302,7 +302,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 <script>
 'use strict';
 // 版本號：每次更新往上加，開始畫面和設定頁會顯示
-const GAME_VER='1.13',GAME_DATE='2026-11-03';
+const GAME_VER='1.14',GAME_DATE='2026-11-03';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -3547,7 +3547,7 @@ const EVENTS={
   sale:{n:'6-TWELVE 大特價',am:'6-TWELVE 今天全部八折！'},
   lost:{n:'阿山的登山帽',am:'阿山好像在找什麼東西…'}};
 function evIs(id){return G.event&&G.event.id===id;}
-function shopDisc(){return G.discount*(evIs('sale')?.8:1);}
+function shopDisc(){return G.discount*(evIs('sale')?.8:1)*(martChain()?1.1:1);}
 // 從家門口的小路（4,8）出發，戶外所有走得到的格子（早上主角在室內，室內跟戶外不相連，所以不從主角位置算）
 function reachable(){const seen=new Set(),q=[[4,8]];seen.add(q[0][1]*MW+q[0][0]);
   while(q.length){const[x,y]=q.shift();for(const[a,b]of[[x+1,y],[x-1,y],[x,y+1],[x,y-1]]){const k=b*MW+a;if(!seen.has(k)&&travelAllowed(a,b)){seen.add(k);q.push([a,b]);}}}return seen;}
@@ -3794,6 +3794,8 @@ const QUESTS=[
   ['st_lu_a','完美口試','找齊隨身碟和筆電，讓小路完美通過口試','ui:chart','story','st_lu',()=>!!(G.story.lu&&G.story.lu.grade==='A'),1000],
   ['st_thief','偷菜真相','查出半夜偷菜的犯人','sweetpotato','story','st_lu',()=>!!(G.story.thief&&G.story.thief.st==='done'),500],
   ['st_thief_a','當場抓到','半夜埋伏，親眼看到犯人','ui:bulb','story','st_thief',()=>!!(G.story.thief&&G.story.thief.end==='A'),1000],
+  ['st_mart','保住 6-TWELVE','在收購危機中保住罐罐的店','ui:shop','story','st_thief',()=>!!(G.story.mart&&/^[AB]$/.test(G.story.mart.end||'')),500],
+  ['st_mart_a','人氣爆棚','把 6-TWELVE 的人氣衝到 100','coin','story','st_mart',()=>!!(G.story.mart&&G.story.mart.end==='A'),1000],
   // 委託
   ['req10','熱心村民','完成 10 件委託','basket','req','req5',()=>[G.stats.reqs,10],300],
   ['req30','村子的依靠','完成 30 件委託','ui:chart','req','req10',()=>[G.stats.reqs,30],600],
@@ -3876,8 +3878,8 @@ const LU_GRADE={
   D:['延畢了……','小路兩手空空去口試。\n老師：「那我們下學期見。」\n\n晚上小路傳訊息給你：\n「延畢了，哈哈笑死。\n……下學期我會記得先備份。」',0,{lu:5}]};
 function luGrade(){const L=stLu(),g=L.got;if(!L.delivered)return'D';if(g.usb&&g.laptop)return'A';if(g.usb)return'B';if(g.draft)return'C';return'D';}
 function luGotText(){const g=stLu().got,a=[];if(g.usb)a.push('隨身碟');if(g.laptop)a.push('筆電');if(g.draft)a.push('第一章初稿');return a.length?a.join('、'):'還沒有';}
-function storyNight(){const L=stLu();if(L.st==='hunt'||L.st==='wait'){L.grade=luGrade();L.st='result';}thiefNight();setTimeout(storyMorning,5800);}
-function storyMorning(){if(!started)return;thiefMorning();const L=stLu();
+function storyNight(){martNight();const L=stLu();if(L.st==='hunt'||L.st==='wait'){L.grade=luGrade();L.st='result';}thiefNight();setTimeout(storyMorning,5800);}
+function storyMorning(){if(!started)return;thiefMorning();martMorning();const L=stLu();
   if(L.st==='result'){const[t,body,gold,rel]=LU_GRADE[L.grade];L.st='done';L.doneDay=G.day;G.gold+=gold;if(G.today)G.today.earn+=gold;for(const id in rel)addRel(id,rel[id]);updHUD();saveGame();sfx(L.grade==='A'?'catch':'click');popInfo('小路的論文大危機｜'+t,body,'好',null,L.grade==='D'?'#ff8a80':'#ffcf40');return;}
   if(L.st==='none'&&G.day>=6&&(G.rel.lu||0)>=40)L.pend=G.day;}
 // 每分鐘檢查：小路起床（6:30）後才傳訊息求救
@@ -3892,7 +3894,7 @@ function pickStoryObj(o){if(!o)return;if(o.kind==='clue'){pickClue();return;}if(
 function drawStoryObj(o){if(!o)return;if(o.kind==='clue'){drawClue(o);return;}const sx=Math.round(o.x-cam.x),sy=Math.round(o.y-cam.y);if(sx<-20||sy<-20||sx>W2+20||sy>H2+20)return;const R_=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(sx+x,sy+y,w,h);};
   R_(-7,5,14,2,'rgba(0,0,0,.2)');R_(-6,-1,9,6,'#9aa4b0');R_(-6,-1,9,1,'#d0d8e0');R_(3,0,4,4,'#3a7ad8');R_(-4,1,4,2,'#f4f4f0');
   if((frameCount>>3)%6<3){R_(5,-7,1,5,'#fff6a0');R_(3,-5,5,1,'#fff6a0');}}
-function storyTalk(n,btns,m){thiefTalk(n,btns);const L=stLu(),add=(b)=>btns.splice(Math.max(0,btns.length-1),0,b);
+function storyTalk(n,btns,m){thiefTalk(n,btns);martTalk(n,btns,m);const L=stLu(),add=(b)=>btns.splice(Math.max(0,btns.length-1),0,b);
   if(n.id==='lu'){if(L.st==='call'){m.textContent='（小路抱著筆電，臉色發白）\n……你終於來了。';btns.unshift(['小路怎麼了？','bp',luStart,'bolt']);}
     else if(L.st==='hunt'){m.textContent='……找到了嗎？\n明天早上九點就要口試了……\n\n目前找到：'+luGotText();if(L.got.usb||L.got.laptop||L.got.draft)btns.unshift(['把找到的東西交給小路','bp',luDeliver,'gift']);}
     else if(L.st==='wait')m.textContent='東西都收好了！\n今晚……先睡一下好了。\n哈哈笑死，睡得著才怪。';return;}
@@ -3901,16 +3903,17 @@ function storyTalk(n,btns,m){thiefTalk(n,btns);const L=stLu(),add=(b)=>btns.spli
   if(n.id==='ted'&&!L.got.laptop)btns.unshift(['跟阿翔借筆電','bp',()=>{closeTalk();festPop('阿翔','筆電借你？OK！\n不過今天是 leg day，\n陪我練完腿就借你，right？',[['陪他練腿（體力 -30）',()=>{if(G.en<30){msg('太累了，練不動……\n先吃點東西再來吧');return;}spendE(30);L.got.laptop=1;sfx('heart');addRel('ted',5);msg('練完腿，腳一直在抖……\n不過借到阿翔的筆電了！');saveGame();updStoryBar();}],['用便當收買他'+((G.food.bento||0)>0?'':'（沒有便當）'),()=>{if(!((G.food.bento||0)>0)){msg('你身上沒有便當……\n6-TWELVE 的熟食櫃台有賣喔');return;}G.food.bento--;L.got.laptop=1;sfx('coin');msg('阿翔：「Deal！筆電拿去！」\n（借到阿翔的筆電了）');updTB();saveGame();updStoryBar();}],['等等再說',null,'bc']],'#e86a8a');},'bag']);
   if(n.id==='yu'&&!L.got.draft)btns.unshift(['問小丁有沒有小路的論文','bp',()=>{closeTalk();L.got.draft=1;sfx('click');saveGame();updStoryBar();popInfo('小丁','又是小路……\n我只有他上次寄給我看的初稿，\n不過只有第一章喔。\n\n……他到底寫了幾章啊？\n\n（拿到小路的第一章初稿）','謝謝小丁！',null,'#e86a8a');},'bulb']);}
 function updStoryBar(){const g=document.getElementById('G');if(!g||!G.story)return;let b=document.getElementById('storyb');
-  const L=G.story.lu,lo=started&&L&&(L.st==='call'||L.st==='hunt'||L.st==='wait'),T_=G.story.thief,to=started&&T_&&T_.st==='active';
-  if(!lo&&!to){if(b)b.remove();return;}
+  const L=G.story.lu,lo=started&&L&&(L.st==='call'||L.st==='hunt'||L.st==='wait'),T_=G.story.thief,to=started&&T_&&T_.st==='active',M_=G.story.mart,mo=started&&M_&&(M_.st==='call'||M_.st==='active');
+  if(!lo&&!to&&!mo){if(b)b.remove();return;}
   if(!b){b=document.createElement('div');b.id='storyb';b.className='storyb';b.onclick=e=>{e.stopPropagation();const parts=[];const L2=G.story.lu,T2=G.story.thief;
     if(L2&&/^(call|hunt|wait)$/.test(L2.st))parts.push('【小路的論文大危機】\n'+(L2.st==='call'?'小路傳訊息求救，去找他看看吧！':L2.st==='wait'?'東西已經交給小路了，\n明天早上就知道口試結果！':'今晚睡覺前，幫小路把論文找回來！\n・饅頭好像有幫他備份'+(L2.got.usb?'　✔ 隨身碟':L2.usbHint?'　→ 去海邊找隨身碟':'')+'\n・阿翔有一台筆電'+(L2.got.laptop?'　✔ 筆電':'')+'\n・小丁是他的研究所同學'+(L2.got.draft?'　✔ 初稿':'')+'\n找到的東西記得拿去給小路。')+'\n小路在：'+luWhere());
-    if(T2&&T2.st==='active')parts.push('【半夜偷菜事件】\n'+thiefDetail());
+    if(T2&&T2.st==='active')parts.push('【半夜偷菜事件】\n'+thiefDetail());const M2=G.story.mart;if(M2&&/^(call|active)$/.test(M2.st))parts.push('【6-TWELVE 收購危機】\n'+martDetail());
     popInfo('劇情任務',parts.join('\n\n'),'好',null,'#e86a8a');};g.appendChild(b);}
   if(lo&&L.st==='hunt'&&L.usbHint&&!L.got.usb&&!L.usbPos)spawnUsb();
   const tb=document.getElementById('top');b.style.top=((tb?tb.offsetTop+tb.offsetHeight:44)+6)+'px';const out=[];
   if(lo){const wh='\n小路在：'+luWhere();out.push(L.st==='call'?'<b>小路的論文大危機</b>\n小路傳訊息求救，去找他！'+wh:L.st==='wait'?'<b>小路的論文大危機</b>\n已交件，明天早上看結果':'<b>小路的論文大危機</b>\n找到：'+luGotText()+'\n睡覺前交給小路！'+wh);}
   if(to)out.push('<b>半夜偷菜事件</b>\n被偷 '+T_.stolen+' 棵・線索 '+T_.clues.length+'/3\n'+(T_.clues.length?'晚上 11 點後到田裡埋伏！':'田邊好像掉了什麼……'));
+  if(mo)out.push('<b>6-TWELVE 收購危機</b>\n'+(M_.st==='call'?'6-TWELVE 門口貼了公告，去問罐罐！':'人氣 '+martPts()+'/100・剩 '+martLeft()+' 天'));
   const txt=out.join('\n');if(b.innerHTML!==txt)b.innerHTML=txt;}
 
 // ===== 半夜偷菜事件：作物每晚被偷，找線索、問嫌疑犯、半夜埋伏 =====
@@ -3953,6 +3956,41 @@ function thiefTalk(n,btns){const T_=stTh();if(T_.st!=='active'||!['camper','mick
     if(!T_.wrong.includes(n.id)){T_.wrong.push(n.id);addRel(n.id,-10);saveGame();}
     popInfo(SHORT[n.id],n.id==='mickey'?'我泡麵裡的青菜是跟阿梅買的啦！\n收據給你看！\n……你居然懷疑教練？\n\n（小鐘有點受傷，好感下降）':'我偷菜？\n好啦我承認我說過很多次「下次一定」，\n但那是羽球！不是菜！\n\n（阿宇有點受傷，好感下降）','對不起……',null,'#ff8a80');},'bolt']);}
 
+// ===== 6-TWELVE 收購危機：7 天內把店的人氣衝到 100 =====
+function stMart(){if(!G.story)G.story={};return G.story.mart||(G.story.mart={st:'none',spent:0,bento:[],staff:[]});}
+function martChain(){const M=G.story&&G.story.mart;return!!(M&&M.chainUntil&&G.day<M.chainUntil);}
+function martPts(){const M=stMart();return Math.min(40,Math.floor(M.spent/100)*5)+20*M.bento.length+10*M.staff.length;}
+function martLeft(){const M=stMart();return Math.max(0,M.start+7-G.day);}
+function martDetail(){const M=stMart();if(M.st==='call')return'6-TWELVE 門口貼了一張奇怪的公告……\n去找罐罐問問看。';
+  return'大全超商要收購 6-TWELVE！\n'+martLeft()+' 天內把店的人氣衝到 100。\n\n目前人氣：'+martPts()+'/100\n・去 6-TWELVE 買東西：每 100G +5（'+Math.min(40,Math.floor(M.spent/100)*5)+'/40）\n・交 5 個當季作物給罐罐做限定便當：+20（'+M.bento.length+'/2）\n・找村民來當一日店員（要 2 顆心）：+10（'+M.staff.length+'/3）';}
+// 在 6-TWELVE 花的錢才算
+function martTrack(){const M=G.story&&G.story.mart;if(!M||M.st!=='active')return;const cur=G.today?G.today.spent:0;if(G.ph==='shop'&&M.spBase!=null&&M.spDay===G.day&&cur>M.spBase)M.spent+=cur-M.spBase;M.spBase=cur;M.spDay=G.day;}
+function martNight(){const M=stMart();if(M.st==='active'&&G.day+1>=M.start+7){const p=martPts();M.end=p>=100?'A':p>=60?'B':'C';M.st='result';}}
+function martMorning(){const M=stMart();
+  if(M.st==='none'&&G.day>=20){M.st='call';saveGame();updStoryBar();setTimeout(()=>msg('6-TWELVE 門口貼了一張公告：\n「本店即將由大全超商收購」\n……罐罐好像很煩惱？'),2500);return;}
+  if(M.st==='done'&&M.end==='C'&&M.chainUntil&&G.day>=M.chainUntil&&!M.back){M.back=1;saveGame();popInfo('6-TWELVE 重新開張！','罐罐用存了兩週的錢，\n把店從大全超商手上買回來了！\n\n招牌又換回 6-TWELVE，\n價格也恢復原本的樣子。\n\n罐罐：「麻吉們，我回來了！」','太好了！',null,'#ffcf40');return;}
+  if(M.st!=='result')return;M.st='done';M.doneDay=G.day;const E=M.end;
+  if(E==='A'){G.discount=Math.max(.7,G.discount*.9);addRel('clerk',20);G.gold+=2000;if(G.today)G.today.earn+=2000;}
+  else if(E==='B'){addRel('clerk',10);G.gold+=1000;if(G.today)G.today.earn+=1000;}
+  else{M.chainUntil=G.day+14;addRel('clerk',5);}
+  updHUD();saveGame();updStoryBar();
+  popInfo('6-TWELVE 收購危機｜'+(E==='A'?'人氣爆棚！':E==='B'?'暫時保住了':'被收購了……'),
+    E==='A'?'大全超商的業務來看了一眼，\n店門口的人潮排到了廣場。\n\n業務默默收起合約：\n「……這間店我們買不起。」\n\n罐罐：「哈哈！麻吉們謝啦！」\n罐罐送你一張 6-TWELVE 永久會員卡，\n以後買東西再打 9 折！\n\n獲得 2000G・永久 9 折':
+    E==='B'?'業務翻了翻帳本：\n「……業績還行，再觀察看看。」\n\n6-TWELVE 暫時保住了！\n罐罐：「呼……差點就要去大全超商上班了。」\n\n獲得 1000G':
+    '6-TWELVE 被大全超商收購了……\n招牌換成藍色的，東西都貴了一成。\n\n罐罐穿著大全超商的制服，\n還是笑著跟你打招呼：\n「沒事，我會把店買回來的。」\n\n（兩週後罐罐會把店買回來）','好',null,E==='C'?'#ff8a80':'#ffcf40');}
+function martStart(){const M=stMart();closeTalk();M.st='active';M.start=G.day;M.spent=0;M.bento=[];M.staff=[];M.spBase=G.today?G.today.spent:0;M.spDay=G.day;saveGame();updStoryBar();
+  popInfo('6-TWELVE 收購危機','罐罐把公告撕下來，嘆了一口氣：\n「大全超商說，這一週的人氣不夠，\n房東就要把店賣給他們……」\n\n7 天內幫罐罐把人氣衝到 100！\n・去 6-TWELVE 買東西\n・交當季作物給罐罐做「村子限定便當」\n・找村民來當一日店員','包在我身上！',null,'#e86a8a');}
+const MART_STAFF={jie:'麻吉的店我當然要顧！\n我還會帶周杰倫的歌來放！',yu:'好啊！\n我順便把西西里咖啡全部擺到最前面！',su:'我來！我很會招呼客人喔～\n還可以教大家唱部落的歌！',lu:'當店員？……好啊！\n可以順便畫店門口的海報嗎？',ak:'……幫罐罐顧店？\n好啦，只有一天喔。',mickey:'交給教練！\n我會讓每個客人都多買一瓶運動飲料！',ted:'Part-time job？OK 啊！\n我在加拿大也做過超市！',sony:'我來負責櫥窗佈置～\n保證拍起來很好看！'};
+function martTalk(n,btns,m){const M=stMart();
+  if(n.id==='clerk'){if(M.st==='call'){m.textContent='（罐罐盯著一張公告發呆）\n……啊，你來了。';btns.unshift(['發生什麼事？','bp',martStart,'bolt']);return;}
+    if(M.st!=='active')return;m.textContent='人氣 '+martPts()+'/100，還剩 '+martLeft()+' 天……\n拜託了，麻吉！';
+    if(M.bento.length<2){const opts=seasonCrops().filter(k=>!M.bento.includes(k)&&(G.hv[k]||0)>=5);btns.unshift(['做村子限定便當（交 5 個當季作物）','bp',()=>{closeTalk();if(!opts.length){popInfo('罐罐','限定便當要用當季作物，\n同一種要 5 個才夠喔！\n\n這一季可以用：'+seasonCrops().map(k=>CROPS[k].n).join('、')+(M.bento.length?'\n（已經做過：'+M.bento.map(k=>CROPS[k].n).join('、')+'）':''),'知道了',null,'#e86a8a');return;}
+      festPop('村子限定便當','要用哪一種作物做便當？（交 5 個）',[...opts.map(k=>[CROPS[k].n+'（有 '+G.hv[k]+'）',()=>{G.hv[k]-=5;M.bento.push(k);sfx('cook');updTB();saveGame();updStoryBar();msg('罐罐推出了「'+CROPS[k].n+'限定便當」！\n人氣 +20（'+martPts()+'/100）');}]),['等等再說',null,'bc']],'#e86a8a');},'shop']);}
+    return;}
+  if(M.st!=='active'||M.staff.includes(n.id)||M.staff.length>=3||n.cust)return;
+  btns.splice(Math.max(0,btns.length-1),0,['請你來 6-TWELVE 當一日店員','bp',()=>{closeTalk();if(hearts(n.id)<2){popInfo(SHORT[n.id]||n.name,'……我們還不太熟耶，\n等熟一點再說吧！\n\n（要 2 顆心以上）','好吧',null,'#ff8a80');return;}
+    M.staff.push(n.id);addRel(n.id,3);sfx('heart');saveGame();updStoryBar();popInfo(SHORT[n.id]||n.name,(MART_STAFF[n.id]||'好啊！\n我會帶朋友一起來買！')+'\n\n（人氣 +10，目前 '+martPts()+'/100）','謝謝！',null,'#e86a8a');},'shop']);}
+
 function spendE(n){if(G.full<=0)n*=2;G.en=Math.max(0,G.en-n);updHUD();}
 function nextDay(){tutEvent('sleep');wishIntro();storyNight();G.day++;{const o=npcOff('su');G.day--;const pv=npcOff('su');G.day++;if(o&&!pv)setTimeout(()=>msg(OFF_MSG[o]),1800);}if(G.saplings)for(const k in G.saplings){if(G.day-G.saplings[k]>=3){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.SPROUT){G.map[y][x]=T.TREE;if(!G.planted)G.planted=[];G.planted.push(k);if(G.cleared)G.cleared=G.cleared.filter(v=>v!==k);}delete G.saplings[k];}}if(G.stumps)for(const k in G.stumps){if(--G.stumps[k]<=0){const[x,y]=k.split(',').map(Number);if(G.map[y][x]===T.STUMP)G.map[y][x]=T.TREE;delete G.stumps[k];}}if(G.orders&&G.orders.length){const got=G.orders.map(k=>{G.owned.push(k);return lookName(k);});G.orders=[];setTimeout(()=>msg('叮咚！線上商城的包裹送到了\n'+got.join('、')+'\n可以到家裡的衣櫃換上喔'),4000);}let rev=0;{if(!G.tdays)G.tdays={};for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const t=G.map[y][x],k=x+','+y;if((t===T.TI||t===T.WA)&&!G.cr[y][x]){G.tdays[k]=(G.tdays[k]||0)+1;if(G.tdays[k]>=3){G.map[y][x]=T.D;delete G.tdays[k];rev++;}}else delete G.tdays[k];}}G.time=330;G.log=[];G.logSeen=0;G.logNew=false;updLogBtn();let seasonMsg='';if((G.day-1)%SEASON_LEN===0){const sc=seasonCrops();let w=0,sl=0;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c||c.type==='grass')continue;if(sc.includes(c.type)){c.slow=false;continue;}if(Math.random()<.35){G.cr[y][x]=null;w++;G.drops.push({x:(x+.5)*TILE+Math.random()*10-5,y:(y+.5)*TILE+6,crop:c.type,qty:1+Math.floor(Math.random()*2)});}else{c.slow=true;sl++;}}buildTools();{const sc2=seasonCrops(),q=[5,3,1,1];sc2.forEach((k,i)=>G.seeds[k]=(+G.seeds[k]||0)+q[i]);G.drop={t:0,txt:sc2.map((k,i)=>CROPS[k].n+'×'+q[i]).join('、')};}seasonMsg='\n'+SEASONS[season()]+'天到了！'+(w?'\n'+w+' 株作物不耐季節枯萎了，種子掉在田邊':'')+(sl?'\n'+sl+' 株非當季作物會長得比較慢':'')+(!w&&!sl?'商店有新的種子喔':'');}for(const r of G.reqs)r.days--;genRequests();G.today=newToday();G.campGuest=Math.random()<.45?(Math.random()<.5?'guide':'rancher'):null;G.campGuestDay=G.day;G.campStay=Math.random()<.5;G.helper=Math.random()<.45?['yu','guide','song','song'][Math.floor(Math.random()*4)]:null;if(G.cat&&G.cat.adopted&&G.cat.fishDay===G.day-1&&Math.random()<.6){const r=Math.random();let txt;if(r<.5){const sc3=seasonCrops(),k=sc3[Math.floor(Math.random()*sc3.length)];G.seeds[k]=(+G.seeds[k]||0)+2;txt=CROPS[k].n+'種子 ×2';}else{const g=30+Math.floor(Math.random()*5)*10;G.gold+=g;txt=g+'G';}setTimeout(()=>msg('阿喵叼了禮物回來：'+txt+'！'),5200);}rollEvent();announceEvent();setTimeout(()=>msg('村子入口旁的委託告示板\n有 '+G.reqs.length+' 件委託'),2600);G.en=MAX_E;for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){const c=G.cr[y][x];if(!c)continue;if((c.watered||c.type==='grass')&&!(c.slow&&(c.sk=!c.sk))){c.daysLeft--;if(c.daysLeft<=0&&c.stage<3){c.stage++;c.daysLeft=CROPS[c.type].d;}}c.watered=false;if(G.map[y][x]===T.WA)G.map[y][x]=T.TI;}let hungry=0;for(const a of G.animals){if(G.trough>0){G.trough--;a.fed=true;if(a.petDay===G.day-1)a.love=Math.min(5,a.love+1);if(a.baby>0){a.baby--;}else if(!a.readyProduct){a.daysLeft--;if(a.daysLeft<=0){a.readyProduct=true;a.bonus=a.love>=4&&Math.random()<.4;a.daysLeft=ANIMAL_DATA[a.type].days;}}}else{a.fed=false;a.love=Math.max(0,a.love-1);hungry++;}}
   const births=[];for(const type of Object.keys(ANIMAL_DATA)){const D=ANIMAL_DATA[type],pair=G.animals.filter(a=>a.type===type&&a.treatDay===G.day-1&&!(a.baby>0)),cnt=G.animals.filter(a=>a.type===type).length;if(pair.length>=2&&cnt<maxOf(type)){addAnimal(type);const nb=G.animals[G.animals.length-1];nb.baby=3;nb.love=3;births.push(D.n);}}
@@ -3968,6 +4006,7 @@ function openShop(mode){
   const list=document.getElementById('sl');let keep=true;
   for(const e of [...list.children]){if(e.classList.contains('shdr')){const s=e.textContent;keep=mode==='food'?s.includes('食物'):(mode==='drink'||mode==='vend')?s.includes('飲料'):!(s.includes('食物')||s.includes('飲料')||s.includes('動物'));}if(!keep)e.remove();}
   document.getElementById('shopTitle').textContent=mode==='food'?'6-TWELVE・熟食櫃台':mode==='vend'?'廣場販賣機（24 小時）':mode==='drink'?'6-TWELVE・飲料櫃':'6-TWELVE・種子農具櫃台';
+  if(martChain()){const t=document.getElementById('shopTitle');t.textContent=t.textContent.replace('6-TWELVE','大全超商');}
 }
 function openShopAll(){G.ph='shop';document.getElementById('sg').textContent='持有：'+G.gold+'G'+(shopDisc()<1?'（'+(evIs('sale')?'今日特價':'九折優惠')+'）':'');const list=document.getElementById('sl');list.innerHTML='';for(let so=0;so<5;so++){const si=so===4?-1:(season()+so)%4;const sh=document.createElement('div');sh.className='shdr';sh.textContent=so===4?'── 全年作物（可以賣給阿牧）──':'── '+SEASONS[si]+'季種子'+(so?'（非當季，長得比較慢）':'（當季）')+' ──';list.appendChild(sh);for(const k of(si<0?['wheat','rice']:SEASON_CROPS[si])){const d=CROPS[k];const{row,info,i}=makeRow('seed:'+k,d.n+'種子','持有 '+G.seeds[k]+' 個｜'+d.sd+'G/個');const btn=document.createElement('button');btn.className='bb';btn.style.cssText='background:#1b5e20;border-color:#4caf50;';btn.textContent='購買';btn.onclick=()=>{const pr=Math.round(d.sd*shopDisc());if(G.gold<pr){msg('金幣不足！');return;}G.gold-=pr;G.today.spent+=pr;sfx('click');G.seeds[k]++;document.getElementById('sg').textContent='持有：'+G.gold+'G';i.textContent='持有 '+G.seeds[k]+' 個｜'+d.sd+'G/個';updHUD();updTB();};row.appendChild(info);row.appendChild(btn);list.appendChild(row);}}if(!G.knife){const kh=document.createElement('div');kh.className='shdr';kh.textContent='── 工具 ──';list.appendChild(kh);const{row,info}=makeRow('knife','屠宰刀','可以把動物處理成肉｜'+Math.round(150*shopDisc())+'G');const btn=document.createElement('button');btn.className='bb';btn.style.cssText='background:#1b5e20;border-color:#4caf50;';btn.textContent='購買';btn.onclick=()=>{const pr=Math.round(150*shopDisc());if(G.gold<pr){msg('金幣不足！');return;}G.gold-=pr;G.today.spent+=pr;G.knife=true;sfx('click');updHUD();msg('買了屠宰刀。\n點動物就能選擇宰殺');openShop();};row.appendChild(info);row.appendChild(btn);list.appendChild(row);}
 shopToolUp(list);
@@ -3977,7 +4016,7 @@ shopToolUp(list);
 function openChest(){G.ph='chest';const list=document.getElementById('cl');list.innerHTML='';let any=false;for(const[k,d]of Object.entries(CROPS)){if(!G.hv[k])continue;any=true;const tot=G.hv[k]*d.sv;const{row,info}=makeRow(k,d.n,'數量：'+G.hv[k]+'｜'+d.sv+'G/個');const btn=document.createElement('button');btn.className='bb';btn.style.cssText='background:#4e2200;border-color:#c8a050;';btn.textContent='賣出 +'+tot+'G';btn.onclick=()=>{G.gold+=tot;G.hv[k]=0;msg('獲得 '+tot+'G！');updHUD();updTB();openChest();};row.appendChild(info);row.appendChild(btn);list.appendChild(row);}for(const[k,d]of Object.entries(PRODUCT_DATA)){if(!G.products[k])continue;any=true;const tot=G.products[k]*d.sv;const{row,info}=makeRow(k,d.n,'數量：'+G.products[k]+'｜'+d.sv+'G/個');const btn=document.createElement('button');btn.className='bb';btn.style.cssText='background:#4e2200;border-color:#c8a050;';btn.textContent='賣出 +'+tot+'G';btn.onclick=()=>{G.gold+=tot;G.products[k]=0;msg('獲得 '+tot+'G！');updHUD();updTB();openChest();};row.appendChild(info);row.appendChild(btn);list.appendChild(row);}if(!any)list.innerHTML='<div style="font-size:15px;color:#888;text-align:center;padding:18px;line-height:1.8">目前沒有可出售的物品</div>';document.getElementById('oc').style.display='flex';}
 document.getElementById('sc').onclick=()=>hideOv('os');document.getElementById('cc').onclick=()=>hideOv('oc');document.getElementById('sn').onclick=()=>hideOv('oz');
 document.getElementById('sy').onclick=()=>{startSleep();};
-function updHUD(){updStoryBar();const hf=document.getElementById('hf');if(hf){hf.style.width=G.full+'%';hf.style.background=G.full<25?'#ff5a4a':'#ff9f43';}document.getElementById('dt').textContent=dateLabel();updClock();document.getElementById('gt').textContent=G.gold+'G';const p=G.en/MAX_E,f=document.getElementById('ef');f.style.width=(p*100)+'%';f.style.background=p>.55?'linear-gradient(90deg,#4caf50,#8bc34a)':p>.28?'linear-gradient(90deg,#ff9800,#ffc107)':'linear-gradient(90deg,#f44336,#ff5722)';}
+function updHUD(){martTrack();updStoryBar();const hf=document.getElementById('hf');if(hf){hf.style.width=G.full+'%';hf.style.background=G.full<25?'#ff5a4a':'#ff9f43';}document.getElementById('dt').textContent=dateLabel();updClock();document.getElementById('gt').textContent=G.gold+'G';const p=G.en/MAX_E,f=document.getElementById('ef');f.style.width=(p*100)+'%';f.style.background=p>.55?'linear-gradient(90deg,#4caf50,#8bc34a)':p>.28?'linear-gradient(90deg,#ff9800,#ffc107)':'linear-gradient(90deg,#f44336,#ff5722)';}
 function updTB(){setTimeout(()=>{if(G.tut!=null&&G.tut>=0)updTut();},0);const bar=document.getElementById('tb');bar.innerHTML='';TOOLS.forEach((t,i)=>{const d=document.createElement('div');d.className='ts'+(i===G.tool&&t.id!=='bag'?' sel':'');d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label',t.n);const ic=document.createElement('canvas');ic.width=ic.height=36;ic.style.cssText='image-rendering:pixelated;display:block;width:36px;height:36px';drawToolIcon(ic.getContext('2d'),t.id,36);d.appendChild(ic);let bv='',bcolor='#ddd';if(CROPS[t.id])bv=G.seeds[t.id];else if(t.id==='basket'){const tot=Object.values(G.hv).reduce((a,v)=>a+v,0)+Object.values(G.products).reduce((a,v)=>a+v,0);if(tot)bv=tot;}else if(t.id==='rod'){if(!G.rod){bv='未取得';bcolor='#888';}else{bv='釣竿';bcolor='#ddd';}}else if(t.id==='bag'){bv='背包';bcolor='#ddd';}else if(t.id==='water'){bv=G.water+'/'+G.maxWater;bcolor=G.water===0?'#ff6b6b':G.water<=5?'#ffb74d':'#7acce8';}else bv=TOOL_UP[t.id]?TOOL_UP[t.id].n:t.n;if(bv!==''){const bd=document.createElement('div');bd.className='tb2';bd.textContent=bv;bd.style.color=(t.id==='hoe'||t.id==='axe')?TOOL_LVC[tlv(t.id)]:bcolor;d.appendChild(bd);}d.onclick=()=>{if(!started||G.ph!=='play')return;if(t.id==='bag'){openBag('bag');return;}if(CROPS[t.id]&&G.tool===i){openBag('seed');return;}if(t.id==='rod'&&!G.rod){msg('還沒有釣竿！\n去市集找海伯，他會教你釣魚');return;}if(t.id==='basket'&&G.tool===i){openBag();return;}G.tool=i;updTB();if(t.id==='basket')msg('再點一次收穫籃，\n就能打開看看裡面有什麼');else if(CROPS[t.id]&&!G.seedTip){G.seedTip=1;msg('再點一次種子，\n可以換成別種種子');}};bar.appendChild(d);});}
 function logMsg(txt){if(!G.log)G.log=[];const t=hhmm(G.time),L=G.log,last=L[L.length-1];if(last&&last.txt===txt){last.t=t;last.n=(last.n||1)+1;G.logSeq=(G.logSeq||0)+1;last.q=G.logSeq;}else{G.logSeq=(G.logSeq||0)+1;L.push({t,txt,q:G.logSeq});if(L.length>80)L.shift();}G.logNew=true;updLogBtn();}
 function drawSndIcon(){const c=document.getElementById('sndic');if(!c)return;const x=c.getContext('2d'),on=SND.on,col=on?'#f9c74f':'#777',f=(a,b,w,h,k)=>{x.fillStyle=k||col;x.fillRect(a,b,w,h);};x.clearRect(0,0,18,18);
