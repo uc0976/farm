@@ -4693,7 +4693,7 @@ const SAVED=readSave();
 // ===== 多人連線（Firebase Realtime Database）=====
 // 房主的世界是準：地圖、作物、天數、天氣由房主決定；每個人的背包、金幣、工具各自存在自己的手機。
 // 資料放在 rooms/<房號>/：meta 房間資訊、snap 世界快照、ed 田地即時修改、pl 玩家位置、ck 時鐘
-const FB_CONFIG=null; // ← 拿到 Firebase 的 firebaseConfig 後填在這裡
+const FB_CONFIG={apiKey:"AIzaSyAqYBnIKhIsWsFWbGPXarNLU-AH9_fvjso",authDomain:"farm-ff73e.firebaseapp.com",databaseURL:"https://farm-ff73e-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"farm-ff73e",storageBucket:"farm-ff73e.firebasestorage.app",messagingSenderId:"802570798862",appId:"1:802570798862:web:578fc7c904eeed52d9b95f"}; // Firebase 網頁設定（公開沒關係，安全靠資料庫規則）
 const NET={on:false,mode:null,code:null,uid:null,tp:null,pl:{},snap:null,snapV:0,wait:null,lastSend:0,lastSig:'',lastCk:0,seq:0,emo:null,offs:[]};
 const NET_MAX=4,NET_PRE='rooms/';
 function netOK(){return!!(window.__NETMOCK||FB_CONFIG);}
