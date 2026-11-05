@@ -304,7 +304,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 <script>
 'use strict';
 // 版本號：每次更新往上加，開始畫面和設定頁會顯示
-const GAME_VER='1.15',GAME_DATE='2026-11-04';
+const GAME_VER='1.16',GAME_DATE='2026-11-05';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -2246,6 +2246,7 @@ function buildHitAt(wx,wy){const near=(G.builds||[]).filter(b=>BUILDS[b.k]&&Math
 function onTap(wx,wy){
   if(G.place==='floor'){paintFloor(Math.floor(wx/TILE),Math.floor(wy/TILE));return;}
   if(G.place){const tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(G.placeAt&&G.placeAt[0]===tx&&G.placeAt[1]===ty){doPlace(tx,ty);}else{G.placeAt=[tx,ty];updPlaceBar();}return;}
+  if(NET.on){const rp=netHitPlayer(wx,wy);if(rp){netPlayerMenu(rp);return;}}
   if(G.sitting!=null)standUp();
   {const sx=Math.floor(wx/TILE),sy=Math.floor(wy/TILE);if(sy===MH-1&&G.map[sy]&&G.map[sy][sx]===T.TREE){G.secret=(G.secret||[]).concat(sx+1).slice(-4);if(G.secret.join()==='4,6,2,2'){G.secret=[];G.gold+=5000;updHUD();sfx('coin');msg('樹上掉下了一袋金幣…\n獲得 5000G！');saveGame();}return;}}
   let tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);
@@ -2734,8 +2735,8 @@ function spawnStoreShopper(){
 const SEATS=[[18,14],[19,14],[21,14],[22,14]];
 function benchFront(b,cell){const F={down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]}[b.dir||'down'];return[cell[0]+F[0],cell[1]+F[1]];}
 function benchSeats(){const out=[];for(const b of G.builds||[])if(b.k==='bench'&&Math.abs(b.x-20)<=7&&Math.abs(b.y-13)<=5)for(const c of cellsOf(b))out.push([c[0],c[1],b.dir||'down']);return out;}
-function seatTaken(x,y,c){return(G.sitting&&typeof G.sitting==='object'&&G.sitting.x===x&&G.sitting.y===y)||G.cust.some(o=>o!==c&&o.seat&&o.seat[0]===x&&o.seat[1]===y);}
-function sitDown(x){if(G.cust.some(o=>o.seat&&o.seat[0]===x)){msg('這個位子有人坐了');return;}clearPath();G.sitting=x;G.px=(x+.5)*TILE;G.py=14.35*TILE;G.dir='down';msg('坐下來休息一下～\n坐著時體力會慢慢恢復');}
+function seatTaken(x,y,c){return netSeatTaken(x,y)||(G.sitting&&typeof G.sitting==='object'&&G.sitting.x===x&&G.sitting.y===y)||G.cust.some(o=>o!==c&&o.seat&&o.seat[0]===x&&o.seat[1]===y);}
+function sitDown(x){if(netSeatTaken(x,-1)||G.cust.some(o=>o.seat&&o.seat[0]===x)){msg('這個位子有人坐了');return;}clearPath();G.sitting=x;G.px=(x+.5)*TILE;G.py=14.35*TILE;G.dir='down';msg('坐下來休息一下～\n坐著時體力會慢慢恢復');}
 function standUp(){if(G.sitting==null)return;if(typeof G.sitting==='object'){const{x,y,dir}=G.sitting;const F={down:[0,1],up:[0,-1],left:[-1,0],right:[1,0]};const order=[F[dir||'down'],[0,1],[0,-1],[1,0],[-1,0]];let p=[x,y+1];for(const[a,c]of order)if(isWalk(x+a,y+c)){p=[x+a,y+c];break;}G.px=(p[0]+.5)*TILE;G.py=(p[1]+.5)*TILE;G.sitting=null;return;}G.px=(G.sitting+.5)*TILE;G.py=15.5*TILE;G.sitting=null;}
 function sitBench(b,tx,ty){clearPath();const cs=cellsOf(b);let cell=cs.find(([a,c])=>a===tx&&c===ty)||cs[0];if(seatTaken(cell[0],cell[1])){const o=cs.find(([a,c])=>!seatTaken(a,c));if(!o){msg('長椅坐滿了');return;}cell=o;}const dir=b.dir||'down';G.sitting={x:cell[0],y:cell[1],dir};G.px=(cell[0]+.5)*TILE;G.py=(cell[1]+(dir==='up'?.3:.45))*TILE;G.dir=dir;msg('坐下來休息一下～\n坐著時體力會慢慢恢復');}
 function custNext(c,say){c.say=say;c.sayT=120;c.stall=null;const r=Math.random();if(r<.35){c.state='pause';c.timer=50;}else if(r<.65){const fs=benchSeats().filter(([x,y])=>!seatTaken(x,y,c));if(fs.length){c.seat=fs[Math.floor(Math.random()*fs.length)];c.state='tosit';{const bb=buildAt(c.seat[0],c.seat[1]),f=bb?benchFront(bb,c.seat):[c.seat[0],c.seat[1]+1];if(isWalk(f[0],f[1])){pathTo(c,f[0],f[1]);if(c.path.length||(Math.floor(c.x/TILE)===f[0]&&Math.floor(c.y/TILE)===f[1]))c.path.push({x:(c.seat[0]+.5)*TILE,y:(c.seat[1]+.5)*TILE});}else c.path=[];}if(!c.path.length){c.seat=null;custLeave(c);}}else custLeave(c);}else custLeave(c);}
@@ -4728,8 +4729,8 @@ function netApplyEdit(e){if(!e||e.by===NET.uid)return;const{x,y}=e,k=x+','+y;if(
   const flag=(arr,on)=>{if(!G[arr])G[arr]=[];const i=G[arr].indexOf(k);if(on&&i<0)G[arr].push(k);if(!on&&i>=0)G[arr].splice(i,1);};flag('planted',e.pl);flag('cleared',e.cl);}
 // ---- 玩家位置 ----
 function netMe(){return{n:G.pname||'小農夫',lk:JSON.stringify(G.look||{}),x:Math.round(G.px),y:Math.round(G.py),d:G.dir,m:G.moving?1:0,a:G.act?[G.act.row,G.act.n,G.act.spd,NET.seq]:0,
-  s:NET.wait?G.day:0,e:NET.emo?NET.emo.t:'',et:NET.emo?NET.emo.ts:0,h:NET.mode==='host'?1:0};}
-function netTick(now){if(!NET.on)return;
+  s:NET.wait?G.day:0,e:NET.emo?NET.emo.t:'',et:NET.emo?NET.emo.ts:0,h:NET.mode==='host'?1:0,si:netSeat()};}
+function netTick(now){if(!NET.on)return;netActTick();
   if(G.act&&G.act!==NET._act){NET._act=G.act;NET.seq++;}if(!G.act)NET._act=null;
   if(now-NET.lastSend>120){const me=netMe(),sig=JSON.stringify(me);if(sig!==NET.lastSig){NET.lastSig=sig;NET.lastSend=now;NET.tp.upd(netP('pl/'+NET.uid),me);}}
   if(NET.mode==='host'&&now-NET.lastCk>2000){NET.lastCk=now;NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}
@@ -4767,6 +4768,7 @@ function netNewDayGuest(S){// 房主換日了：自己還醒著的話直接累�
 function netListen(){const t=NET.tp;
   NET.offs.push(t.on(netP('pl'),netPlayers));
   NET.offs.push(t.onAdd(netP('ed'),(k,e)=>netApplyEdit(e)));
+  NET.offs.push(t.onAdd(netP('msg/'+NET.uid),netOnMsg));
   if(NET.mode==='guest'){
     NET.offs.push(t.on(netP('meta'),m=>{if(!m&&NET.on){NET.on=false;popInfo('房主離開了','房主關掉了房間，\n要回到你自己的農場囉。','好',()=>location.reload(),'#ff8a80');}}));
     NET.offs.push(t.on(netP('snap'),v=>{if(!v||v.v===NET.snapV)return;NET.snapV=v.v;const S=JSON.parse(v.s);if(S.day>G.day&&started)netNewDayGuest(S);else{NET.snap=S;netApplySnap(S);}}));
@@ -4793,12 +4795,12 @@ async function netJoin(code){if(!netOK()){popInfo('多人連線','多人連線�
   netApplySnap(S);G.px=S.hx+TILE;G.py=S.hy;G.dir='down';G.indoor=false;if(G.tut!=null&&G.tut>=0)G.tut=-1;
   st.style.display='none';document.getElementById('st').style.display='none';initAudio();started=true;
   t.onDis(netP('pl/'+NET.uid));netListen();saveGame();
-  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角 💬 可以跟大家打招呼\n・大家都上床睡覺才會到隔天\n・動物和建造先交給房主','開始！',null,'#9fe0ff'),300);}
+  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角 💬 可以打招呼、跳舞、拍合照\n・點一下朋友，可以送東西、擊掌、抱抱\n・大家都上床睡覺才會到隔天\n・動物和建造先交給房主','開始！',null,'#9fe0ff'),300);}
 function netClose(){if(!NET.on)return;if(NET.mode==='host'){NET.tp.del(netP());NET.offs.forEach(f=>f());NET.offs=[];NET.on=false;NET.mode=null;NET.pl={};const b=document.getElementById('netemo');if(b)b.remove();msg('房間關閉了');}else location.reload();}
 // ---- 介面 ----
 function netGuestBlock(what){if(NET.mode!=='guest')return false;msg('多人模式下，'+what+'先交給房主喔！');return true;}
 function netEmoBtn(){if(document.getElementById('netemo'))return;const b=el('button',null,'💬');b.id='netemo';b.type='button';b.style.cssText='position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom) + 96px);z-index:30;font-size:22px;width:46px;height:46px;border-radius:50%;border:2px solid #9fe0ff;background:#123a52;color:#fff;cursor:pointer';
-  b.onclick=e=>{e.stopPropagation();if(G.ph!=='play')return;const opts=['👋','❤️','😂','👍','😮','來這邊！','謝謝！','等我一下','晚安～'];festPop('跟大家說',(NET.mode==='host'?'房號 '+NET.code+'・':'')+'選一句話，會冒在你頭上',[...opts.map(t=>[t,()=>{NET.emo={t,ts:Date.now()};NET.lastSig='';sfx('click');}]),['房間資訊',()=>openNetPanel(),'bp'],['取消',null,'bc']],'#9fe0ff');};document.body.appendChild(b);}
+  b.onclick=e=>{e.stopPropagation();openNetMenu();};document.body.appendChild(b);}
 function openNetPanel(){const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn','多人連線');t.style.color='#9fe0ff';box.appendChild(t);
   if(!NET.on){box.appendChild(el('div','dpd','開一個房間，把房號給朋友，\n朋友在開頭畫面按「和朋友一起玩」輸入房號，\n就能來你的農場一起種田！\n\n・最多 '+NET_MAX+' 個人\n・朋友的金幣和背包是各自的\n・你關掉遊戲，房間就會關閉'));
     const b=el('button','bp','開房間');b.type='button';b.onclick=()=>{document.getElementById('dp').style.display='none';netHost();};box.appendChild(b);}
@@ -4814,6 +4816,83 @@ function openNetJoin(){const box=document.getElementById('dpbox');box.innerHTML=
   const b=el('button','bp','加入');b.type='button';b.onclick=()=>{const v=inp.value.replace(/\D/g,'');if(v.length!==4){inp.focus();return;}netJoin(v);};box.appendChild(b);
   const c=el('button','bc','返回');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(c);
   document.getElementById('dp').style.display='flex';setTimeout(()=>inp.focus(),50);}
+// ===== 多人互動：點朋友、送東西、擊掌抱抱、動作、合照、並排坐 =====
+// 私訊放在 rooms/<房號>/msg/<收件人>/，收到處理完就刪掉
+function netSend(to,t,d){if(!NET.on)return;NET.tp.push(netP('msg/'+to),{f:NET.uid,fn:G.pname||'小農夫',t,d:d==null?0:d,ts:Date.now()});}
+function netHearts(x,y,n){for(let i=0;i<(n||3);i++)setTimeout(()=>G.fx.push({kind:'heart',x:x+(Math.random()-.5)*20,y:y-30,t:0}),i*160);}
+function netSay(t){NET.emo={t,ts:Date.now()};NET.lastSig='';}
+function netNear(p,tiles){return Math.hypot(p.rx-G.px,p.ry-G.py)<=TILE*tiles;}
+function netHitPlayer(wx,wy){for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null)continue;if(Math.abs(wx-p.rx)<18&&wy>p.ry+15-66&&wy<p.ry+20)return id;}return null;}
+function netPop(title,body,btns){festPop(title,body,btns,'#9fe0ff');}
+function netPlayerMenu(id){const p=NET.pl[id];if(!p)return;sfx('click');
+  netPop(p.n,(p.h?'這座農場的主人\n':'')+(netNear(p,3)?'要做什麼呢？':'離太遠了，走近一點才能擊掌、抱抱或送東西'),[
+    ['🎁 送東西',()=>{if(!netNear(NET.pl[id]||p,3)){msg('走近一點才能把東西交給 '+p.n);return;}netGiftMenu(id);}],
+    ['✋ 擊掌',()=>netAsk(id,'hi5')],['🤗 抱抱',()=>netAsk(id,'hug')],
+    ['📷 一起拍照',()=>netPhotoStart()],['返回',null,'bc']]);}
+const NET_ASK={hi5:{ask:'舉起手想跟你擊掌！',ok:'✋ 擊掌！',me:'✋',done:'啪！擊掌成功！'},hug:{ask:'張開雙手想抱抱你！',ok:'🤗 抱抱',me:'🤗',done:'抱了一下，好溫暖～'}};
+function netAsk(id,k){const p=NET.pl[id];if(!p)return;if(!netNear(p,2.5)){msg('要站在 '+p.n+' 旁邊才行喔！');return;}netSay(NET_ASK[k].me);netSend(id,k);msg('等 '+p.n+' 回應……');}
+function netGiftMenu(id){const p=NET.pl[id];if(!p)return;const box=document.getElementById('mbox');box.innerHTML='';G.ph='market';box.appendChild(el('div','ot','送給 '+p.n));
+  const rows=[];const add=(src,k,n,name,icon)=>{if(!(n>0))return;const b=el('button','bb','送');b.type='button';b.style.cssText='background:#1b4e6e;border-color:#4ab0e0';
+    b.onclick=()=>{closeOm();popQty({title:'送'+name+'給 '+p.n,img:iconDataURL(icon,32),desc:'背包裡有 '+n+' 個',price:0,max:n,verb:'送出',onOk:q=>netGive(id,src,k,q,name)});};rows.push(bagRow(icon,name+' ×'+n,src==='seeds'?'種子':src==='food'?'食物':'作物・收穫',b));};
+  for(const k in CROPS)add('hv',k,G.hv[k],CROPS[k].n,k);for(const k in PRODUCT_DATA)add('products',k,G.products[k],PRODUCT_DATA[k].n,k);
+  for(const k in FOOD)add('food',k,G.food[k],FOOD[k].n,k);for(const k in CROPS)add('seeds',k,G.seeds[k],CROPS[k].n+'種子','seed:'+k);
+  if(G.mat&&G.mat.wood>0)add('mat','wood',G.mat.wood,'木材','wood');
+  {const b=el('button','bb','送');b.type='button';b.style.cssText='background:#5a4a10;border-color:#f9c74f';b.onclick=()=>{closeOm();const mx=G.gold;festPop('送金幣給 '+p.n,'你有 '+G.gold+'G，要送多少？',[...[50,100,500,1000].filter(v=>v<=mx).map(v=>[v+'G',()=>netGive(id,'gold','gold',v,'金幣')]),['取消',null,'bc']],'#f9c74f');};rows.push(bagRow('coin','金幣','你有 '+G.gold+'G',b));}
+  rows.forEach(r=>box.appendChild(r));const c=el('button','bc','返回');c.type='button';c.onclick=closeOm;box.appendChild(c);document.getElementById('om').style.display='flex';}
+function netGive(id,src,k,q,name){const p=NET.pl[id];if(!p){msg('對方已經離開了');return;}
+  if(src==='gold'){if(G.gold<q)return;G.gold-=q;}else if(src==='mat'){if((G.mat[k]||0)<q)return;G.mat[k]-=q;}else{if((G[src][k]||0)<q)return;G[src][k]-=q;}
+  netSend(id,'gift',{src,k,q,name});netSay('🎁');netHearts(p.rx,p.ry,2);sfx('coin');updHUD();updTB();buildTools();saveGame();msg('把'+name+(src==='gold'?' '+q+'G':' ×'+q)+'送給 '+p.n+' 了！');}
+function netGot(m){const d=m.d||{};const what=d.src==='gold'?d.q+'G':d.name+' ×'+d.q;
+  if(d.src==='gold')G.gold+=d.q;else if(d.src==='mat'){if(!G.mat)G.mat={};G.mat[d.k]=(G.mat[d.k]||0)+d.q;}else{if(!G[d.src])return;G[d.src][d.k]=(G[d.src][d.k]||0)+d.q;}
+  updHUD();updTB();buildTools();saveGame();sfx('heart');netHearts(G.px,G.py,3);netSend(m.f,'thx',what);
+  if(G.ph==='play')popInfo(m.fn+' 送你禮物！','🎁 '+what+'\n\n已經放進背包了。','謝謝！',null,'#9fe0ff');else msg(m.fn+' 送你 '+what+'！');}
+function netOnMsg(k,m){NET.tp.del(netP('msg/'+NET.uid+'/'+k));if(!m||Date.now()-m.ts>60000)return;const p=NET.pl[m.f];
+  if(m.t==='gift')return netGot(m);
+  if(m.t==='thx')return msg(m.fn+' 收到了你的 '+m.d+'！');
+  if(NET_ASK[m.t]){const A=NET_ASK[m.t];if(G.ph!=='play'){netSend(m.f,'busy',m.t);return;}
+    netPop(m.fn,m.fn+' '+A.ask,[[A.ok,()=>{netSay(A.me);netSend(m.f,m.t+'_ok');sfx('heart');netHearts(G.px,G.py);if(p){faceTo(p.rx,p.ry);netHearts(p.rx,p.ry);}msg(A.done);}],['下次吧',()=>netSend(m.f,'no',m.t),'bc']]);return;}
+  if(/_ok$/.test(m.t)){const k2=m.t.slice(0,-3),A=NET_ASK[k2];if(!A)return;sfx('heart');netSay(A.me);netHearts(G.px,G.py);if(p){faceTo(p.rx,p.ry);netHearts(p.rx,p.ry);}msg(A.done);return;}
+  if(m.t==='no')return msg(m.fn+'：「下次吧！」');
+  if(m.t==='busy')return msg(m.fn+' 現在正在忙，等一下再試試');
+  if(m.t==='photo')return netPhotoCount(m.fn);}
+// ---- 動作 ----
+function netDance(){NET.dance=frameCount+180;netSay('💃');}
+function netWave(){G.dir='down';netSay('👋');}
+function netActTick(){if(NET.dance){if(frameCount>NET.dance||G.moving||G.ph!=='play'){NET.dance=0;G.dir='down';}else if(frameCount%10===0)G.dir=['left','down','right','down'][Math.floor(frameCount/10)%4];}
+  // 並排坐：旁邊也有朋友坐著就冒愛心
+  if(G.sitting!=null&&frameCount%200===0){for(const id in NET.pl){const p=NET.pl[id];if(!p.si||!netNear(p,1.8))continue;netHearts((G.px+p.rx)/2,(G.py+p.ry)/2,1);if(!NET.satWith)NET.satWith={};if(NET.satWith[id]!==G.day){NET.satWith[id]=G.day;msg('和 '+p.n+' 並排坐著聊天，好愜意～');}}}}
+function netSeat(){const s=G.sitting;return s==null?0:typeof s==='object'?[s.x,s.y]:[s,-1];}
+function netSeatTaken(x,y){return NET.on&&Object.values(NET.pl).some(p=>p.si&&p.si[0]===x&&p.si[1]===y);}
+// ---- 合照：大家一起倒數，每個人的手機各存一張 ----
+function netPhotoStart(){if(G.ph!=='play')return;for(const id in NET.pl)if(netNear(NET.pl[id],8))netSend(id,'photo');netPhotoCount(null);}
+function netPhotoCount(who){if(NET.photoing)return;NET.photoing=true;if(who)msg(who+' 說：「來拍照！」');const ov=el('div',null,'3');ov.id='netcount';ov.style.cssText='position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);font-size:72px;color:#fff;text-shadow:0 0 8px #000,3px 3px 0 #2a1a0a;z-index:35;pointer-events:none;font-family:var(--font-ui)';document.body.appendChild(ov);
+  netSay('😄');let n=3;const iv=setInterval(()=>{n--;sfx('click');if(n>0){ov.textContent=n;return;}clearInterval(iv);ov.remove();netSay('✌️');setTimeout(()=>{netSnapPhoto();NET.photoing=false;},120);},800);}
+function netAlbum(){try{return JSON.parse(localStorage.getItem('farm-album')||'[]');}catch(e){return[];}}
+function netSnapPhoto(){const cv=document.getElementById('c'),k=cv.width/W2,inPic=Object.values(NET.pl).filter(p=>Math.abs(p.rx-G.px)<W2/2+20&&Math.abs(p.ry-G.py)<H2/2+20);
+  // 以大家為中心裁一張橫的照片
+  const xs=[G.px,...inPic.map(p=>p.rx)],ys=[G.py,...inPic.map(p=>p.ry)],cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2-24;
+  let cw=Math.min(W2,Math.max(8*TILE,Math.max(...xs)-Math.min(...xs)+4*TILE)),ch=cw*.75;if(ch>H2){ch=H2;cw=ch/.75;}
+  const sx=Math.max(0,Math.min(W2-cw,cx-cam.x-cw/2)),sy=Math.max(0,Math.min(H2-ch,cy-cam.y-ch/2)),W=360,H=270,c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');x.imageSmoothingEnabled=false;x.drawImage(cv,sx*k,sy*k,cw*k,ch*k,0,0,W,H);
+  const names=[G.pname||'我',...inPic.map(p=>p.n)];
+  x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,H-20,W,20);x.fillStyle='#fff';x.font='12px Cubic11,sans-serif';x.fillText(dateLabel()+'・'+names.join('、'),6,H-6);
+  const A=netAlbum();A.unshift({d:c.toDataURL('image/jpeg',.72),t:dateLabel(),w:names});while(A.length>12)A.pop();let ok=true;try{localStorage.setItem('farm-album','[]');localStorage.setItem('farm-album',JSON.stringify(A));}catch(e){ok=false;}
+  const fl=el('div');fl.style.cssText='position:fixed;inset:0;background:#fff;opacity:.9;z-index:36;pointer-events:none;transition:opacity .5s';document.body.appendChild(fl);setTimeout(()=>{fl.style.opacity='0';setTimeout(()=>fl.remove(),600);},60);sfx('coin');
+  msg(ok?'喀嚓！照片存進相簿了\n（💬 → 相簿）':'相簿滿了，存不下這張照片');}
+function openAlbum(){const box=document.getElementById('mbox');box.innerHTML='';G.ph='market';box.appendChild(el('div','ot','相簿'));const A=netAlbum();
+  if(!A.length)box.appendChild(el('div','msgtxt','還沒有照片。\n和朋友站在一起，按 💬 →「📷 一起拍照」吧！'));
+  const g=el('div');g.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px';A.forEach((p,i)=>{const f=el('div');f.style.cssText='background:#f4ecd8;padding:4px 4px 2px;cursor:pointer';const im=document.createElement('img');im.src=p.d;im.style.cssText='width:100%;display:block';f.appendChild(im);const cap=el('div',null,p.t);cap.style.cssText='font-size:10px;color:#3a2a10;text-align:center;padding:2px 0';f.appendChild(cap);
+    f.onclick=()=>{const b2=document.getElementById('dpbox');b2.innerHTML='';DP=null;const big=document.createElement('img');big.src=p.d;big.style.cssText='width:100%;image-rendering:pixelated';b2.appendChild(big);b2.appendChild(el('div','dpd',p.t+'\n'+(p.w||[]).join('、')));
+      const del=el('button','bc','刪除這張');del.type='button';del.onclick=()=>{const L=netAlbum();L.splice(i,1);try{localStorage.setItem('farm-album',JSON.stringify(L));}catch(e){}document.getElementById('dp').style.display='none';openAlbum();};b2.appendChild(del);
+      const c2=el('button','bc','返回');c2.type='button';c2.onclick=()=>{document.getElementById('dp').style.display='none';};b2.appendChild(c2);document.getElementById('dp').style.display='flex';};g.appendChild(f);});box.appendChild(g);
+  const c=el('button','bc','關閉');c.type='button';c.onclick=closeOm;box.appendChild(c);document.getElementById('om').style.display='flex';}
+// ---- 💬 互動選單 ----
+function openNetMenu(){if(G.ph!=='play')return;const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn','互動');t.style.color='#9fe0ff';box.appendChild(t);
+  const sec=(name,items)=>{box.appendChild(el('div','dps',name));const r=el('div','qtyrow');r.style.flexWrap='wrap';for(const[lb,fn]of items){const b=el('button','qb s',lb);b.type='button';b.onclick=()=>{document.getElementById('dp').style.display='none';fn();};r.appendChild(b);}box.appendChild(r);};
+  sec('說一句話',['👋','❤️','😂','👍','😮','來這邊！','謝謝！','等我一下','晚安～'].map(s=>[s,()=>{netSay(s);sfx('click');}]));
+  sec('動作',[['👋 揮手',netWave],['💃 跳舞',netDance],['📷 一起拍照',netPhotoStart]]);
+  box.appendChild(el('div','dps','點一下朋友，可以送東西、擊掌、抱抱'));
+  sec('其他',[['🖼 相簿',openAlbum],['🏠 房間資訊',openNetPanel]]);
+  const c=el('button','bc','關閉');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(c);document.getElementById('dp').style.display='flex';}
 // ---- 接到原本的遊戲流程 ----
 {const _endDay=endDay;endDay=function(p){_endDay(p);if(!NET.on)return;const bs=[...document.querySelectorAll('#mbox button.bp')],b=bs[bs.length-1];if(b&&/迎接新的一天/.test(b.textContent)){const f=b.onclick;b.onclick=()=>netGate(()=>f());}};}
 {const _nextDay=nextDay;nextDay=function(){const r=_nextDay.apply(this,arguments);if(NET.on){if(NET.mode==='host'){netWriteSnap();NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}else if(NET.snap){const hp=[G.px,G.py];netApplySnap(NET.snap);G.px=hp[0];G.py=hp[1];saveGame();}}return r;};}
@@ -4874,7 +4953,7 @@ function tileFill(t,row){const P=rowParts(row);t.innerHTML='';const im=document.
   t.appendChild(row);t._row=row;t._key=rowKey(row);}
 function tileify(root){const rows=[...root.querySelectorAll('.or,.mrow')].filter(r=>!r.closest('.titem')&&!r.closest('#dp'));if(!rows.length)return;
   let grid=null,prev=null;for(const r of rows){if(!(prev&&prev.nextSibling===r&&grid)){grid=el('div','tgrid');r.parentNode.insertBefore(grid,r);}
-    prev=r;const t=el('div','titem');t.setAttribute('role','button');t.tabIndex=0;r.parentNode.removeChild(r);tileFill(t,r);t.onclick=()=>openTileDetail(t,root);grid.appendChild(t);
+    prev=r;const t=el('div','titem');t.setAttribute('role','button');t.tabIndex=0;r.parentNode.removeChild(r);tileFill(t,r);t.onclick=e=>{if(t._row&&t._row.contains(e.target))return;openTileDetail(t,root);};grid.appendChild(t);
     // 讓下一列能接在同一格：用 grid 當作 prev 的位置參考
     prev=grid;grid._last=true;}
   // 把相鄰的 grid 合併
@@ -4922,11 +5001,11 @@ f(20,3,6,6,'#f9e08a');f(22,3,4,4,'#0d2744');const zz=document.getElementById('sy
 const h=document.createElement('canvas');h.width=h.height=32;const y=h.getContext('2d');y.imageSmoothingEnabled=false;drawToolIcon(y,'hoe',32);const sn=document.getElementById('sni');if(sn)sn.src=h.toDataURL();})();
 
 function popQty(o){let q=Math.min(1,o.max);const box=document.getElementById('dpbox');const draw=()=>{box.innerHTML='';DP=null;const im=document.createElement('img');im.className='dpi';im.src=o.img;im.alt='';box.appendChild(im);box.appendChild(el('div','dpn',o.title));
-  box.appendChild(el('div','dpd',(o.desc?o.desc+'\n':'')+'單價 '+o.price+'G'+(o.max>0?'｜最多 '+o.max+' 個':'')));
+  box.appendChild(el('div','dpd',(o.desc?o.desc+'\n':'')+(o.price?'單價 '+o.price+'G':'')+(o.max>0?(o.price?'｜':'')+'最多 '+o.max+' 個':'')));
   if(o.max<1){box.appendChild(el('div','dps',o.empty||'沒辦法交易'));}
   else{const row=el('div','qtyrow');const mk=(t,fn)=>{const b=el('button','qb',t);b.type='button';b.onclick=()=>{fn();sfx('click');draw();};row.appendChild(b);};mk('−',()=>{q=Math.max(1,q-1);});row.appendChild(el('span','qn',''+q));mk('＋',()=>{q=Math.min(o.max,q+1);});box.appendChild(row);
     const qk=el('div','qtyrow');for(const n of[5,10]){const b=el('button','qb s','+'+n);b.type='button';b.onclick=()=>{q=Math.min(o.max,q+n);sfx('click');draw();};qk.appendChild(b);}const ba=el('button','qb s','全部');ba.type='button';ba.onclick=()=>{q=o.max;sfx('click');draw();};qk.appendChild(ba);box.appendChild(qk);
-    box.appendChild(el('div','dps','共 '+(q*o.price)+'G'));const ok=el('button','bp',o.verb+' '+q+' 個（'+(q*o.price)+'G）');ok.type='button';ok.onclick=()=>{document.getElementById('dp').style.display='none';o.onOk(q);};box.appendChild(ok);}
+    if(o.price)box.appendChild(el('div','dps','共 '+(q*o.price)+'G'));const ok=el('button','bp',o.verb+' '+q+' 個'+(o.price?'（'+(q*o.price)+'G）':''));ok.type='button';ok.onclick=()=>{document.getElementById('dp').style.display='none';o.onOk(q);};box.appendChild(ok);}
   const c=el('button','bc','返回');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';if(o.onBack)o.onBack();};box.appendChild(c);};draw();document.getElementById('dp').style.display='flex';}
 function buySapling(who){const pr=30;popQty({title:who+'的樹苗',img:iconDataURL('sapling',32),desc:'種在空草地上，大約 3 天長成大樹。\n背包裡有 '+((G.mat&&G.mat.sapling)||0)+' 棵',price:pr,max:Math.min(99,Math.floor(G.gold/pr)),empty:'金幣不夠喔！',verb:'購買',onOk:q=>{if(!G.mat)G.mat={};G.gold-=q*pr;G.today.spent+=q*pr;G.mat.sapling=(G.mat.sapling||0)+q;sfx('coin');updHUD();msg(who+'：「好好照顧它們喔！」\n樹苗 +'+q);saveGame();}});}
 function sellWood(){const w=(G.mat&&G.mat.wood)||0;popQty({title:'賣木材',img:iconDataURL('wood',32),desc:'阿宇：「好木頭我都收！」\n背包裡有 '+w+' 個',price:8,max:w,empty:'背包裡沒有木材，拿斧頭砍樹就有了！',verb:'賣出',onOk:q=>{G.mat.wood-=q;G.gold+=q*8;G.stats.earned+=q*8;updHUD();sfx('coin');msg('阿宇：「好木頭！下次也拿來給我」\n獲得 '+(q*8)+'G');saveGame();}});}
