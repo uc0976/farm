@@ -173,7 +173,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 .mginfo{font-size:11px;white-space:pre-line;min-height:52px;text-align:center}
 .mghit{font-size:22px!important;padding:18px!important;min-height:76px;margin:0!important}
 /* ── 統一按鈕與面板比例（像素風圓角） ── */
-.ob,.bc,.bp,.ccard,.titem,.bagtabs button,.qopt,.shopcard,.tutok,.mgx,#st-go,#st-new{--u:2px;clip-path:polygon(calc(var(--u)*2) 0,calc(100% - var(--u)*2) 0,calc(100% - var(--u)*2) var(--u),calc(100% - var(--u)) var(--u),calc(100% - var(--u)) calc(var(--u)*2),100% calc(var(--u)*2),100% calc(100% - var(--u)*2),calc(100% - var(--u)) calc(100% - var(--u)*2),calc(100% - var(--u)) calc(100% - var(--u)),calc(100% - var(--u)*2) calc(100% - var(--u)),calc(100% - var(--u)*2) 100%,calc(var(--u)*2) 100%,calc(var(--u)*2) calc(100% - var(--u)),var(--u) calc(100% - var(--u)),var(--u) calc(100% - var(--u)*2),0 calc(100% - var(--u)*2),0 calc(var(--u)*2),var(--u) calc(var(--u)*2),var(--u) var(--u),calc(var(--u)*2) var(--u));
+.ob,.bc,.bp,.ccard,.titem,.bagtabs button,.qopt,.shopcard,.tutok,.mgx,#st-go,#st-new,#st-mp,#netemo{--u:2px;clip-path:polygon(calc(var(--u)*2) 0,calc(100% - var(--u)*2) 0,calc(100% - var(--u)*2) var(--u),calc(100% - var(--u)) var(--u),calc(100% - var(--u)) calc(var(--u)*2),100% calc(var(--u)*2),100% calc(100% - var(--u)*2),calc(100% - var(--u)) calc(100% - var(--u)*2),calc(100% - var(--u)) calc(100% - var(--u)),calc(100% - var(--u)*2) calc(100% - var(--u)),calc(100% - var(--u)*2) 100%,calc(var(--u)*2) 100%,calc(var(--u)*2) calc(100% - var(--u)),var(--u) calc(100% - var(--u)),var(--u) calc(100% - var(--u)*2),0 calc(100% - var(--u)*2),0 calc(var(--u)*2),var(--u) calc(var(--u)*2),var(--u) var(--u),calc(var(--u)*2) var(--u));
  background:linear-gradient(var(--bd),var(--bd)) left top/var(--u) var(--u) no-repeat,linear-gradient(var(--bd),var(--bd)) right top/var(--u) var(--u) no-repeat,linear-gradient(var(--bd),var(--bd)) left bottom/var(--u) var(--u) no-repeat,linear-gradient(var(--bd),var(--bd)) right bottom/var(--u) var(--u) no-repeat,var(--fl)}
 .ob{--u:3px;--bd:#c8a050;--fl:var(--panel)}
 .bc,.mgx{--bd:#c0392b;--fl:#3b0000}.bp,.tutok{--bd:#4caf50;--fl:#1b5e20}
@@ -181,7 +181,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 .titem{--bd:#4a3520;--fl:#1c1208}.titem.hl{--bd:var(--gold);--fl:#2e240a}
 .bagtabs button{--bd:#4a3520;--fl:#1c1208}.bagtabs button.act{--bd:var(--gold);--fl:#2e240a}
 .qopt{--bd:var(--wood);--fl:#2a1a0a}.shopcard{--bd:#4a3520;--fl:#1c1208}.shopcard.act{--bd:var(--gold);--fl:#2e240a}
-#st-go{--bd:var(--gold);--fl:rgba(0,0,0,0)}#st-new{--bd:#666;--fl:rgba(0,0,0,0)}
+#st-go{--bd:var(--gold);--fl:rgba(0,0,0,0)}#st-new{--bd:#666;--fl:rgba(0,0,0,0)}#st-mp{--bd:#4a8ab0;--fl:rgba(0,0,0,0)}#netemo{--u:3px;--bd:#c8a050;--fl:var(--panel)}
 .bb,.tutsk,.shopcard button,.hikeart{clip-path:polygon(2px 0,calc(100% - 2px) 0,calc(100% - 2px) 2px,100% 2px,100% calc(100% - 2px),calc(100% - 2px) calc(100% - 2px),calc(100% - 2px) 100%,2px 100%,2px calc(100% - 2px),0 calc(100% - 2px),0 2px,2px 2px)}
 .toast{border-radius:0!important;clip-path:polygon(4px 0,100% 0,100% 100%,4px 100%,4px calc(100% - 2px),2px calc(100% - 2px),2px calc(100% - 4px),0 calc(100% - 4px),0 4px,2px 4px,2px 2px,4px 2px)}
 .ob{border-radius:0!important}
@@ -196,6 +196,8 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 .lookhead .ot{margin-bottom:8px;padding-bottom:6px}
 .lookhead .hikeart{width:auto;max-width:100%;height:112px;margin:6px auto 4px}
 #st-go{display:flex;align-items:center;justify-content:center;line-height:1;min-width:220px;min-height:44px;padding:10px 20px!important;border-radius:0!important;font-size:11px!important;font-family:var(--font-ui)}
+#st-mp{min-width:200px;min-height:40px;padding:8px 16px!important;border:2px solid #4a8ab0;border-radius:0;background:rgba(20,50,70,.35)!important;color:#9fe0ff;font-size:11px!important;font-family:var(--font-ui);display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+#netemo{position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom) + 96px);z-index:30;width:52px;height:52px;border:0;padding:4px 0 2px;color:var(--gold);font-family:var(--font-ui);font-size:10px;line-height:1.3;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 #st-new{min-width:160px;min-height:36px;padding:8px 16px!important;border-radius:0!important;font-size:11px!important;font-family:var(--font-ui);margin-top:16px;opacity:.85;display:inline-flex;align-items:center;justify-content:center}
 .mgx{border-radius:0!important}
 #dp{z-index:45}
@@ -297,7 +299,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
   <div style="font-size:11px;color:#ccc;line-height:2">種田、交朋友，在小村子過自己的慢生活<br>第一次玩會有新手教學一步一步帶你上手</div>
   <div id="st-go" style="margin-top:4px;font-size:11px;font-weight:700;color:var(--gold);border:2px solid var(--gold);padding:10px 26px;border-radius:8px">點擊開始遊戲</div>
   <button id="st-new" type="button" hidden style="font-family:var(--font-ui);font-size:11px;color:#ccc;background:transparent;border:1px solid #666;border-radius:6px;padding:6px 14px;cursor:pointer">重新開始新遊戲</button>
-  <button id="st-mp" type="button" style="font-family:var(--font-ui);font-size:11px;color:#9fe0ff;background:transparent;border:1px solid #4a8ab0;border-radius:6px;padding:6px 14px;cursor:pointer">和朋友一起玩（輸入房號）</button>
+  <button id="st-mp" type="button">和朋友一起玩（輸入房號）</button>
   <div id="st-ver" style="font-size:10px;color:#888;margin-top:2px"></div>
 </div>
 </div>
@@ -4746,7 +4748,7 @@ function netDrawPlayer(p){const sx=Math.round(p.rx-cam.x),sy=Math.round(p.ry-cam
     if(p.a&&frameCount-(p._af||0)<p.a[1]*p.a[2]){row=p.a[0];col=Math.min(p.a[1]-1,Math.floor((frameCount-p._af)/p.a[2]));}
     else{const back=p.d==='up';if(moving){row=back?8:1;col=Math.floor(frameCount/5)%7;}else{row=back?7:0;col=Math.floor(frameCount/32)%2;}}
     ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(sx,sy+15);if(p.d==='left')ctx.scale(-1,1);ctx.drawImage(frameCv(img,col,row),0,0,FW,FH,-12.5*HS,-FH*HS,FW*HS,FH*HS);ctx.restore();}
-  ctx.font='bold 11px Cubic11,"Noto Sans TC",sans-serif';ctx.textAlign='center';const nm=p.n+(p.s?' 💤':''),w=fmw(nm)+10,ty=sy-FH*HS+46;
+  ctx.font='bold 11px Cubic11,"Noto Sans TC",sans-serif';ctx.textAlign='center';const nm=p.n+(p.s?' Zz':''),w=fmw(nm)+10,ty=sy-FH*HS+46;
   ctx.fillStyle='rgba(10,6,2,.7)';ctx.fillRect(sx-w/2,ty-13,w,16);ctx.fillStyle=p.h?'#f9c74f':'#9fe0ff';ftx(nm,sx,ty);
   if(p.e&&Date.now()-p.et<4000){ctx.font='bold 13px Cubic11,"Noto Sans TC",sans-serif';const bw=fmw(p.e)+16,by=ty-22;ctx.fillStyle='#fff';ctx.fillRect(sx-bw/2,by-16,bw,22);ctx.fillRect(sx-3,by+6,6,4);ctx.fillStyle='#2a1a0a';ftx(p.e,sx,by);}
   ctx.textAlign='left';}
@@ -4759,7 +4761,7 @@ function netSleepers(){const ids=Object.keys(NET.pl);return{n:ids.length+1,ok:1+
 function netCheckSleep(){const s=netSleepers();netWaitUI();if(s.ok>=s.n||G.time>=26*60)netRelease();}
 function netRelease(){const f=NET.wait;if(!f)return;NET.wait=null;NET.lastSig='';f();}
 function netWaitUI(){if(!NET.wait)return;const box=document.getElementById('mbox');const s=netSleepers();box.innerHTML='';box.appendChild(el('div','ot','晚安！'));
-  const names=[(G.pname||'你')+'（你）💤',...Object.values(NET.pl).map(p=>p.n+(p.s===G.day?' 💤':'　還醒著'))];
+  const names=[(G.pname||'你')+'（你）睡著了',...Object.values(NET.pl).map(p=>p.n+(p.s===G.day?'　睡著了':'　還醒著'))];
   box.appendChild(el('div','msgtxt','等大家都上床睡覺……（'+s.ok+' / '+s.n+' 人）\n\n'+names.join('\n')+'\n\n'+(NET.mode==='host'?'凌晨 2 點還沒睡的人會直接累倒。':'等房主換到新的一天。')));document.getElementById('om').style.display='flex';}
 function netNewDayGuest(S){// 房主換日了：自己還醒著的話直接累倒
   if(NET.wait){NET.snap=S;netRelease();return;}
@@ -4795,11 +4797,14 @@ async function netJoin(code){if(!netOK()){popInfo('多人連線','多人連線�
   netApplySnap(S);G.px=S.hx+TILE;G.py=S.hy;G.dir='down';G.indoor=false;if(G.tut!=null&&G.tut>=0)G.tut=-1;
   st.style.display='none';document.getElementById('st').style.display='none';initAudio();started=true;
   t.onDis(netP('pl/'+NET.uid));netListen();saveGame();
-  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角 💬 可以打招呼、跳舞、拍合照\n・點一下朋友，可以送東西、擊掌、抱抱\n・大家都上床睡覺才會到隔天\n・動物和建造先交給房主','開始！',null,'#9fe0ff'),300);}
+  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角「互動」可以打招呼、跳舞、拍合照\n・點一下朋友，可以送東西、擊掌、抱抱\n・大家都上床睡覺才會到隔天\n・動物和建造先交給房主','開始！',null,'#9fe0ff'),300);}
 function netClose(){if(!NET.on)return;if(NET.mode==='host'){NET.tp.del(netP());NET.offs.forEach(f=>f());NET.offs=[];NET.on=false;NET.mode=null;NET.pl={};const b=document.getElementById('netemo');if(b)b.remove();msg('房間關閉了');}else location.reload();}
 // ---- 介面 ----
 function netGuestBlock(what){if(NET.mode!=='guest')return false;msg('多人模式下，'+what+'先交給房主喔！');return true;}
-function netEmoBtn(){if(document.getElementById('netemo'))return;const b=el('button',null,'💬');b.id='netemo';b.type='button';b.style.cssText='position:fixed;left:10px;bottom:calc(env(safe-area-inset-bottom) + 96px);z-index:30;font-size:22px;width:46px;height:46px;border-radius:50%;border:2px solid #9fe0ff;background:#123a52;color:#fff;cursor:pointer';
+function netEmoBtn(){if(document.getElementById('netemo'))return;const b=el('button',null);b.id='netemo';b.type='button';b.setAttribute('aria-label','互動');
+  const c=document.createElement('canvas');c.width=18;c.height=18;c.style.cssText='image-rendering:pixelated;display:block;width:22px;height:22px;margin:0 auto';const x=c.getContext('2d'),f=(a,y,w,h,col)=>{x.fillStyle=col;x.fillRect(a,y,w,h);};
+  f(2,2,14,10,'#f9c74f');f(3,3,12,8,'#f4e6c4');x.clearRect(2,2,1,1);x.clearRect(15,2,1,1);x.clearRect(2,11,1,1);x.clearRect(15,11,1,1);f(11,12,4,1,'#f9c74f');f(12,13,3,1,'#f9c74f');f(13,14,2,1,'#f9c74f');f(14,15,1,1,'#f9c74f');f(12,11,2,2,'#f4e6c4');
+  for(const dx of[5,8,11])f(dx,6,2,2,'#6b4c2a');b.appendChild(c);b.appendChild(el('span',null,'互動'));
   b.onclick=e=>{e.stopPropagation();openNetMenu();};document.body.appendChild(b);}
 function openNetPanel(){const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn','多人連線');t.style.color='#9fe0ff';box.appendChild(t);
   if(!NET.on){box.appendChild(el('div','dpd','開一個房間，把房號給朋友，\n朋友在開頭畫面按「和朋友一起玩」輸入房號，\n就能來你的農場一起種田！\n\n・最多 '+NET_MAX+' 個人\n・朋友的金幣和背包是各自的\n・你關掉遊戲，房間就會關閉'));
@@ -4826,10 +4831,10 @@ function netHitPlayer(wx,wy){for(const id in NET.pl){const p=NET.pl[id];if(p.rx=
 function netPop(title,body,btns){festPop(title,body,btns,'#9fe0ff');}
 function netPlayerMenu(id){const p=NET.pl[id];if(!p)return;sfx('click');
   netPop(p.n,(p.h?'這座農場的主人\n':'')+(netNear(p,3)?'要做什麼呢？':'離太遠了，走近一點才能擊掌、抱抱或送東西'),[
-    ['🎁 送東西',()=>{if(!netNear(NET.pl[id]||p,3)){msg('走近一點才能把東西交給 '+p.n);return;}netGiftMenu(id);}],
-    ['✋ 擊掌',()=>netAsk(id,'hi5')],['🤗 抱抱',()=>netAsk(id,'hug')],
-    ['📷 一起拍照',()=>netPhotoStart()],['返回',null,'bc']]);}
-const NET_ASK={hi5:{ask:'舉起手想跟你擊掌！',ok:'✋ 擊掌！',me:'✋',done:'啪！擊掌成功！'},hug:{ask:'張開雙手想抱抱你！',ok:'🤗 抱抱',me:'🤗',done:'抱了一下，好溫暖～'}};
+    ['送東西',()=>{if(!netNear(NET.pl[id]||p,3)){msg('走近一點才能把東西交給 '+p.n);return;}netGiftMenu(id);}],
+    ['擊掌',()=>netAsk(id,'hi5')],['抱抱',()=>netAsk(id,'hug')],
+    ['一起拍照',()=>netPhotoStart()],['返回',null,'bc']]);}
+const NET_ASK={hi5:{ask:'舉起手想跟你擊掌！',ok:'擊掌！',me:'擊掌！',done:'啪！擊掌成功！'},hug:{ask:'張開雙手想抱抱你！',ok:'抱抱',me:'抱抱～',done:'抱了一下，好溫暖～'}};
 function netAsk(id,k){const p=NET.pl[id];if(!p)return;if(!netNear(p,2.5)){msg('要站在 '+p.n+' 旁邊才行喔！');return;}netSay(NET_ASK[k].me);netSend(id,k);msg('等 '+p.n+' 回應……');}
 function netGiftMenu(id){const p=NET.pl[id];if(!p)return;const box=document.getElementById('mbox');box.innerHTML='';G.ph='market';box.appendChild(el('div','ot','送給 '+p.n));
   const rows=[];const add=(src,k,n,name,icon)=>{if(!(n>0))return;const b=el('button','bb','送');b.type='button';b.style.cssText='background:#1b4e6e;border-color:#4ab0e0';
@@ -4841,11 +4846,11 @@ function netGiftMenu(id){const p=NET.pl[id];if(!p)return;const box=document.getE
   rows.forEach(r=>box.appendChild(r));const c=el('button','bc','返回');c.type='button';c.onclick=closeOm;box.appendChild(c);document.getElementById('om').style.display='flex';}
 function netGive(id,src,k,q,name){const p=NET.pl[id];if(!p){msg('對方已經離開了');return;}
   if(src==='gold'){if(G.gold<q)return;G.gold-=q;}else if(src==='mat'){if((G.mat[k]||0)<q)return;G.mat[k]-=q;}else{if((G[src][k]||0)<q)return;G[src][k]-=q;}
-  netSend(id,'gift',{src,k,q,name});netSay('🎁');netHearts(p.rx,p.ry,2);sfx('coin');updHUD();updTB();buildTools();saveGame();msg('把'+name+(src==='gold'?' '+q+'G':' ×'+q)+'送給 '+p.n+' 了！');}
+  netSend(id,'gift',{src,k,q,name});netSay('送你！');netHearts(p.rx,p.ry,2);sfx('coin');updHUD();updTB();buildTools();saveGame();msg('把'+name+(src==='gold'?' '+q+'G':' ×'+q)+'送給 '+p.n+' 了！');}
 function netGot(m){const d=m.d||{};const what=d.src==='gold'?d.q+'G':d.name+' ×'+d.q;
   if(d.src==='gold')G.gold+=d.q;else if(d.src==='mat'){if(!G.mat)G.mat={};G.mat[d.k]=(G.mat[d.k]||0)+d.q;}else{if(!G[d.src])return;G[d.src][d.k]=(G[d.src][d.k]||0)+d.q;}
   updHUD();updTB();buildTools();saveGame();sfx('heart');netHearts(G.px,G.py,3);netSend(m.f,'thx',what);
-  if(G.ph==='play')popInfo(m.fn+' 送你禮物！','🎁 '+what+'\n\n已經放進背包了。','謝謝！',null,'#9fe0ff');else msg(m.fn+' 送你 '+what+'！');}
+  if(G.ph==='play')popInfo(m.fn+' 送你禮物！',what+'\n\n已經放進背包了。','謝謝！',null,'#9fe0ff');else msg(m.fn+' 送你 '+what+'！');}
 function netOnMsg(k,m){NET.tp.del(netP('msg/'+NET.uid+'/'+k));if(!m||Date.now()-m.ts>60000)return;const p=NET.pl[m.f];
   if(m.t==='gift')return netGot(m);
   if(m.t==='thx')return msg(m.fn+' 收到了你的 '+m.d+'！');
@@ -4856,8 +4861,8 @@ function netOnMsg(k,m){NET.tp.del(netP('msg/'+NET.uid+'/'+k));if(!m||Date.now()-
   if(m.t==='busy')return msg(m.fn+' 現在正在忙，等一下再試試');
   if(m.t==='photo')return netPhotoCount(m.fn);}
 // ---- 動作 ----
-function netDance(){NET.dance=frameCount+180;netSay('💃');}
-function netWave(){G.dir='down';netSay('👋');}
+function netDance(){NET.dance=frameCount+180;netSay('♪～');}
+function netWave(){G.dir='down';netSay('嗨～');}
 function netActTick(){if(NET.dance){if(frameCount>NET.dance||G.moving||G.ph!=='play'){NET.dance=0;G.dir='down';}else if(frameCount%10===0)G.dir=['left','down','right','down'][Math.floor(frameCount/10)%4];}
   // 並排坐：旁邊也有朋友坐著就冒愛心
   if(G.sitting!=null&&frameCount%200===0){for(const id in NET.pl){const p=NET.pl[id];if(!p.si||!netNear(p,1.8))continue;netHearts((G.px+p.rx)/2,(G.py+p.ry)/2,1);if(!NET.satWith)NET.satWith={};if(NET.satWith[id]!==G.day){NET.satWith[id]=G.day;msg('和 '+p.n+' 並排坐著聊天，好愜意～');}}}}
@@ -4866,7 +4871,7 @@ function netSeatTaken(x,y){return NET.on&&Object.values(NET.pl).some(p=>p.si&&p.
 // ---- 合照：大家一起倒數，每個人的手機各存一張 ----
 function netPhotoStart(){if(G.ph!=='play')return;for(const id in NET.pl)if(netNear(NET.pl[id],8))netSend(id,'photo');netPhotoCount(null);}
 function netPhotoCount(who){if(NET.photoing)return;NET.photoing=true;if(who)msg(who+' 說：「來拍照！」');const ov=el('div',null,'3');ov.id='netcount';ov.style.cssText='position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);font-size:72px;color:#fff;text-shadow:0 0 8px #000,3px 3px 0 #2a1a0a;z-index:35;pointer-events:none;font-family:var(--font-ui)';document.body.appendChild(ov);
-  netSay('😄');let n=3;const iv=setInterval(()=>{n--;sfx('click');if(n>0){ov.textContent=n;return;}clearInterval(iv);ov.remove();netSay('✌️');setTimeout(()=>{netSnapPhoto();NET.photoing=false;},120);},800);}
+  netSay('笑一個！');let n=3;const iv=setInterval(()=>{n--;sfx('click');if(n>0){ov.textContent=n;return;}clearInterval(iv);ov.remove();netSay('耶！');setTimeout(()=>{netSnapPhoto();NET.photoing=false;},120);},800);}
 function netAlbum(){try{return JSON.parse(localStorage.getItem('farm-album')||'[]');}catch(e){return[];}}
 function netSnapPhoto(){const cv=document.getElementById('c'),k=cv.width/W2,inPic=Object.values(NET.pl).filter(p=>Math.abs(p.rx-G.px)<W2/2+20&&Math.abs(p.ry-G.py)<H2/2+20);
   // 以大家為中心裁一張橫的照片
@@ -4877,9 +4882,9 @@ function netSnapPhoto(){const cv=document.getElementById('c'),k=cv.width/W2,inPi
   x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,H-20,W,20);x.fillStyle='#fff';x.font='12px Cubic11,sans-serif';x.fillText(dateLabel()+'・'+names.join('、'),6,H-6);
   const A=netAlbum();A.unshift({d:c.toDataURL('image/jpeg',.72),t:dateLabel(),w:names});while(A.length>12)A.pop();let ok=true;try{localStorage.setItem('farm-album','[]');localStorage.setItem('farm-album',JSON.stringify(A));}catch(e){ok=false;}
   const fl=el('div');fl.style.cssText='position:fixed;inset:0;background:#fff;opacity:.9;z-index:36;pointer-events:none;transition:opacity .5s';document.body.appendChild(fl);setTimeout(()=>{fl.style.opacity='0';setTimeout(()=>fl.remove(),600);},60);sfx('coin');
-  msg(ok?'喀嚓！照片存進相簿了\n（💬 → 相簿）':'相簿滿了，存不下這張照片');}
+  msg(ok?'喀嚓！照片存進相簿了\n（互動 → 相簿）':'相簿滿了，存不下這張照片');}
 function openAlbum(){const box=document.getElementById('mbox');box.innerHTML='';G.ph='market';box.appendChild(el('div','ot','相簿'));const A=netAlbum();
-  if(!A.length)box.appendChild(el('div','msgtxt','還沒有照片。\n和朋友站在一起，按 💬 →「📷 一起拍照」吧！'));
+  if(!A.length)box.appendChild(el('div','msgtxt','還沒有照片。\n和朋友站在一起，按「互動」→「一起拍照」吧！'));
   const g=el('div');g.style.cssText='display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px';A.forEach((p,i)=>{const f=el('div');f.style.cssText='background:#f4ecd8;padding:4px 4px 2px;cursor:pointer';const im=document.createElement('img');im.src=p.d;im.style.cssText='width:100%;display:block';f.appendChild(im);const cap=el('div',null,p.t);cap.style.cssText='font-size:10px;color:#3a2a10;text-align:center;padding:2px 0';f.appendChild(cap);
     f.onclick=()=>{const b2=document.getElementById('dpbox');b2.innerHTML='';DP=null;const big=document.createElement('img');big.src=p.d;big.style.cssText='width:100%;image-rendering:pixelated';b2.appendChild(big);b2.appendChild(el('div','dpd',p.t+'\n'+(p.w||[]).join('、')));
       const del=el('button','bc','刪除這張');del.type='button';del.onclick=()=>{const L=netAlbum();L.splice(i,1);try{localStorage.setItem('farm-album',JSON.stringify(L));}catch(e){}document.getElementById('dp').style.display='none';openAlbum();};b2.appendChild(del);
@@ -4888,10 +4893,10 @@ function openAlbum(){const box=document.getElementById('mbox');box.innerHTML='';
 // ---- 💬 互動選單 ----
 function openNetMenu(){if(G.ph!=='play')return;const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn','互動');t.style.color='#9fe0ff';box.appendChild(t);
   const sec=(name,items)=>{box.appendChild(el('div','dps',name));const r=el('div','qtyrow');r.style.flexWrap='wrap';for(const[lb,fn]of items){const b=el('button','qb s',lb);b.type='button';b.onclick=()=>{document.getElementById('dp').style.display='none';fn();};r.appendChild(b);}box.appendChild(r);};
-  sec('說一句話',['👋','❤️','😂','👍','😮','來這邊！','謝謝！','等我一下','晚安～'].map(s=>[s,()=>{netSay(s);sfx('click');}]));
-  sec('動作',[['👋 揮手',netWave],['💃 跳舞',netDance],['📷 一起拍照',netPhotoStart]]);
+  sec('說一句話',['嗨～','讚！','哈哈哈','哇！','好耶！','來這邊！','謝謝！','等我一下','晚安～'].map(s=>[s,()=>{netSay(s);sfx('click');}]));
+  sec('動作',[['揮手',netWave],['跳舞',netDance],['一起拍照',netPhotoStart]]);
   box.appendChild(el('div','dps','點一下朋友，可以送東西、擊掌、抱抱'));
-  sec('其他',[['🖼 相簿',openAlbum],['🏠 房間資訊',openNetPanel]]);
+  sec('其他',[['相簿',openAlbum],['房間資訊',openNetPanel]]);
   const c=el('button','bc','關閉');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(c);document.getElementById('dp').style.display='flex';}
 // ---- 接到原本的遊戲流程 ----
 {const _endDay=endDay;endDay=function(p){_endDay(p);if(!NET.on)return;const bs=[...document.querySelectorAll('#mbox button.bp')],b=bs[bs.length-1];if(b&&/迎接新的一天/.test(b.textContent)){const f=b.onclick;b.onclick=()=>netGate(()=>f());}};}
