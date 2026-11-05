@@ -306,7 +306,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 <script>
 'use strict';
 // 版本號：每次更新往上加，開始畫面和設定頁會顯示
-const GAME_VER='1.16',GAME_DATE='2026-11-05';
+const GAME_VER='1.17',GAME_DATE='2026-11-05';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -4732,7 +4732,7 @@ function netApplyEdit(e){if(!e||e.by===NET.uid)return;const{x,y}=e,k=x+','+y;if(
 // ---- 玩家位置 ----
 function netMe(){return{n:G.pname||'小農夫',lk:JSON.stringify(G.look||{}),x:Math.round(G.px),y:Math.round(G.py),d:G.dir,m:G.moving?1:0,a:G.act?[G.act.row,G.act.n,G.act.spd,NET.seq]:0,
   s:NET.wait?G.day:0,e:NET.emo?NET.emo.t:'',et:NET.emo?NET.emo.ts:0,h:NET.mode==='host'?1:0,si:netSeat()};}
-function netTick(now){if(!NET.on)return;netActTick();
+function netTick(now){if(!NET.on)return;netActTick();mgInviteTick();
   if(G.act&&G.act!==NET._act){NET._act=G.act;NET.seq++;}if(!G.act)NET._act=null;
   if(now-NET.lastSend>120){const me=netMe(),sig=JSON.stringify(me);if(sig!==NET.lastSig){NET.lastSig=sig;NET.lastSend=now;NET.tp.upd(netP('pl/'+NET.uid),me);}}
   if(NET.mode==='host'&&now-NET.lastCk>2000){NET.lastCk=now;NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}
@@ -4771,6 +4771,7 @@ function netListen(){const t=NET.tp;
   NET.offs.push(t.on(netP('pl'),netPlayers));
   NET.offs.push(t.onAdd(netP('ed'),(k,e)=>netApplyEdit(e)));
   NET.offs.push(t.onAdd(netP('msg/'+NET.uid),netOnMsg));
+  NET.offs.push(t.on(netP('game'),mgOnGame));
   if(NET.mode==='guest'){
     NET.offs.push(t.on(netP('meta'),m=>{if(!m&&NET.on){NET.on=false;popInfo('房主離開了','房主關掉了房間，\n要回到你自己的農場囉。','好',()=>location.reload(),'#ff8a80');}}));
     NET.offs.push(t.on(netP('snap'),v=>{if(!v||v.v===NET.snapV)return;NET.snapV=v.v;const S=JSON.parse(v.s);if(S.day>G.day&&started)netNewDayGuest(S);else{NET.snap=S;netApplySnap(S);}}));
@@ -4895,9 +4896,118 @@ function openNetMenu(){if(G.ph!=='play')return;const box=document.getElementById
   const sec=(name,items)=>{box.appendChild(el('div','dps',name));const r=el('div','qtyrow');r.style.flexWrap='wrap';for(const[lb,fn]of items){const b=el('button','qb s',lb);b.type='button';b.onclick=()=>{document.getElementById('dp').style.display='none';fn();};r.appendChild(b);}box.appendChild(r);};
   sec('說一句話',['嗨～','讚！','哈哈哈','哇！','好耶！','來這邊！','謝謝！','等我一下','晚安～'].map(s=>[s,()=>{netSay(s);sfx('click');}]));
   sec('動作',[['揮手',netWave],['跳舞',netDance],['一起拍照',netPhotoStart]]);
+  sec('一起玩（運動）',Object.keys(MG2).map(k=>[MG2[k].n,()=>mgStart(k)]));
   box.appendChild(el('div','dps','點一下朋友，可以送東西、擊掌、抱抱'));
   sec('其他',[['相簿',openAlbum],['房間資訊',openNetPanel]]);
   const c=el('button','bc','關閉');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(c);document.getElementById('dp').style.display='flex';}
+// ===== 多人小遊戲：揪團、大廳、開始、結算 =====
+// rooms/<房號>/game：{k 遊戲, st lobby|play|end, by 發起人, ts, pl:{uid:{n,j,sc,done,ft,prog,tp}}, ball, res}
+const MG2={
+  bball:{n:'籃球鬥牛',d:'每人投 10 球，看誰進最多！\n抓準時機按「投籃」。',min:2},
+  vball:{n:'排球接力',d:'大家合作傳球，球飛過來時按「接球」。\n看全隊能接幾球！',min:2,coop:1},
+  race:{n:'賽跑',d:'左腳、右腳輪流按，\n先跑到終點的人贏！',min:2},
+  tug:{n:'拔河',d:'分成兩隊一直按「用力拉」，\n把繩子拉到自己這邊就贏！',min:2}};
+let GM=null;
+function mgP(s){return netP('game'+(s?'/'+s:''));}
+function mgStart(k){if(!NET.on)return;if(NET.game){msg('已經有人在揪團了，先玩完這一場吧！');return;}if(!Object.keys(NET.pl).length){msg('農場裡只有你一個人，等朋友來再一起玩吧！');return;}
+  NET.tp.set(mgP(),{k,st:'lobby',by:NET.uid,ts:Date.now(),pl:{[NET.uid]:{n:G.pname||'小農夫',j:Date.now()}}});sfx('click');}
+function mgJoin(){if(!NET.game)return;NET.tp.upd(mgP('pl/'+NET.uid),{n:G.pname||'小農夫',j:Date.now()});}
+function mgLeave(){const g=NET.game;if(!g)return;document.getElementById('dp').style.display='none';G.ph='play';if(g.by===NET.uid)NET.tp.del(mgP());else NET.tp.del(mgP('pl/'+NET.uid));}
+function mgIds(g){return Object.keys(g.pl||{}).sort((a,b)=>g.pl[a].j-g.pl[b].j);}
+function mgOnGame(v){const old=NET.game;NET.game=v;
+  if(!v){if(GM&&!GM.ended){mgClose();msg('遊戲取消了');}else if(old&&old.st==='lobby'&&document.getElementById('mglobby'))mgCloseDp();return;}
+  const me=v.pl&&v.pl[NET.uid];
+  if(v.st==='lobby'){if(me)mgLobby();else if(!NET.mgAsk||NET.mgAsk!==v.ts){NET.mgAsk=v.ts;NET.mgPending=v.ts;}if(!me&&document.getElementById('mglobby'))mgCloseDp();}
+  if(v.st==='play'&&me&&(!GM||GM.ts!==v.ts)){mgCloseDp();mgRun(v);}
+  if(v.st==='play'&&!me&&old&&old.st==='lobby'&&NET.mgPending===v.ts){NET.mgPending=0;mgCloseDp();}
+  if(GM&&GM.ts===v.ts){GM.g=v;if(MG2G[v.k].sync)MG2G[v.k].sync(GM,v);if(v.st==='end')mgEnd(v);}
+  if(v.by===NET.uid&&v.st==='play')mgHostCheck(v);}
+function mgCloseDp(){const d=document.getElementById('dp');if(d.style.display!=='none'&&(document.getElementById('mglobby')||document.getElementById('mgmark'))){d.style.display='none';if(G.ph==='market')G.ph='play';}}
+function mgInviteTick(){if(!NET.mgPending||G.ph!=='play')return;const g=NET.game;if(!g||g.st!=='lobby'||g.ts!==NET.mgPending){NET.mgPending=0;return;}NET.mgPending=0;const M=MG2[g.k],who=(g.pl[g.by]||{}).n||'朋友';
+  festPop(who+' 揪團！',who+' 想跟大家玩「'+M.n+'」\n\n'+M.d,[['加入',()=>mgJoin()],['不玩',null,'bc']],'#9fe0ff');{const mk=el('span');mk.id='mgmark';mk.hidden=true;document.getElementById('dpbox').appendChild(mk);}sfx('click');}
+function mgLobby(){const g=NET.game;if(!g)return;const M=MG2[g.k],box=document.getElementById('dpbox');G.ph='market';box.innerHTML='';DP=null;
+  const t=el('div','dpn',M.n);t.id='mglobby';t.style.color='#9fe0ff';box.appendChild(t);box.appendChild(el('div','dpd',M.d));
+  const ids=mgIds(g);let list='現在加入的人（'+ids.length+'）：\n'+ids.map(id=>g.pl[id].n+(id===g.by?'（發起）':'')).join('\n');
+  if(g.k==='tug'&&ids.length>1){const T=mgTeams(g);list+='\n\n藍隊：'+T.A.map(id=>g.pl[id].n).join('、')+'\n紅隊：'+T.B.map(id=>g.pl[id].n).join('、');}
+  box.appendChild(el('div','dps',list));
+  if(g.by===NET.uid){const b=el('button','bp',ids.length>=M.min?'開始！（'+ids.length+' 人）':'等朋友加入……');b.type='button';b.disabled=ids.length<M.min;b.onclick=()=>NET.tp.upd(mgP(),{st:'play',go:Date.now(),...(g.k==='vball'?{ball:{to:ids[1],n:0,id:1}}:{})});box.appendChild(b);}
+  else box.appendChild(el('div','dps','等 '+(g.pl[g.by]||{}).n+' 按開始……'));
+  const c=el('button','bc',g.by===NET.uid?'取消揪團':'退出');c.type='button';c.onclick=mgLeave;box.appendChild(c);document.getElementById('dp').style.display='flex';}
+function mgTeams(g){const ids=mgIds(g),A=[],B=[];ids.forEach((id,i)=>(i%2?B:A).push(id));return{A,B};}
+function mgHostCheck(v){const ids=mgIds(v).filter(id=>id===NET.uid||NET.pl[id]);if(v.k==='bball'||v.k==='race'){if(v.k==='race'&&ids.some(id=>v.pl[id].done)&&!NET.mgFirst)NET.mgFirst=Date.now();
+    if(ids.every(id=>v.pl[id].done)||Date.now()-v.go>75000||(v.k==='race'&&NET.mgFirst&&Date.now()-NET.mgFirst>8000)){NET.mgFirst=0;mgEndSend({st:'end'});}}}
+// ---- 遊戲畫面 ----
+function mgRun(g){mgClose();const W=320,H=300,ov=el('div');ov.id='mg2';ov.style.cssText='position:fixed;inset:0;z-index:50;background:rgba(10,6,2,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;font-family:var(--font-ui)';
+  const ttl=el('div',null,MG2[g.k].n);ttl.style.cssText='color:var(--gold);font-size:20px';ov.appendChild(ttl);
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;cv.style.cssText='width:min(92vw,400px);image-rendering:pixelated;border:3px solid #c8a050;background:#1c1208;touch-action:none';ov.appendChild(cv);
+  const sb=el('div');sb.style.cssText='color:#f4e6c4;font-size:11px;white-space:pre-line;text-align:center;min-height:30px;line-height:1.5';ov.appendChild(sb);
+  const bt=el('div');bt.style.cssText='display:flex;gap:10px;width:min(92vw,400px)';ov.appendChild(bt);document.body.appendChild(ov);
+  G.ph='mg2';clearPath();const x=cv.getContext('2d');x.imageSmoothingEnabled=false;
+  GM={ts:g.ts,k:g.k,g,cv,x,sb,bt,W,H,f:0,go:performance.now()+3000,started:false,lastW:0,
+    R:(a,b,w,h,c)=>{x.fillStyle=c;x.fillRect(Math.round(a),Math.round(b),w,h);},
+    T:(s,a,b,c,sz,al)=>{x.font=(sz||12)+'px Cubic11,"Noto Sans TC",sans-serif';x.textAlign=al||'center';x.fillStyle='#2a1a0a';x.fillText(s,a+1,b+1);x.fillStyle=c||'#fff';x.fillText(s,a,b);x.textAlign='left';},
+    btn:(label,fn,cls)=>{const b=el('button',cls||'bp',label);b.type='button';b.style.cssText='flex:1;min-height:52px;font-size:14px;margin:0';b.addEventListener('pointerdown',e=>{e.preventDefault();if(GM&&GM.started&&!GM.over)fn();});bt.appendChild(b);return b;},
+    put:o=>NET.tp.upd(mgP('pl/'+NET.uid),o)};
+  MG2G[g.k].init(GM);const loop=()=>{if(!GM||GM.cv!==cv)return;GM.f++;const now=performance.now();
+    if(!GM.started&&now>=GM.go){GM.started=true;GM.t0=now;sfx('right');}
+    MG2G[GM.k].draw(GM,now);if(!GM.started){const n=Math.ceil((GM.go-now)/1000);GM.R(0,0,W,H,'rgba(0,0,0,.45)');GM.T(String(n),W/2,H/2+20,'#fff',64);}
+    if(GM.started&&!GM.over&&MG2G[GM.k].tick)MG2G[GM.k].tick(GM,now);
+    if(GM.doneMsg&&!GM.ended&&GM.f%90===0)GM.put(GM.doneMsg);if(GM.endMsg&&GM.f%60===0&&NET.game&&NET.game.ts===GM.ts&&NET.game.st!=='end')NET.tp.upd(mgP(),GM.endMsg);if(GM.f%30===0&&GM.g.by===NET.uid&&GM.g.st==='play')mgHostCheck(GM.g);
+    GM.sb.textContent=MG2G[GM.k].board(GM);requestAnimationFrame(loop);};requestAnimationFrame(loop);}
+function mgClose(){const o=document.getElementById('mg2');if(o)o.remove();GM=null;if(G.ph==='mg2')G.ph='play';}
+function mgName(g,id){return id===NET.uid?'你':(g.pl[id]||{}).n||'？';}
+function mgEnd(v){if(!GM||GM.ended)return;GM.ended=true;GM.over=true;const r=MG2G[v.k].result(GM,v);G.gold+=r.gold;if(G.today)G.today.earn+=r.gold;G.en=Math.max(0,G.en-5);updHUD();saveGame();sfx(r.win?'coin':'click');
+  setTimeout(()=>{if(!GM)return;festPop(MG2[v.k].n+'｜結果',r.text+'\n\n'+(r.gold?'獲得 '+r.gold+'G':'')+'・體力 -5',[['好',()=>{mgClose();}]],'#9fe0ff');},900);
+  if(v.by===NET.uid)setTimeout(()=>{if(NET.game&&NET.game.ts===v.ts)NET.tp.del(mgP());},8000);}
+function mgEndSend(o){if(GM)GM.endMsg=o;NET.tp.upd(mgP(),o);}
+function mgRank(g,key,desc){const ids=mgIds(g);return ids.map(id=>({id,v:g.pl[id][key]})).sort((a,b)=>desc?(b.v||0)-(a.v||0):(a.v||9e9)-(b.v||9e9));}
+const MG2G={
+  // ---- 籃球鬥牛：準心在條上來回跑，停在綠色區就進 ----
+  bball:{init(M){M.shot=0;M.sc=0;M.ph=0;M.anim=null;M.btn('投籃',()=>{if(M.anim||M.shot>=10)return;const z=.5,w=.2-M.shot*.01,d=Math.abs(M.ph-z),ok=d<w/2;M.shot++;if(ok)M.sc++;M.anim={t:0,ok,perfect:d<w/6};sfx('click');M.put({sc:M.sc,sh:M.shot});});},
+    tick(M){if(!M.anim)M.ph=(Math.sin(M.f*(.045+M.shot*.006))+1)/2;else{M.anim.t++;if(M.anim.t===38){sfx(M.anim.ok?'right':'wrong');}if(M.anim.t>60){M.anim=null;if(M.shot>=10){M.over=true;M.doneMsg={done:1,sc:M.sc};M.put(M.doneMsg);}}}},
+    draw(M){const{R,T,W,H}=M;R(0,0,W,H,'#3a6aa8');R(0,180,W,120,'#c8864a');for(let i=0;i<W;i+=40)R(i,180,2,120,'#b07440');R(0,180,W,3,'#f4ecd8');
+      R(120,30,80,54,'#f4f4f4');R(140,50,40,26,'#c84030');R(143,53,34,20,'#f4f4f4');R(156,84,8,96,'#888');R(130,82,60,4,'#e86020');for(let i=0;i<6;i++)R(133+i*9,86,2,14,'#f4f4f4');
+      let bx=150,by=226;if(M.anim){const k=Math.min(1,M.anim.t/38),ex=M.anim.ok?160:(M.shot%2?122:198);bx=150+(ex-150)*k;by=226+(80-226)*k-Math.sin(k*Math.PI)*90;if(M.anim.t>38){const k2=(M.anim.t-38)/22;by=M.anim.ok?84+k2*90:80+k2*60;bx+=M.anim.ok?0:(M.shot%2?-40:40)*k2;}}
+      mgChar(M,NET.uid,150,294,{back:true,s:1.3});R(bx-7,by-7,14,14,'#e87020');R(bx-7,by-1,14,2,'#7a3010');R(bx-1,by-7,2,14,'#7a3010');
+      const w=.2-Math.min(9,M.shot)*.01;R(30,192,260,12,'#2a1a0a');R(30+260*(.5-w/2),192,260*w,12,'#4caf50');R(30+260*(.5-w/6),192,260*w/3,12,'#a5ff70');if(!M.anim)R(30+260*M.ph-2,187,4,22,'#fff');
+      T('第 '+Math.min(10,M.shot+(M.anim?0:1))+' / 10 球',W/2,20,'#fff',13);if(M.anim&&M.anim.t>38)T(M.anim.ok?(M.anim.perfect?'空心！':'進了！'):'沒進',W/2,150,M.anim.ok?'#ffd54f':'#ffb0a0',20);},
+    board(M){const g=M.g;return mgIds(g).map(id=>mgName(g,id)+' '+(id===NET.uid?M.sc:(g.pl[id].sc||0))+' 球'+((id===NET.uid?M.over:g.pl[id].done)?'（投完）':'')).join('　');},
+    result(M,v){const r=mgRank(v,'sc',true),top=r[0].v||0,win=(v.pl[NET.uid].sc||0)===top&&top>0;return{win,gold:win?150:50,text:r.map((o,i)=>(i+1)+'. '+mgName(v,o.id)+'　'+(o.v||0)+' 球').join('\n')+(win?'\n\n你是冠軍！':'')};}},
+  // ---- 賽跑：左右腳輪流按 ----
+  race:{init(M){M.prog=0;M.last='';const step=f=>{if(M.prog>=100)return;if(M.last===f){M.trip=12;return;}M.last=f;M.prog=Math.min(100,M.prog+2.2);if(M.prog>=100){M.over=true;M.ft=performance.now()-M.t0;M.doneMsg={prog:100,done:1,ft:Math.round(M.ft)};M.put(M.doneMsg);sfx('right');}};M.btn('左腳',()=>step('L'));M.btn('右腳',()=>step('R'));},
+    tick(M,now){if(M.trip)M.trip--;if(now-M.lastW>150&&!M.over){M.lastW=now;M.put({prog:Math.round(M.prog)});}},
+    draw(M){const{R,T,W,H}=M,g=M.g,ids=mgIds(g),C=['#e85a5a','#4a90e2','#f2c94c','#6fcf6f'];R(0,0,W,H,'#6aa84f');R(0,40,W,H-60,'#c8864a');R(W-36,40,6,H-60,'#fff');for(let y=40;y<H-20;y+=12)R(W-36,y,6,6,'#2a1a0a');
+      const lh=(H-60)/Math.max(2,ids.length);ids.forEach((id,i)=>{const y=40+i*lh,me=id===NET.uid,p=me?M.prog:(g.pl[id].prog||0),x=16+(W-70)*p/100,leg=Math.floor(p*1.5)%2;R(0,y+lh-2,W,2,'#f4ecd8');
+        {const sc=Math.min(1.25,lh/62);mgChar(M,id,x,y+lh-6,{mv:p<100,s:sc});T(mgName(g,id),x,y+lh-6-FH*sc+22,me?'#ffd54f':'#fff',11);}});
+      if(M.trip)T('同一隻腳！',W/2,30,'#ffb0a0',14);else T('左、右、左、右！',W/2,30,'#fff',12);},
+    board(M){const g=M.g;return mgIds(g).map(id=>mgName(g,id)+' '+(id===NET.uid?Math.round(M.prog):(g.pl[id].prog||0))+'%').join('　');},
+    result(M,v){const r=mgRank(v,'ft',false),win=r[0].id===NET.uid&&v.pl[NET.uid].done;return{win,gold:win?150:50,text:r.map((o,i)=>(i+1)+'. '+mgName(v,o.id)+'　'+(o.v?(o.v/1000).toFixed(1)+' 秒':'沒跑完（'+(v.pl[o.id].prog||0)+'%）')).join('\n')+(win?'\n\n你是第一名！':'')};}},
+  // ---- 拔河：兩隊一直按，繩子超過 40 就贏 ----
+  tug:{init(M){M.taps=0;const T_=mgTeams(M.g);M.team=T_.A.includes(NET.uid)?'A':'B';M.btn('用力拉！',()=>{M.taps++;M.pull=6;sfx('click');});},
+    rope(M){const g=M.g,T_=mgTeams(g),sum=a=>a.reduce((s,id)=>s+(id===NET.uid?M.taps:(g.pl[id].tp||0)),0),nA=T_.A.length,nB=T_.B.length,mx=Math.max(nA,nB);return sum(T_.A)*mx/nA-sum(T_.B)*mx/nB;},
+    tick(M,now){if(M.pull)M.pull--;if(now-M.lastW>100){M.lastW=now;M.put({tp:M.taps});}const r=this.rope(M);if(M.g.by===NET.uid&&!M.sentEnd&&(Math.abs(r)>=40||now-M.t0>20000)){M.sentEnd=true;mgEndSend({st:'end',res:r>=0?'A':'B'});}},
+    draw(M){const{R,T,W,H}=M,g=M.g,T_=mgTeams(g),r=Math.max(-40,Math.min(40,this.rope(M))),off=-r*2.6;R(0,0,W,H,'#7ab85a');R(0,170,W,130,'#9a7a4a');R(W/2-1,150,2,60,'#fff');
+      R(20,182,W-40,6,'#d8b878');for(let i=24;i<W-24;i+=10)R(i+off%10,183,4,4,'#a88848');R(W/2+off-4,170,8,30,'#e53935');
+      const pp=(id,i,side)=>{const me=id===NET.uid,bx=(side<0?60-i*30:W-60+i*30)+off,lean=me&&M.pull?side*3:0;R(bx-14,200,28,4,side<0?'#4a90e2':'#e85a5a');mgChar(M,id,bx+lean,196,{left:side>0,mv:me&&M.pull>0});T(mgName(g,id),bx,160,me?'#ffd54f':'#fff',11);};
+      T_.A.forEach((id,i)=>pp(id,i,-1));T_.B.forEach((id,i)=>pp(id,i,1));T('藍隊',50,30,'#9fd0ff',14);T('紅隊',W-50,30,'#ffb0a0',14);
+      const left=M.t0?Math.max(0,20-Math.floor((performance.now()-M.t0)/1000)):20;T('剩 '+left+' 秒',W/2,30,'#fff',14);T('你是'+(M.team==='A'?'藍隊':'紅隊'),W/2,60,M.team==='A'?'#9fd0ff':'#ffb0a0',13);},
+    board(M){return '你按了 '+M.taps+' 下';},
+    result(M,v){const win=v.res===M.team,T_=mgTeams(v);return{win,gold:win?120:40,text:(v.res==='A'?'藍隊':'紅隊')+'贏了！\n\n藍隊：'+T_.A.map(id=>mgName(v,id)).join('、')+'\n紅隊：'+T_.B.map(id=>mgName(v,id)).join('、')};}},
+  // ---- 排球接力：球傳到你這邊時，圈圈縮到最小按接球 ----
+  vball:{init(M){M.recv=null;M.btn('接球！',()=>{const r=M.recv;if(!r||r.hit)return;const k=r.t/r.dur;if(k>=.72&&k<=1.04){r.hit=true;sfx('right');M.flash={t:24,txt:k>=.84&&k<=.98?'漂亮！':'好球！'};const ids=mgIds(M.g).filter(id=>id!==NET.uid&&(NET.pl[id]));const to=ids.length?ids[Math.floor(Math.random()*ids.length)]:NET.uid;setTimeout(()=>NET.tp.upd(mgP(),{ball:{to,n:r.n+1,id:r.id+1}}),300);M.recv=null;}else{M.recv.hit=true;M.flash={t:40,txt:'太早了！'};sfx('wrong');mgEndSend({st:'end',res:r.n});}});},
+    sync(M,v){const b=v.ball;if(b&&b.to===NET.uid&&b.id!==M.lastId&&v.st==='play'){M.lastId=b.id;M.recv={n:b.n,id:b.id,t:0,dur:Math.max(36,80-b.n*3)};}},
+    tick(M){const r=M.recv;if(r&&!r.hit){r.t++;if(r.t/r.dur>1.1){r.hit=true;M.flash={t:40,txt:'沒接到……'};sfx('wrong');mgEndSend({st:'end',res:r.n});}}if(M.flash)M.flash.t--;},
+    draw(M){const{R,T,W,H}=M,g=M.g,b=g.ball||{n:0};R(0,0,W,H,'#f2d38a');R(0,0,W,120,'#7ac0e8');R(W/2-2,120,4,90,'#fff');R(W/2-40,120,80,3,'#fff');
+      T('連續 '+b.n+' 球',W/2,32,'#fff',20);const r=M.recv;
+      if(r&&!r.hit){const k=r.t/r.dur,bx=W/2+(1-k)*60,by=60+k*170;const rad=Math.max(10,40*(1-k)+10);x_ring(M,W/2,232,rad,k>=.72?'#4caf50':'#fff');R(bx-8,by-8,16,16,'#f4f4f4');R(bx-8,by-2,16,3,'#2a62d0');R(bx-2,by-8,3,16,'#e8c020');T('球來了！',W/2,80,'#ffd54f',16);}
+      else if(b.to&&b.to!==NET.uid){T('球在 '+mgName(g,b.to)+' 那邊……',W/2,58,'#fff',13);const bb=(M.f%60)/60,qx=W/2+60-bb*20,qy=112-Math.sin(bb*Math.PI)*30;R(qx-6,qy-6,12,12,'#f4f4f4');R(qx-6,qy-1,12,2,'#2a62d0');R(qx-1,qy-6,2,12,'#e8c020');}
+      mgIds(g).filter(id=>id!==NET.uid).forEach((id,i,a)=>{const ox=W/2+(i-(a.length-1)/2)*60;mgChar(M,id,ox,118,{s:.9});T(mgName(g,id),ox,88,'#ffd54f',10);});
+      mgChar(M,NET.uid,W/2,292,{back:true,s:1.3});if(M.flash&&M.flash.t>0)T(M.flash.txt,W/2,200,'#c0392b',18);},
+    board(M){return '大家一起傳球，看能接幾球！';},
+    result(M,v){const n=v.res||0,gold=Math.min(600,n*15);return{win:n>=5,gold,text:'全隊連續接了 '+n+' 球！'+(n>=15?'\n小鐘教練：「你們可以去比賽了！」':n>=5?'\n小鐘教練：「默契不錯喔！」':'\n小鐘教練：「再練練吧！」')};}}};
+function mgChar(M,id,x,y,o){o=o||{};const img=id===NET.uid?heroImg():netSheet((NET.pl[id]||{}).lk);if(!img||!img.width)return;const row=o.back?(o.mv?8:7):(o.mv?1:0),col=o.mv?Math.floor(M.f/5)%7:Math.floor(M.f/32)%2,sc=o.s||1.25;
+  const X=M.x;X.save();X.imageSmoothingEnabled=false;X.translate(Math.round(x),Math.round(y));if(o.left)X.scale(-1,1);X.drawImage(frameCv(img,col,row),0,0,FW,FH,-12.5*sc,-FH*sc,FW*sc,FH*sc);X.restore();}
+function x_ring(M,cx,cy,r,c){const x=M.x;x.strokeStyle=c;x.lineWidth=3;x.beginPath();x.arc(cx,cy,r,0,Math.PI*2);x.stroke();}
 // ---- 接到原本的遊戲流程 ----
 {const _endDay=endDay;endDay=function(p){_endDay(p);if(!NET.on)return;const bs=[...document.querySelectorAll('#mbox button.bp')],b=bs[bs.length-1];if(b&&/迎接新的一天/.test(b.textContent)){const f=b.onclick;b.onclick=()=>netGate(()=>f());}};}
 {const _nextDay=nextDay;nextDay=function(){const r=_nextDay.apply(this,arguments);if(NET.on){if(NET.mode==='host'){netWriteSnap();NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}else if(NET.snap){const hp=[G.px,G.py];netApplySnap(NET.snap);G.px=hp[0];G.py=hp[1];saveGame();}}return r;};}
