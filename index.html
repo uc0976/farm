@@ -306,7 +306,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 <script>
 'use strict';
 // 版本號：每次更新往上加，開始畫面和設定頁會顯示
-const GAME_VER='1.17',GAME_DATE='2026-11-05';
+const GAME_VER='1.18',GAME_DATE='2026-11-08';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -4753,7 +4753,7 @@ function netDrawPlayer(p){const sx=Math.round(p.rx-cam.x),sy=Math.round(p.ry-cam
   if(p.e&&Date.now()-p.et<4000){ctx.font='bold 13px Cubic11,"Noto Sans TC",sans-serif';const bw=fmw(p.e)+16,by=ty-22;ctx.fillStyle='#fff';ctx.fillRect(sx-bw/2,by-16,bw,22);ctx.fillRect(sx-3,by+6,6,4);ctx.fillStyle='#2a1a0a';ftx(p.e,sx,by);}
   ctx.textAlign='left';}
 function netEnts(ents){if(!NET.on)return;const zone=e=>isInStore(e)?1:isInBarn(e)?2:0,mz=zone({x:G.px,y:G.py});
-  for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null)continue;{const pz=zone({x:p.rx,y:p.ry});if(pz&&pz!==mz)continue;}ents.push({y:p.ry,f:()=>netDrawPlayer(p)});}
+  for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null||!mgHideSee(p,id))continue;{const pz=zone({x:p.rx,y:p.ry});if(pz&&pz!==mz)continue;}ents.push({y:p.ry,f:()=>netDrawPlayer(p)});}
   if(NET.emo&&Date.now()-NET.emo.ts<4000)ents.push({y:9e9,f:()=>{const sx=Math.round(G.px-cam.x),sy=Math.round(G.py-cam.y)-FH*HS+24;ctx.font='bold 13px Cubic11,"Noto Sans TC",sans-serif';ctx.textAlign='center';const bw=fmw(NET.emo.t)+16;ctx.fillStyle='#fff';ctx.fillRect(sx-bw/2,sy-16,bw,22);ctx.fillRect(sx-3,sy+6,6,4);ctx.fillStyle='#2a1a0a';ftx(NET.emo.t,sx,sy);ctx.textAlign='left';}});}
 // ---- 一起睡覺：大家都按了「迎接新的一天」才換日 ----
 function netGate(fn){if(!NET.on)return fn();NET.wait=fn;NET.lastSig='';netWaitUI();if(NET.mode==='host')netCheckSleep();}
@@ -4828,9 +4828,9 @@ function netSend(to,t,d){if(!NET.on)return;NET.tp.push(netP('msg/'+to),{f:NET.ui
 function netHearts(x,y,n){for(let i=0;i<(n||3);i++)setTimeout(()=>G.fx.push({kind:'heart',x:x+(Math.random()-.5)*20,y:y-30,t:0}),i*160);}
 function netSay(t){NET.emo={t,ts:Date.now()};NET.lastSig='';}
 function netNear(p,tiles){return Math.hypot(p.rx-G.px,p.ry-G.py)<=TILE*tiles;}
-function netHitPlayer(wx,wy){for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null)continue;if(Math.abs(wx-p.rx)<18&&wy>p.ry+15-66&&wy<p.ry+20)return id;}return null;}
+function netHitPlayer(wx,wy){for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null||!mgHideSee(p,id))continue;if(Math.abs(wx-p.rx)<18&&wy>p.ry+15-66&&wy<p.ry+20)return id;}return null;}
 function netPop(title,body,btns){festPop(title,body,btns,'#9fe0ff');}
-function netPlayerMenu(id){const p=NET.pl[id];if(!p)return;sfx('click');
+function netPlayerMenu(id){if(mgHideTap(id))return;const p=NET.pl[id];if(!p)return;sfx('click');
   netPop(p.n,(p.h?'這座農場的主人\n':'')+(netNear(p,3)?'要做什麼呢？':'離太遠了，走近一點才能擊掌、抱抱或送東西'),[
     ['送東西',()=>{if(!netNear(NET.pl[id]||p,3)){msg('走近一點才能把東西交給 '+p.n);return;}netGiftMenu(id);}],
     ['擊掌',()=>netAsk(id,'hi5')],['抱抱',()=>netAsk(id,'hug')],
@@ -4896,7 +4896,8 @@ function openNetMenu(){if(G.ph!=='play')return;const box=document.getElementById
   const sec=(name,items)=>{box.appendChild(el('div','dps',name));const r=el('div','qtyrow');r.style.flexWrap='wrap';for(const[lb,fn]of items){const b=el('button','qb s',lb);b.type='button';b.onclick=()=>{document.getElementById('dp').style.display='none';fn();};r.appendChild(b);}box.appendChild(r);};
   sec('說一句話',['嗨～','讚！','哈哈哈','哇！','好耶！','來這邊！','謝謝！','等我一下','晚安～'].map(s=>[s,()=>{netSay(s);sfx('click');}]));
   sec('動作',[['揮手',netWave],['跳舞',netDance],['一起拍照',netPhotoStart]]);
-  sec('一起玩（運動）',Object.keys(MG2).map(k=>[MG2[k].n,()=>mgStart(k)]));
+  sec('一起玩（運動）',Object.keys(MG2).filter(k=>MG2[k].cat==='sport').map(k=>[MG2[k].n,()=>mgStart(k)]));
+  sec('比賽與派對',Object.keys(MG2).filter(k=>MG2[k].cat==='party').map(k=>[MG2[k].n,()=>mgStart(k)]));
   box.appendChild(el('div','dps','點一下朋友，可以送東西、擊掌、抱抱'));
   sec('其他',[['相簿',openAlbum],['房間資訊',openNetPanel]]);
   const c=el('button','bc','關閉');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(c);document.getElementById('dp').style.display='flex';}
@@ -4930,14 +4931,16 @@ function mgLobby(){const g=NET.game;if(!g)return;const M=MG2[g.k],box=document.g
   const ids=mgIds(g);let list='現在加入的人（'+ids.length+'）：\n'+ids.map(id=>g.pl[id].n+(id===g.by?'（發起）':'')).join('\n');
   if(g.k==='tug'&&ids.length>1){const T=mgTeams(g);list+='\n\n藍隊：'+T.A.map(id=>g.pl[id].n).join('、')+'\n紅隊：'+T.B.map(id=>g.pl[id].n).join('、');}
   box.appendChild(el('div','dps',list));
-  if(g.by===NET.uid){const b=el('button','bp',ids.length>=M.min?'開始！（'+ids.length+' 人）':'等朋友加入……');b.type='button';b.disabled=ids.length<M.min;b.onclick=()=>NET.tp.upd(mgP(),{st:'play',go:Date.now(),...(g.k==='vball'?{ball:{to:ids[1],n:0,id:1}}:{})});box.appendChild(b);}
+  if(g.by===NET.uid){const b=el('button','bp',ids.length>=M.min?'開始！（'+ids.length+' 人）':'等朋友加入……');b.type='button';b.disabled=ids.length<M.min;b.onclick=()=>NET.tp.upd(mgP(),{st:'play',go:Date.now(),...(g.k==='vball'?{ball:{to:ids[1],n:0,id:1}}:{}),...(M.start?M.start(ids):{})});box.appendChild(b);}
   else box.appendChild(el('div','dps','等 '+(g.pl[g.by]||{}).n+' 按開始……'));
   const c=el('button','bc',g.by===NET.uid?'取消揪團':'退出');c.type='button';c.onclick=mgLeave;box.appendChild(c);document.getElementById('dp').style.display='flex';}
 function mgTeams(g){const ids=mgIds(g),A=[],B=[];ids.forEach((id,i)=>(i%2?B:A).push(id));return{A,B};}
 function mgHostCheck(v){const ids=mgIds(v).filter(id=>id===NET.uid||NET.pl[id]);if(v.k==='bball'||v.k==='race'){if(v.k==='race'&&ids.some(id=>v.pl[id].done)&&!NET.mgFirst)NET.mgFirst=Date.now();
-    if(ids.every(id=>v.pl[id].done)||Date.now()-v.go>75000||(v.k==='race'&&NET.mgFirst&&Date.now()-NET.mgFirst>8000)){NET.mgFirst=0;mgEndSend({st:'end'});}}}
+    if(ids.every(id=>v.pl[id].done)||Date.now()-v.go>75000||(v.k==='race'&&NET.mgFirst&&Date.now()-NET.mgFirst>8000)){NET.mgFirst=0;mgEndSend({st:'end'});}}
+  else if(MG2[v.k].indiv||v.k==='rps'||v.k==='dice'){if(ids.every(id=>v.pl[id].done)||Date.now()-v.go>(MG2[v.k].limit||60000))mgEndSend({st:'end'});}
+  else if(v.k==='hide'){const hid=ids.filter(id=>id!==v.seek);if(hid.every(id=>v.pl[id].caught)||Date.now()-v.go>(HIDE_T+SEEK_T+5)*1000)mgEndSend({st:'end'});}}
 // ---- 遊戲畫面 ----
-function mgRun(g){mgClose();const W=320,H=300,ov=el('div');ov.id='mg2';ov.style.cssText='position:fixed;inset:0;z-index:50;background:rgba(10,6,2,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;font-family:var(--font-ui)';
+function mgRun(g){if(MG2[g.k].world)return mgRunWorld(g);mgClose();const W=320,H=300,ov=el('div');ov.id='mg2';ov.style.cssText='position:fixed;inset:0;z-index:50;background:rgba(10,6,2,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;font-family:var(--font-ui)';
   const ttl=el('div',null,MG2[g.k].n);ttl.style.cssText='color:var(--gold);font-size:20px';ov.appendChild(ttl);
   const cv=document.createElement('canvas');cv.width=W;cv.height=H;cv.style.cssText='width:min(92vw,400px);image-rendering:pixelated;border:3px solid #c8a050;background:#1c1208;touch-action:none';ov.appendChild(cv);
   const sb=el('div');sb.style.cssText='color:#f4e6c4;font-size:11px;white-space:pre-line;text-align:center;min-height:30px;line-height:1.5';ov.appendChild(sb);
@@ -5008,6 +5011,107 @@ const MG2G={
 function mgChar(M,id,x,y,o){o=o||{};const img=id===NET.uid?heroImg():netSheet((NET.pl[id]||{}).lk);if(!img||!img.width)return;const row=o.back?(o.mv?8:7):(o.mv?1:0),col=o.mv?Math.floor(M.f/5)%7:Math.floor(M.f/32)%2,sc=o.s||1.25;
   const X=M.x;X.save();X.imageSmoothingEnabled=false;X.translate(Math.round(x),Math.round(y));if(o.left)X.scale(-1,1);X.drawImage(frameCv(img,col,row),0,0,FW,FH,-12.5*sc,-FH*sc,FW*sc,FH*sc);X.restore();}
 function x_ring(M,cx,cy,r,c){const x=M.x;x.strokeStyle=c;x.lineWidth=3;x.beginPath();x.arc(cx,cy,r,0,Math.PI*2);x.stroke();}
+// ===== 第三批：比賽與派對 =====
+for(const k of['bball','vball','race','tug'])MG2[k].cat='sport';
+Object.assign(MG2,{
+  fish:{n:'釣魚大賽',d:'60 秒內看誰釣到的魚最值錢！\n浮標一沉下去就趕快按「拉竿」。\n釣到的魚都可以帶回家。',min:2,indiv:1,limit:75000,cat:'party'},
+  harv:{n:'搶收大賽',d:'30 秒內點成熟的作物，\n點到枯掉的會扣分！',min:2,indiv:1,limit:45000,cat:'party'},
+  cook:{n:'料理對決',d:'選 3 樣食材、控制火候，\n林奶奶來評分！',min:2,indiv:1,limit:70000,cat:'party'},
+  quiz:{n:'搶答王',d:'一共 5 題，\n答對又答得快，分數越高！',min:2,indiv:1,limit:90000,cat:'party',start:()=>{const P=mgQuizPool(),qs=[];while(qs.length<5){const i=Math.floor(Math.random()*P.length);if(!qs.includes(i))qs.push(i);}return{qs};}},
+  rps:{n:'猜拳',d:'猜三局，每局跟每個人比，\n贏最多的人是冠軍！',min:2,cat:'party'},
+  dice:{n:'擲骰子',d:'每人擲兩顆骰子，\n點數最大的人贏！\n最小的人要請大家吃熱狗～',min:2,cat:'party'},
+  hide:{n:'捉迷藏',d:'一個人當鬼，其他人 30 秒內躲起來！\n鬼要在 3 分鐘內找到大家。\n躲的人離鬼遠一點，鬼就看不到你。',min:2,cat:'party',world:1,start:ids=>({seek:ids[Math.floor(Math.random()*ids.length)]})}});
+function mgQuizPool(){return[...QUIZ,...FISH_QUIZ,...HORSE_QUIZ,...CAMP_QUIZ,...GUARD_QUIZ,...JAY_QUIZ,...BALL_QUIZ].filter(q=>q.a&&q.a.length===1&&q.o.length<=4);}
+function mgFin(M,o){M.over=true;M.doneMsg=Object.assign({done:1},o);M.put(M.doneMsg);}
+function mgIndivResult(v,unit,win1,rest){const r=mgRank(v,'sc',true),top=r[0].v||0,win=(v.pl[NET.uid].sc||0)===top&&top>0;return{win,gold:win?win1:rest,text:r.map((o,i)=>(i+1)+'. '+mgName(v,o.id)+'　'+(o.v||0)+unit).join('\n')+(win?'\n\n你是冠軍！':'')};}
+function mgBoard(M,unit){const g=M.g;return mgIds(g).map(id=>mgName(g,id)+' '+(id===NET.uid?M.sc:(g.pl[id].sc||0))+unit+((id===NET.uid?M.over:g.pl[id].done)?'（完成）':'')).join('　');}
+const FISH_POOL=Object.keys(PRODUCT_DATA).filter(k=>/^fish_/.test(k));
+Object.assign(MG2G,{
+  // ---- 釣魚大賽 ----
+  fish:{init(M){M.sc=0;M.got={};M.st='wait';M.next=0;M.btn('拉竿',()=>{if(M.st==='bite'){const w=FISH_POOL.map(k=>1/Math.sqrt(PRODUCT_DATA[k].sv)),tot=w.reduce((a,b)=>a+b,0);let r=Math.random()*tot,k=FISH_POOL[0];for(let i=0;i<w.length;i++){r-=w[i];if(r<=0){k=FISH_POOL[i];break;}}
+        M.sc+=PRODUCT_DATA[k].sv;M.got[k]=(M.got[k]||0)+1;M.st='caught';M.fishK=k;M.stT=M.f;sfx('right');M.put({sc:M.sc});}else if(M.st==='wait'){M.st='miss';M.stT=M.f;M.msgT='太早拉了，魚跑掉了';sfx('wrong');}});},
+    tick(M,now){if(!M.next)M.next=M.f+60+Math.random()*120;const el_=(now-M.t0)/1000;if(el_>=60){mgFin(M,{sc:M.sc});return;}
+      if(M.st==='wait'&&M.f>=M.next){M.st='bite';M.stT=M.f;sfx('click');}else if(M.st==='bite'&&M.f-M.stT>40){M.st='miss';M.stT=M.f;M.msgT='魚跑掉了……';}else if((M.st==='caught'||M.st==='miss')&&M.f-M.stT>55){M.st='wait';M.next=M.f+50+Math.random()*130;}},
+    draw(M,now){const{R,T,W,H}=M;R(0,0,W,H,'#7ac0e8');R(0,110,W,H-110,'#2a6aa8');for(let i=0;i<8;i++)R((i*47+M.f*.4)%W,140+i*18,18,2,'#5a9ad0');R(0,230,140,70,'#8a5a30');R(0,230,140,5,'#b07a44');
+      mgChar(M,NET.uid,70,236,{s:1.3});R(92,170,2,60,'#5a3a1a');const bob=M.st==='bite'?6+Math.sin(M.f)*2:Math.sin(M.f/15)*2;R(200,128+bob,8,8,'#e53935');R(200,128+bob,8,3,'#fff');M.x.strokeStyle='#eee';M.x.lineWidth=1;M.x.beginPath();M.x.moveTo(93,170);M.x.lineTo(204,128+bob);M.x.stroke();
+      if(M.st==='bite')T('！',204,110,'#ffd54f',28);if(M.st==='caught'){drawIcon(M.x,M.fishK,204,96,2.2);T(PRODUCT_DATA[M.fishK].n+'！ +'+PRODUCT_DATA[M.fishK].sv+'G',W/2,60,'#ffd54f',16);}if(M.st==='miss')T(M.msgT,W/2,60,'#ffb0a0',14);
+      const left=M.t0?Math.max(0,60-Math.floor((now-M.t0)/1000)):60;T('剩 '+left+' 秒',W-40,24,'#fff',13);T('漁獲 '+M.sc+'G',50,24,'#fff',13);},
+    board(M){return mgBoard(M,'G');},
+    result(M,v){const r=mgIndivResult(v,'G',150,50),list=Object.entries(M.got);for(const[k,n]of list)G.products[k]=(G.products[k]||0)+n;updTB();r.text+=list.length?'\n\n帶回家：'+list.map(([k,n])=>PRODUCT_DATA[k].n+' ×'+n).join('、'):'';return r;}},
+  // ---- 搶收大賽：打地鼠式 ----
+  harv:{init(M){M.sc=0;M.cells=Array.from({length:12},()=>({s:0,t:0}));M.pops=[];M.crops=seasonCrops();
+      M.cv.addEventListener('pointerdown',e=>{if(!M.started||M.over)return;const r=M.cv.getBoundingClientRect(),x=(e.clientX-r.left)*M.W/r.width,y=(e.clientY-r.top)*M.H/r.height,cx=Math.floor((x-16)/72),cy=Math.floor((y-50)/80);if(cx<0||cx>3||cy<0||cy>2)return;const c=M.cells[cy*4+cx];
+        if(c.s===2){M.sc++;c.s=0;sfx('harvest');M.pops.push({x:16+cx*72+36,y:50+cy*80+20,t:0,txt:'+1'});}else if(c.s===3){M.sc=Math.max(0,M.sc-1);c.s=0;sfx('wrong');M.pops.push({x:16+cx*72+36,y:50+cy*80+20,t:0,txt:'-1'});}M.put({sc:M.sc});});},
+    tick(M,now){if((now-M.t0)/1000>=30){mgFin(M,{sc:M.sc});return;}if(M.f%18===0){const free=M.cells.filter(c=>!c.s);if(free.length){const c=free[Math.floor(Math.random()*free.length)];c.s=Math.random()<.22?3:2;c.t=M.f;c.k=M.crops[Math.floor(Math.random()*M.crops.length)];}}
+      for(const c of M.cells)if(c.s&&M.f-c.t>(c.s===3?70:80))c.s=0;for(const p of M.pops)p.t++;M.pops=M.pops.filter(p=>p.t<30);},
+    draw(M,now){const{R,T,W,H}=M;R(0,0,W,H,'#6aa84f');T('剩 '+(M.t0?Math.max(0,30-Math.floor((now-M.t0)/1000)):30)+' 秒',W/2,30,'#fff',16);
+      M.cells.forEach((c,i)=>{const x=16+(i%4)*72,y=50+Math.floor(i/4)*80;R(x+4,y+40,64,30,'#7a4a24');R(x+4,y+40,64,4,'#9a6a3a');if(c.s===2)drawIcon(M.x,c.k,x+36,y+36,2.4);else if(c.s===3){R(x+26,y+20,20,24,'#6a5a3a');R(x+30,y+14,4,10,'#5a4a2a');R(x+38,y+16,4,8,'#5a4a2a');T('枯',x+36,y+38,'#2a1a0a',12);}});
+      for(const p of M.pops)T(p.txt,p.x,p.y-p.t,p.txt==='+1'?'#ffd54f':'#ffb0a0',18);},
+    board(M){return mgBoard(M,' 個');},
+    result(M,v){const r=mgIndivResult(v,' 個',150,50);return r;}},
+  // ---- 料理對決 ----
+  cook:{init(M){const sc=seasonCrops(),pool=[...sc,...['wheat','rice'].filter(k=>!sc.includes(k))];M.opts=pool.sort(()=>Math.random()-.5).slice(0,6);M.star=M.opts[Math.floor(Math.random()*6)];M.pick=[];M.ph='pick';M.fire=0;M.sc=0;this.ui(M);},
+    ui(M){M.bt.innerHTML='';M.bt.style.flexWrap='wrap';if(M.ph==='pick'){for(const k of M.opts){const on=M.pick.includes(k);const b=M.btn((on?'✔ ':'')+CROPS[k].n,()=>{const i=M.pick.indexOf(k);if(i>=0)M.pick.splice(i,1);else if(M.pick.length<3)M.pick.push(k);sfx('click');MG2G.cook.ui(M);},on?'bp':'bb');b.style.cssText='flex:1 0 30%;min-height:40px;font-size:12px;margin:0';}
+        if(M.pick.length===3){const b=M.btn('下鍋！',()=>{M.ph='fire';sfx('click');MG2G.cook.ui(M);});b.style.cssText='flex:1 0 100%;min-height:46px;font-size:14px;margin:0';}}
+      else if(M.ph==='fire')M.btn('起鍋！',()=>{const d=Math.abs(M.fire-.5);M.fs=Math.max(0,Math.round(30-d*80));M.ph='done';const ins=M.pick.filter(k=>inSeason(k)||CROPS[k].allYear).length;M.parts={star:M.pick.includes(M.star)?30:0,season:ins*10,v:10,fire:M.fs};M.sc=M.parts.star+M.parts.season+M.parts.v+M.parts.fire;sfx('cook');M.bt.innerHTML='';mgFin(M,{sc:M.sc,dish:M.pick.join(',')});});},
+    tick(M){if(M.ph==='fire')M.fire=(Math.sin(M.f*.07)+1)/2;if((performance.now()-M.t0)/1000>55&&!M.over){if(M.ph!=='done'){M.sc=0;M.parts=null;M.bt.innerHTML='';mgFin(M,{sc:0});}}},
+    draw(M){const{R,T,W,H}=M;R(0,0,W,H,'#f4e6c4');R(0,200,W,100,'#8a5a30');T('林奶奶：「今天想吃有'+CROPS[M.star].n+'的料理～」',W/2,30,'#5a3a1a',13);
+      R(110,150,100,60,'#3a3a40');R(104,146,112,8,'#5a5a64');M.pick.forEach((k,i)=>drawIcon(M.x,k,132+i*28,142,1.6));
+      if(M.ph==='fire'){R(30,240,260,12,'#2a1a0a');R(30+260*.4,240,260*.2,12,'#4caf50');R(30+260*.47,240,260*.06,12,'#a5ff70');R(30+260*M.fire-2,235,4,22,'#fff');T('火候：停在中間最好吃',W/2,280,'#fff',12);for(let i=0;i<5;i++)R(120+i*18,214+Math.sin(M.f/4+i)*3,8,10,i%2?'#ff9030':'#ffd040');}
+      else if(M.ph==='pick')T('選 3 樣食材（'+M.pick.length+' / 3）',W/2,250,'#fff',13);
+      else if(M.parts){T('評分中……',W/2,90,'#5a3a1a',14);T(M.sc+' 分',W/2,250,'#ffd54f',26);}},
+    board(M){return mgBoard(M,' 分');},
+    result(M,v){const r=mgIndivResult(v,' 分',150,50),p=M.parts,s=M.sc;if(p)r.text+='\n\n你的料理：'+M.pick.map(k=>CROPS[k].n).join('＋')+'\n'+(p.star?'有'+CROPS[M.star].n+' +30・':'')+'當季食材 +'+p.season+'・用心 +10・火候 +'+p.fire+'\n林奶奶：「'+(s>=85?'這是我吃過最好吃的！':s>=65?'嗯～很有家的味道。':s>=45?'還不錯，下次火候再注意一點。':'……下次再加油喔。')+'」';return r;}},
+  // ---- 搶答王 ----
+  quiz:{init(M){M.sc=0;M.i=-1;M.qs=(M.g.qs||[]).map(i=>mgQuizPool()[i]).filter(Boolean);M.bt.style.flexWrap='wrap';this.next(M);},
+    next(M){M.i++;M.bt.innerHTML='';if(M.i>=M.qs.length){mgFin(M,{sc:M.sc});return;}const q=M.qs[M.i];M.qT=null;M.ans=null;
+      q.o.forEach((o,j)=>{const b=M.btn(o,()=>{if(M.ans!=null)return;M.ans=j;const ok=q.a[0]===j,left=Math.max(0,10-(performance.now()-M.qT)/1000);if(ok){M.sc+=10+Math.round(left);sfx('right');}else sfx('wrong');M.put({sc:M.sc});[...M.bt.children].forEach((c,k)=>{c.style.borderColor=k===q.a[0]?'#a5ff70':k===j?'#ff6b6b':'';});setTimeout(()=>MG2G.quiz.next(M),1300);},'bb');b.style.cssText='flex:1 0 45%;min-height:44px;font-size:12px;margin:0;white-space:normal;line-height:1.3';});},
+    tick(M,now){if(!M.qT&&M.i<M.qs.length)M.qT=now;if(M.ans==null&&M.qT&&now-M.qT>10000){M.ans=-1;sfx('wrong');[...M.bt.children].forEach((c,k)=>{if(k===M.qs[M.i].a[0])c.style.borderColor='#a5ff70';});setTimeout(()=>MG2G.quiz.next(M),1300);}},
+    draw(M,now){const{R,T,W,H}=M;R(0,0,W,H,'#2a1a3a');const q=M.qs[M.i];if(!q){T('答完了！等其他人……',W/2,H/2,'#fff',14);return;}T('第 '+(M.i+1)+' / '+M.qs.length+' 題',W/2,28,'#ffd54f',14);
+      const left=M.qT&&M.ans==null?Math.max(0,1-(now-M.qT)/10000):0;R(20,40,280,6,'#4a3a5a');R(20,40,280*left,6,'#a5ff70');
+      M.x.font='14px Cubic11,"Noto Sans TC",sans-serif';M.x.fillStyle='#fff';M.x.textAlign='left';let line='',y=80;for(const ch of q.q){if(M.x.measureText(line+ch).width>280){M.x.fillText(line,20,y);line='';y+=22;}line+=ch;}M.x.fillText(line,20,y);
+      if(M.ans!=null){const ok=M.ans===q.a[0];T(M.ans<0?'時間到！':ok?'答對了！':'答錯了……',W/2,230,ok?'#a5ff70':'#ffb0a0',20);}},
+    board(M){return mgBoard(M,' 分');},
+    result(M,v){return mgIndivResult(v,' 分',150,50);}},
+  // ---- 猜拳 ----
+  rps:{N:['石頭','剪刀','布'],init(M){M.r=1;M.pick=null;M.rs=null;M.sc=0;M.rT=0;this.ui(M);},
+    ui(M){M.bt.innerHTML='';if(M.over)return;this.N.forEach((n,j)=>M.btn(n,()=>{if(M.pick!=null||M.rs)return;M.pick=j;sfx('click');M.put({['r'+M.r]:j});}));},
+    sync(M){},
+    tick(M){if(!M.rT)M.rT=M.f;const g=M.g,ids=mgIds(g);if(M.pick==null&&M.f-M.rT>360){M.pick=Math.floor(Math.random()*3);M.put({['r'+M.r]:M.pick});}
+      if(!M.rs&&ids.every(id=>id===NET.uid?M.pick!=null:g.pl[id]['r'+M.r]!=null)){const P=id=>id===NET.uid?M.pick:g.pl[id]['r'+M.r];M.rs={t:M.f,p:ids.map(id=>[id,P(id)])};let w=0;for(const id of ids)if(id!==NET.uid){const a=M.pick,b=P(id);if((a+1)%3===b)w++;}M.sc+=w;M.put({sc:M.sc});sfx(w?'right':'click');}
+      if(M.rs&&M.f-M.rs.t>150){if(M.r>=3){mgFin(M,{sc:M.sc});M.bt.innerHTML='';}else{M.r++;M.pick=null;M.rs=null;M.rT=M.f;}}},
+    draw(M){const{R,T,W,H}=M;R(0,0,W,H,'#3a5a7a');T('第 '+M.r+' / 3 局',W/2,30,'#ffd54f',16);const hand=(j,x,y)=>{if(j===0){R(x-14,y-10,28,22,'#f4d8b0');R(x-14,y-10,28,4,'#e0c090');}else if(j===1){R(x-4,y-22,6,26,'#f4d8b0');R(x+4,y-20,6,24,'#f4d8b0');R(x-10,y+2,24,14,'#f4d8b0');}else{R(x-16,y-16,32,30,'#f4d8b0');for(let i=0;i<4;i++)R(x-14+i*8,y-22,6,8,'#f4d8b0');}};
+      if(M.rs){const n=M.rs.p.length;M.rs.p.forEach(([id,j],i)=>{const x=W/2+(i-(n-1)/2)*Math.min(90,280/n);hand(j,x,130);T(this.N[j],x,175,'#fff',13);T(mgName(M.g,id),x,200,id===NET.uid?'#ffd54f':'#fff',12);});}
+      else{T(M.pick==null?'出什麼好呢？（6 秒內）':'你出了「'+this.N[M.pick]+'」，等大家……',W/2,150,'#fff',14);}},
+    board(M){const g=M.g;return mgIds(g).map(id=>mgName(g,id)+' '+(id===NET.uid?M.sc:(g.pl[id].sc||0))+' 勝').join('　');},
+    result(M,v){return mgIndivResult(v,' 勝',100,20);}},
+  // ---- 擲骰子 ----
+  dice:{init(M){M.d=null;M.roll=0;M.btn('擲骰子',()=>{if(M.d||M.roll)return;M.roll=M.f;sfx('click');});},
+    tick(M){if(M.roll&&!M.d&&M.f-M.roll>50){M.d=[1+Math.floor(Math.random()*6),1+Math.floor(Math.random()*6)];M.sc=M.d[0]+M.d[1];sfx('right');mgFin(M,{sc:M.sc,d:M.d.join(',')});}},
+    draw(M){const{R,T,W,H}=M;R(0,0,W,H,'#2a6a3a');R(20,40,280,200,'#1f5a2e');const die=(x,y,n)=>{R(x,y,44,44,'#f4f4f4');R(x,y+40,44,4,'#c8c8c8');const P={1:[[1,1]],2:[[0,0],[2,2]],3:[[0,0],[1,1],[2,2]],4:[[0,0],[2,0],[0,2],[2,2]],5:[[0,0],[2,0],[1,1],[0,2],[2,2]],6:[[0,0],[2,0],[0,1],[2,1],[0,2],[2,2]]}[n];for(const[a,b]of P)R(x+6+a*13,y+6+b*13,6,6,n===1?'#c0392b':'#2a1a0a');};
+      const g=M.g,ids=mgIds(g),n=ids.length;ids.forEach((id,i)=>{const y=56+i*Math.min(60,180/n),me=id===NET.uid;let d=me?M.d:(g.pl[id].d?g.pl[id].d.split(',').map(Number):null);if(me&&M.roll&&!M.d)d=[1+Math.floor(M.f/3)%6,1+Math.floor(M.f/5)%6];T(mgName(g,id),70,y+28,me?'#ffd54f':'#fff',13);if(d){die(130,y,d[0]);die(184,y,d[1]);T(String(d[0]+d[1]),262,y+28,'#fff',16);}else T('還沒擲……',190,y+28,'#cfe',12);});},
+    board(M){return '';},
+    result(M,v){const r=mgRank(v,'sc',true),top=r[0].v||0,low=r[r.length-1],win=(v.pl[NET.uid].sc||0)===top;return{win,gold:win?100:20,text:r.map((o,i)=>(i+1)+'. '+mgName(v,o.id)+'　'+(o.v||0)+' 點').join('\n')+(win?'\n\n你的點數最大！':'')+'\n\n'+(low.id===NET.uid?'你點數最小，要請大家吃熱狗！':mgName(v,low.id)+' 點數最小，要請大家吃熱狗！')};}},
+  hide:{}});
+// ---- 捉迷藏（在村子裡玩）----
+const HIDE_T=30,SEEK_T=180;
+function mgHide(){const g=NET.game;return GM&&GM.k==='hide'&&g&&g.st==='play'?GM:null;}
+function mgRunWorld(g){mgClose();const ov=el('div');ov.id='mg2';ov.style.cssText='position:fixed;left:0;right:0;top:0;bottom:0;z-index:31;pointer-events:none;font-family:var(--font-ui)';
+  const bn=el('div');bn.style.cssText='position:absolute;left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%);background:rgba(10,6,2,.85);color:#ffd54f;border:2px solid #c8a050;padding:6px 12px;font-size:12px;white-space:pre-line;text-align:center;min-width:220px';ov.appendChild(bn);
+  const bl=el('div');bl.style.cssText='position:absolute;inset:0;background:#000;display:none;align-items:center;justify-content:center;color:#fff;font-size:18px;text-align:center;white-space:pre-line;pointer-events:auto;line-height:1.8';ov.appendChild(bl);document.body.appendChild(ov);
+  const seeker=g.seek===NET.uid;GM={ts:g.ts,k:'hide',g,world:true,bn,bl,f:0,t0:performance.now(),started:true,seeker,caught:0,put:o=>NET.tp.upd(mgP('pl/'+NET.uid),o)};
+  msg(seeker?'你是鬼！先閉上眼睛數到 30。':'鬼是 '+mgName(g,g.seek)+'！\n30 秒內快去躲起來！');
+  const loop=()=>{if(!GM||GM.bn!==bn)return;GM.f++;const el_=(performance.now()-GM.t0)/1000,v=GM.g,hid=mgIds(v).filter(id=>id!==v.seek),left=hid.filter(id=>!v.pl[id].caught);
+    if(el_<HIDE_T){const n=Math.ceil(HIDE_T-el_);if(seeker){bl.style.display='flex';bl.textContent='你是鬼！\n閉上眼睛數到 30……\n\n'+(HIDE_T-n+1);if(G.ph==='play'||G.ph==='mg2')G.ph='mg2';}bn.textContent=seeker?'數到 30 就可以去找人':'快躲起來！鬼還在數（剩 '+n+' 秒）';}
+    else{if(seeker&&bl.style.display!=='none'){bl.style.display='none';if(G.ph==='mg2')G.ph='play';msg('30！找人囉！\n看到人就點他，要站在旁邊才抓得到');}const s=Math.max(0,Math.ceil(HIDE_T+SEEK_T-el_)),mm=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+      bn.textContent=seeker?'找人！剩 '+mm+'・還沒找到 '+left.length+' 人':(v.pl[NET.uid]&&v.pl[NET.uid].caught?'你被找到了！剩 '+mm:'躲好別被找到！剩 '+mm+'\n鬼：'+mgName(v,v.seek));}
+    if(GM.endMsg&&GM.f%60===0&&NET.game&&NET.game.ts===GM.ts&&NET.game.st!=='end')NET.tp.upd(mgP(),GM.endMsg);if(GM.f%30===0&&v.by===NET.uid&&v.st==='play')mgHostCheck(v);requestAnimationFrame(loop);};requestAnimationFrame(loop);}
+function mgHideSee(p,id){const H_=mgHide();if(!H_||!H_.seeker)return true;const v=H_.g;if(id===v.seek||(v.pl[id]&&v.pl[id].caught)||!v.pl[id])return true;return netNear(p,3.5);}
+function mgHideTap(id){const H_=mgHide();if(!H_)return false;const v=H_.g;if(!H_.seeker||!v.pl[id]||id===v.seek)return true;if((performance.now()-H_.t0)/1000<HIDE_T)return true;if(v.pl[id].caught){msg(mgName(v,id)+' 已經被找到了');return true;}
+  const p=NET.pl[id];if(!p||!netNear(p,2.5)){msg('再靠近一點才抓得到！');return true;}NET.tp.upd(mgP('pl/'+id),{caught:1,cby:G.pname||'鬼'});sfx('right');netSay('找到你了！');msg('找到 '+p.n+' 了！');return true;}
+MG2G.hide={sync(M,v){const me=v.pl&&v.pl[NET.uid];if(me&&me.caught&&!M.wasCaught){M.wasCaught=1;msg('被 '+(me.cby||'鬼')+' 找到了！');sfx('wrong');}},result(M,v){const hid=mgIds(v).filter(id=>id!==v.seek),c=hid.filter(id=>v.pl[id].caught).length,me=v.pl[NET.uid]||{};let gold,win;
+  if(M.seeker){gold=c*40;win=c===hid.length;}else{win=!me.caught;gold=win?120:30;}
+  return{win,gold,text:'鬼：'+mgName(v,v.seek)+'\n找到 '+c+' / '+hid.length+' 人'+(c===hid.length?'，全部抓到了！':'')+'\n\n'+hid.map(id=>mgName(v,id)+(v.pl[id].caught?'：被找到了':'：躲得很好！')).join('\n')};}};
 // ---- 接到原本的遊戲流程 ----
 {const _endDay=endDay;endDay=function(p){_endDay(p);if(!NET.on)return;const bs=[...document.querySelectorAll('#mbox button.bp')],b=bs[bs.length-1];if(b&&/迎接新的一天/.test(b.textContent)){const f=b.onclick;b.onclick=()=>netGate(()=>f());}};}
 {const _nextDay=nextDay;nextDay=function(){const r=_nextDay.apply(this,arguments);if(NET.on){if(NET.mode==='host'){netWriteSnap();NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}else if(NET.snap){const hp=[G.px,G.py];netApplySnap(NET.snap);G.px=hp[0];G.py=hp[1];saveGame();}}return r;};}
