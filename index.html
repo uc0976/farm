@@ -306,7 +306,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 <script>
 'use strict';
 // 版本號：每次更新往上加，開始畫面和設定頁會顯示
-const GAME_VER='1.18',GAME_DATE='2026-11-08';
+const GAME_VER='1.19',GAME_DATE='2026-11-09';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -2837,11 +2837,11 @@ function drawStallFront(tx,ty,kind){
 }
 
 // ★ 自動存檔（存在這台裝置的瀏覽器裡）
-let SAVE_KEY='farm-story-save-v3';
+const MAIN_SAVE_KEY='farm-story-save-v3';let SAVE_KEY=MAIN_SAVE_KEY;
 function fixNums(){if(G.products)for(const k in PRODUCT_DATA)if(G.products[k]==null)G.products[k]=0;for(const o of [G.seeds,G.hv,G.products,G.food,G.mat,G.stashB])if(o)for(const k in o){const v=o[k];if(v===null||v===undefined||(typeof v==='number'&&!isFinite(v)))o[k]=0;}if(!isFinite(G.gold))G.gold=0;}
 function saveGame(){fixNums();
   if(!started)return;
-  try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:3,mw:MW,mh:MH,map:G.map,cr:G.cr,px:G.px,py:G.py,dir:G.dir,tool:G.tool,seeds:G.seeds,hv:G.hv,gold:G.gold,en:G.en,day:G.day,time:G.time,products:G.products,weather:G.weather,water:G.water,quizDay:G.quizDay,hay:G.hay,trough:G.trough,full:G.full,food:G.food,rel:G.rel,relGift:G.relGift,sport:G.sport,fridge:G.fridge,plantW:G.plantW,yuAsk:G.yuAsk,talked:G.talked,gifted:G.gifted,reqs:G.reqs,today:G.today,lastHike:G.lastHike,discount:G.discount,rod:G.rod,helper:G.helper,helpDay:G.helpDay,penLv:G.penLv,seen:G.seen,stats:G.stats,ach:G.ach,fishQuizDay:G.fishQuizDay,store:G.store,loot:G.loot||[],mat:G.mat,builds:G.placeMove?[...G.builds,G.placeMove]:G.builds,stumps:G.stumps,removed:G.removed,benchMerged:G.benchMerged,lampMerged:G.lampMerged,potMerged:G.potMerged,homeMig:G.homeMig,vlampMerged:G.vlampMerged,homeFurn:G.homeFurn,riSeen:G.riSeen,floors:G.floors||{},road2:G.road2,mv3:G.mv3,wellB:G.wellB,aptV3:G.aptV3,suFix:G.suFix,benchUp:G.benchUp,boardMerged:G.boardMerged,stashB:G.stashB,cleared:G.cleared,fixBench1:G.fixBench1,saplings:G.saplings,planted:G.planted,bbase:G.bbase,look:G.look,owned:G.owned,orders:G.orders,pname:G.pname,tut:G.tut,curSeed:G.curSeed,tdays:G.tdays,lastCampTrip:G.lastCampTrip,fq:G.fq,akDay:G.akDay,akCat:G.akCat,songCat:G.songCat,argueDay:G.argueDay,horseQuizDay:G.horseQuizDay,campQuizDay:G.campQuizDay,hatBack:G.hatBack,lastSea:G.lastSea,lastRide:G.lastRide,campMealDay:G.campMealDay,campGuest:G.campGuest,campGuestDay:G.campGuestDay,campStay:G.campStay,campNight:G.campNight,knife:G.knife,tl:G.tl,wish:G.wish,cal:G.cal,story:G.story,drops:G.drops,event:G.event,cat:G.cat?{adopted:G.cat.adopted,x:G.cat.x,y:G.cat.y,petDay:G.cat.petDay,fishDay:G.cat.fishDay}:null,
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify({v:3,mw:MW,mh:MH,map:G.map,cr:G.cr,px:G.px,py:G.py,dir:G.dir,tool:G.tool,seeds:G.seeds,hv:G.hv,gold:G.gold,en:G.en,day:G.day,time:G.time,products:G.products,weather:G.weather,water:G.water,quizDay:G.quizDay,hay:G.hay,trough:G.trough,full:G.full,food:G.food,rel:G.rel,relGift:G.relGift,sport:G.sport,fridge:G.fridge,plantW:G.plantW,yuAsk:G.yuAsk,talked:G.talked,gifted:G.gifted,reqs:G.reqs,today:G.today,lastHike:G.lastHike,discount:G.discount,rod:G.rod,helper:G.helper,helpDay:G.helpDay,penLv:G.penLv,seen:G.seen,stats:G.stats,ach:G.ach,fishQuizDay:G.fishQuizDay,store:G.store,loot:G.loot||[],mat:G.mat,builds:G.placeMove?[...G.builds,G.placeMove]:G.builds,stumps:G.stumps,removed:G.removed,benchMerged:G.benchMerged,lampMerged:G.lampMerged,potMerged:G.potMerged,homeMig:G.homeMig,vlampMerged:G.vlampMerged,homeFurn:G.homeFurn,riSeen:G.riSeen,floors:G.floors||{},road2:G.road2,mv3:G.mv3,wellB:G.wellB,aptV3:G.aptV3,suFix:G.suFix,benchUp:G.benchUp,boardMerged:G.boardMerged,stashB:G.stashB,cleared:G.cleared,fixBench1:G.fixBench1,saplings:G.saplings,planted:G.planted,bbase:G.bbase,look:G.look,owned:G.owned,orders:G.orders,pname:G.pname,tut:G.tut,curSeed:G.curSeed,tdays:G.tdays,lastCampTrip:G.lastCampTrip,fq:G.fq,akDay:G.akDay,akCat:G.akCat,songCat:G.songCat,argueDay:G.argueDay,horseQuizDay:G.horseQuizDay,campQuizDay:G.campQuizDay,hatBack:G.hatBack,lastSea:G.lastSea,lastRide:G.lastRide,campMealDay:G.campMealDay,campGuest:G.campGuest,campGuestDay:G.campGuestDay,campStay:G.campStay,campNight:G.campNight,knife:G.knife,tl:G.tl,wish:G.wish,cal:G.cal,story:G.story,arts:G.arts||[],bigDone:G.bigDone||{},drops:G.drops,event:G.event,cat:G.cat?{adopted:G.cat.adopted,x:G.cat.x,y:G.cat.y,petDay:G.cat.petDay,fishDay:G.cat.fishDay}:null,
     market:{mult:G.market.mult,hot:G.market.hot,stall:G.market.stall,rep:G.market.rep,price:G.market.price||{}},
     animals:G.animals.map(a=>({type:a.type,x:a.x,y:a.y,daysLeft:a.daysLeft,readyProduct:a.readyProduct,love:a.love,fed:a.fed,petDay:a.petDay,bonus:a.bonus,treatDay:a.treatDay,baby:a.baby}))}));}catch(e){}
 }
@@ -3111,6 +3111,7 @@ function schedFest(){const c=SND.ctx,spb=60/132/2;if(SND.next<c.currentTime)SND.
 function openRequests(){
   G.ph='market';clearPath();const box=document.getElementById('mbox');box.innerHTML='';
   box.appendChild(el('div','ot','村子委託告示板'));{const wb=el('button','bp','村莊心願簿（'+wishDone()+' / '+WISHES.length+'）');wb.type='button';wb.style.marginBottom='8px';wb.onclick=openWishes;box.appendChild(wb);}
+  bigRows(box);
   if(!G.reqs.length)box.appendChild(el('div','msgtxt','今天的委託都完成了！\n明天早上會有新的委託。'));
   for(const r of G.reqs){
     const h=have(r.item),ok=h>=r.qty;
@@ -4772,6 +4773,7 @@ function netListen(){const t=NET.tp;
   NET.offs.push(t.onAdd(netP('ed'),(k,e)=>netApplyEdit(e)));
   NET.offs.push(t.onAdd(netP('msg/'+NET.uid),netOnMsg));
   NET.offs.push(t.on(netP('game'),mgOnGame));
+  NET.offs.push(t.on(netP('big'),bigOnChange));
   if(NET.mode==='guest'){
     NET.offs.push(t.on(netP('meta'),m=>{if(!m&&NET.on){NET.on=false;popInfo('房主離開了','房主關掉了房間，\n要回到你自己的農場囉。','好',()=>location.reload(),'#ff8a80');}}));
     NET.offs.push(t.on(netP('snap'),v=>{if(!v||v.v===NET.snapV)return;NET.snapV=v.v;const S=JSON.parse(v.s);if(S.day>G.day&&started)netNewDayGuest(S);else{NET.snap=S;netApplySnap(S);}}));
@@ -4783,7 +4785,7 @@ async function netHost(){if(NET.on)return;if(!netOK()){popInfo('多人連線','�
   NET.uid=NET.tp.uid;let code;for(let i=0;i<8;i++){code=netCode();if(!(await NET.tp.get(NET_PRE+code+'/meta')))break;}
   NET.code=code;NET.mode='host';NET.on=true;NET.snapV=1;
   await NET.tp.set(netP(),{meta:{host:NET.uid,name:G.pname||'小農夫',ver:GAME_VER,ts:Date.now()},snap:{v:1,s:JSON.stringify(netSnapObj())},ck:{d:G.day,t:Math.round(G.time)}});
-  NET.tp.onDis(netP());netListen();sfx('coin');openNetPanel();}
+  NET.tp.onDis(netP());netListen();sfx('coin');openNetPanel();setTimeout(bigCheckDay,1500);}
 async function netJoin(code){if(!netOK()){popInfo('多人連線','多人連線還沒設定好，\n等 Firebase 設定完成就能用了。','好');return;}
   const st=document.getElementById('dp');popInfo('加入房間','連線中……','取消',()=>location.reload());
   let t;try{t=await netTransport();}catch(e){popInfo('加入失敗','連不上伺服器，請確認網路後再試一次。','好',null,'#ff8a80');return;}
@@ -4898,6 +4900,7 @@ function openNetMenu(){if(G.ph!=='play')return;const box=document.getElementById
   sec('動作',[['揮手',netWave],['跳舞',netDance],['一起拍照',netPhotoStart]]);
   sec('一起玩（運動）',Object.keys(MG2).filter(k=>MG2[k].cat==='sport').map(k=>[MG2[k].n,()=>mgStart(k)]));
   sec('比賽與派對',Object.keys(MG2).filter(k=>MG2[k].cat==='party').map(k=>[MG2[k].n,()=>mgStart(k)]));
+  sec('畫畫',Object.keys(MG2).filter(k=>MG2[k].cat==='art').map(k=>[MG2[k].n,()=>mgStart(k)]));
   box.appendChild(el('div','dps','點一下朋友，可以送東西、擊掌、抱抱'));
   sec('其他',[['相簿',openAlbum],['房間資訊',openNetPanel]]);
   const c=el('button','bc','關閉');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(c);document.getElementById('dp').style.display='flex';}
@@ -5112,9 +5115,93 @@ function mgHideTap(id){const H_=mgHide();if(!H_)return false;const v=H_.g;if(!H_
 MG2G.hide={sync(M,v){const me=v.pl&&v.pl[NET.uid];if(me&&me.caught&&!M.wasCaught){M.wasCaught=1;msg('被 '+(me.cby||'鬼')+' 找到了！');sfx('wrong');}},result(M,v){const hid=mgIds(v).filter(id=>id!==v.seek),c=hid.filter(id=>v.pl[id].caught).length,me=v.pl[NET.uid]||{};let gold,win;
   if(M.seeker){gold=c*40;win=c===hid.length;}else{win=!me.caught;gold=win?120:30;}
   return{win,gold,text:'鬼：'+mgName(v,v.seek)+'\n找到 '+c+' / '+hid.length+' 人'+(c===hid.length?'，全部抓到了！':'')+'\n\n'+hid.map(id=>mgName(v,id)+(v.pl[id].caught?'：被找到了':'：躲得很好！')).join('\n')};}};
+// ===== 第四批：畫畫與合作 =====
+// 畫作存成像素格子（每格一個顏色代碼），掛在家裡時直接用色塊畫出來
+const ART_PAL=['#f4ecd8','#2a1a0a','#e53935','#f39c12','#f9d23c','#4caf50','#7ac0e8','#2a62d0','#9a6ad0','#f088b0','#8a5a30','#ffffff'],ART_CH='0123456789ab',ART_W=24,ART_H=16;
+function artGrid(s,W,H){const n=W*H;return(s||'').padEnd(n,'0').slice(0,n);}
+function artRegister(a){const k='h_art_'+a.id;BUILDS[k]={n:'畫作「'+a.t+'」',cost:0,d:a.d+'・'+(a.w||[]).join('、')+' 一起畫的',t:T.HFURN,fixed:true,home:true,paint:'myart',arg:a.id,wall:true};return k;}
+function artRegisterAll(){for(const a of G.arts||[])artRegister(a);}
+FURN_P.myart=(X,Y,w,h,arg)=>{const a=(G.arts||[]).find(o=>o.id===arg);const R=(x,y,ww,hh,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),ww,hh);};
+  const fx=X+Math.round((w-30)/2),fy=Y+4;R(fx,fy,30,22,'#7a4a24');R(fx+1,fy+1,28,20,'#b07a44');const g=artGrid(a&&a.px,ART_W,ART_H);for(let i=0;i<ART_W*ART_H;i++){const c=ART_PAL[ART_CH.indexOf(g[i])]||ART_PAL[0];R(fx+3+(i%ART_W),fy+3+Math.floor(i/ART_W),1,1,c);}R(fx+13,fy-3,4,3,'#5a3a1a');};
+FLIFT.myart=-14;
+function artToURL(px,W,H,sc){const c=document.createElement('canvas');c.width=W*sc;c.height=H*sc;const x=c.getContext('2d');const g=artGrid(px,W,H);for(let i=0;i<W*H;i++){x.fillStyle=ART_PAL[ART_CH.indexOf(g[i])]||ART_PAL[0];x.fillRect((i%W)*sc,Math.floor(i/W)*sc,sc,sc);}return c.toDataURL();}
+for(const k of Object.keys(MG2))if(!MG2[k].cat)MG2[k].cat='party';
+Object.assign(MG2,{
+  guess:{n:'你畫我猜',d:'輪流當畫家，畫出題目讓大家猜！\n猜對越快分數越高，畫家也會加分。',min:2,cat:'art',start:ids=>({rd:{n:1,w:Math.floor(Math.random()*GUESS_WORDS.length),dr:ids[0]}})},
+  paint:{n:'一起畫畫',d:'大家在同一張畫布上一起畫！\n畫完每個人都會拿到一幅畫作，\n可以掛在家裡。',min:2,cat:'art'}});
+const GUESS_WORDS=['南瓜','番茄','西瓜','玉米','草莓','蘿蔔','雞','牛','羊','豬','魚','貓','太陽','月亮','雨傘','房子','樹','花','籃球','釣竿','熱狗','飯糰','腳踏車','帳篷','營火','船','星星','雲','彩虹','雞蛋','蘋果','香蕉','螃蟹','冰淇淋','蛋糕'];
+// 共用：在畫布上畫格子
+function gridPaint(M,gx,gy,cs,W,H,data,local){const{R}=M;const g=artGrid(data,W,H);R(gx-2,gy-2,W*cs+4,H*cs+4,'#5a3a1a');for(let i=0;i<W*H;i++){const c=local&&local['c'+i]!=null?local['c'+i]:g[i];R(gx+(i%W)*cs,gy+Math.floor(i/W)*cs,cs,cs,ART_PAL[ART_CH.indexOf(c)]||ART_PAL[0]);}}
+function gridMerge(base,map,W,H){const a=artGrid(base,W,H).split('');for(const k in map||{}){const i=+String(k).replace('c',''),v=map[k];if(v!=null&&i>=0&&i<W*H&&ART_CH.includes(v))a[i]=v;}return a.join('');}
+function gridInput(M,gx,gy,cs,W,H,can,onCell){const at=e=>{const r=M.cv.getBoundingClientRect(),x=(e.clientX-r.left)*M.W/r.width,y=(e.clientY-r.top)*M.H/r.height,cx=Math.floor((x-gx)/cs),cy=Math.floor((y-gy)/cs);if(cx<0||cy<0||cx>=W||cy>=H)return;onCell(cy*W+cx);};
+  let down=false;M.cv.addEventListener('pointerdown',e=>{if(!M.started||M.over||!can())return;down=true;M.cv.setPointerCapture&&M.cv.setPointerCapture(e.pointerId);at(e);});M.cv.addEventListener('pointermove',e=>{if(down&&can()&&!M.over)at(e);});
+  const up=()=>{down=false;};M.cv.addEventListener('pointerup',up);M.cv.addEventListener('pointercancel',up);}
+function palUI(M,extra){const row=el('div');row.style.cssText='display:flex;flex-wrap:wrap;gap:4px;justify-content:center;width:100%';ART_PAL.forEach((c,i)=>{const b=el('button',null,i===0?'擦':'');b.type='button';b.style.cssText='width:30px;height:30px;border:2px solid '+(M.col===ART_CH[i]?'#ffd54f':'#5a3a1a')+';background:'+c+';font-size:10px;color:#5a3a1a;cursor:pointer;padding:0;font-family:var(--font-ui)';b.onclick=()=>{M.col=ART_CH[i];sfx('click');palUI(M,extra);};row.appendChild(b);});
+  M.bt.innerHTML='';M.bt.style.flexWrap='wrap';M.bt.appendChild(row);if(extra)extra();}
+Object.assign(MG2G,{
+  // ---- 一起畫畫：24×16 的共用像素畫布 ----
+  paint:{GX:16,GY:30,CS:12,init(M){M.col='1';M.pend={};M.lastF=0;const{GX,GY,CS}=this;gridInput(M,GX,GY,CS,ART_W,ART_H,()=>true,i=>{M.pend['c'+i]=M.col;});
+      palUI(M,()=>{if(M.g.by===NET.uid){const b=M.btn('畫好了！',()=>{mgEndSend({st:'end'});});b.style.cssText='flex:1 0 100%;min-height:42px;font-size:13px;margin:4px 0 0';}});},
+    tick(M,now){if(now-M.lastW>150&&Object.keys(M.pend).length){M.lastW=now;const p=M.pend;M.pend={};M.sent=Object.assign(M.sent||{},p);NET.tp.upd(mgP('px'),p);}
+      if(M.g.by===NET.uid&&(now-M.t0)/1000>180&&!M.sentEnd){M.sentEnd=true;mgEndSend({st:'end'});}},
+    draw(M,now){const{R,T,W,H}=M;R(0,0,W,H,'#3a2a1a');const left=M.t0?Math.max(0,180-Math.floor((now-M.t0)/1000)):180;T('一起畫畫・剩 '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'),W/2,20,'#ffd54f',13);
+      const loc=Object.assign({},M.sent||{},M.pend);for(const i in M.g.px||{})if(M.sent&&M.sent[i]===M.g.px[i])delete loc[i];gridPaint(M,this.GX,this.GY,this.CS,ART_W,ART_H,gridMerge('',M.g.px,ART_W,ART_H),loc);
+      T(M.g.by===NET.uid?'畫好了按下面的「畫好了！」':'畫好了等 '+mgName(M.g,M.g.by)+' 按完成',W/2,H-6,'#f4e6c4',11);},
+    board(M){return '點顏色，再在畫布上點或拖曳';},
+    result(M,v){const px=gridMerge('',v.px,ART_W,ART_H),names=mgIds(v).map(id=>(v.pl[id]||{}).n||'?'),id=v.ts.toString(36)+NET.uid.slice(-3);
+      if(!G.arts)G.arts=[];if(!G.arts.some(a=>a.id===id)){const a={id,px,t:'第 '+((G.arts.length||0)+1)+' 號',d:dateLabel(),w:names};G.arts.push(a);const k=artRegister(a);if(!G.stashB)G.stashB={};G.stashB[k]=(+G.stashB[k]||0)+1;
+        if(NET.mode==='guest')try{const o=JSON.parse(localStorage.getItem(MAIN_SAVE_KEY)||'null');if(o){o.arts=(o.arts||[]).filter(x=>x.id!==a.id).concat([a]);o.stashB=o.stashB||{};o.stashB[k]=(+o.stashB[k]||0)+1;localStorage.setItem(MAIN_SAVE_KEY,JSON.stringify(o));}}catch(e){}
+        const A=netAlbum();A.unshift({d:artToURL(px,ART_W,ART_H,10),t:dateLabel()+'・畫作',w:names});while(A.length>12)A.pop();try{localStorage.setItem('farm-album',JSON.stringify(A));}catch(e){}}
+      return{win:true,gold:30,text:'大家一起畫好了！\n\n'+(NET.mode==='guest'?'畫作已經寄回你自己的農場，\n回去後在「背包 → 建造」按「放回去」，\n就能掛在家裡的牆上。':'畫作已經收進「背包 → 建造」，\n回家按「放回去」就能掛在牆上。')+'\n相簿裡也存了一張。'};}},
+  // ---- 你畫我猜 ----
+  guess:{GX:16,GY:30,CS:9,GW:32,GH:20,
+    rounds(g){const n=mgIds(g).length;return n<=2?4:n;},
+    init(M){M.sc=0;M.col='1';M.pend={};M.chat=[];M.cRd=0;const{GX,GY,CS,GW,GH}=this;gridInput(M,GX,GY,CS,GW,GH,()=>MG2G.guess.amDrawer(M)&&!MG2G.guess.reveal(M),i=>{M.pend['c'+i]=M.col;});
+      NET.offs.push(M.chatOff=NET.tp.onAdd(mgP('chat'),(k,c)=>{if(!GM||GM!==M||!c)return;M.chat.push(c);if(M.chat.length>4)M.chat.shift();}));this.ui(M);},
+    amDrawer(M){const r=M.g.rd;return!!r&&r.dr===NET.uid;},
+    reveal(M){const r=M.g.rd;return!!r&&M.g.rv===r.n;},
+    ui(M){const r=M.g.rd;M.uiFor=(r?r.n:0)+'|'+this.amDrawer(M)+'|'+this.reveal(M);M.bt.innerHTML='';
+      if(this.reveal(M)){M.bt.appendChild(el('div','dps','等下一題……'));return;}
+      if(this.amDrawer(M)){palUI(M,()=>{const b=M.btn('全部擦掉',()=>{NET.tp.set(mgP('d'+r.n),null);M.pend={};M.sent={};});b.style.cssText='flex:1 0 100%;min-height:36px;font-size:12px;margin:4px 0 0';b.className='bc';});return;}
+      if(r&&(M.gotRd===r.n||(M.g.pl[NET.uid]&&M.g.pl[NET.uid]['g'+r.n]))){M.bt.appendChild(el('div','dps','你猜對了！等其他人……'));return;}
+      const inp=document.createElement('input');inp.type='text';inp.maxLength=8;inp.placeholder='輸入答案';inp.style.cssText='flex:1 1 auto;width:auto;font-family:var(--font-ui);font-size:16px;padding:8px;background:#120c04;color:var(--gold);border:2px solid var(--gold);min-width:0';
+      const go=()=>{const t=inp.value.trim();if(!t||!M.started||M.over)return;inp.value='';const ok=t===GUESS_WORDS[M.g.rd.w];if(ok){const left=Math.max(0,60-(performance.now()-(M.rT||performance.now()))/1000);M.sc+=10+Math.ceil(left/6);M.gotRd=M.g.rd.n;sfx('right');M.put({['g'+M.g.rd.n]:1,sc:M.sc});NET.tp.push(mgP('chat'),{n:G.pname||'？',ok:1});MG2G.guess.ui(M);}else{sfx('click');NET.tp.push(mgP('chat'),{n:G.pname||'？',t});}};
+      inp.addEventListener('keydown',e=>{if(e.key==='Enter')go();});const b=el('button','bp','猜！');b.type='button';b.style.cssText='min-height:44px;margin:0;padding:0 18px;width:auto;flex:0 0 auto';b.onclick=go;M.bt.appendChild(inp);M.bt.appendChild(b);},
+    sync(M,v){const r=v.rd;if(r&&r.n!==M.cRd){M.cRd=r.n;M.rT=performance.now();M.pend={};M.sent={};M.chat=[];M.scored=false;}const key=(r?r.n:0)+'|'+this.amDrawer(M)+'|'+this.reveal(M);if(key!==M.uiFor)this.ui(M);
+      // 畫家：揭曉時依猜對人數加分
+      if(r&&this.reveal(M)&&r.dr===NET.uid&&!M.scored){M.scored=true;const n=mgIds(v).filter(id=>id!==NET.uid&&v.pl[id]['g'+r.n]).length;if(n){M.sc+=n*5;M.put({sc:M.sc});}}},
+    tick(M,now){const r=M.g.rd;if(!r)return;if(this.amDrawer(M)&&now-M.lastW>150&&Object.keys(M.pend).length){M.lastW=now;const p=M.pend;M.pend={};M.sent=Object.assign(M.sent||{},p);NET.tp.upd(mgP('d'+r.n),p);}
+      if(M.g.by!==NET.uid)return;const ids=mgIds(M.g).filter(id=>id===NET.uid||NET.pl[id]),gs=ids.filter(id=>id!==r.dr),all=gs.every(id=>M.g.pl[id]['g'+r.n]),el_=(now-(M.rT||now))/1000;
+      if(M.g.rv!==r.n&&(all||el_>60)){NET.tp.upd(mgP(),{rv:r.n});M.rvT=now;}
+      else if(M.g.rv===r.n&&M.rvT&&now-M.rvT>3500){M.rvT=0;if(r.n>=this.rounds(M.g)){mgEndSend({st:'end'});}else{const n=r.n+1;let w;do{w=Math.floor(Math.random()*GUESS_WORDS.length);}while(w===r.w);NET.tp.upd(mgP(),{rd:{n,w,dr:ids[(n-1)%ids.length]}});}}},
+    draw(M,now){const{R,T,W,H}=M,r=M.g.rd;R(0,0,W,H,'#2a3a2a');if(!r)return;const dr=this.amDrawer(M),rv=this.reveal(M),word=GUESS_WORDS[r.w];
+      T('第 '+r.n+' / '+this.rounds(M.g)+' 題・畫家：'+mgName(M.g,r.dr),W/2,18,'#ffd54f',12);
+      const left=M.rT?Math.max(0,60-Math.floor((now-M.rT)/1000)):60;T(left+'',W-14,18,'#fff',12,'right');
+      const loc=dr?Object.assign({},M.sent||{},M.pend):null,data=M.g['d'+r.n];if(loc)for(const i in data||{})if(M.sent&&M.sent[i]===data[i])delete loc[i];gridPaint(M,this.GX,this.GY,this.CS,this.GW,this.GH,gridMerge('',data,this.GW,this.GH),loc);
+      const by=this.GY+this.GH*this.CS+18;if(rv)T('答案是「'+word+'」！',W/2,by,'#a5ff70',15);else if(dr)T('題目：「'+word+'」　畫出來！',W/2,by,'#ffd54f',14);else T('提示：'+word.length+' 個字',W/2,by,'#cfe',12);
+      M.chat.forEach((c,i)=>T(c.ok?c.n+' 猜對了！':c.n+'：'+c.t,W/2,by+18+i*15,c.ok?'#a5ff70':'#f4e6c4',11));},
+    board(M){return mgBoard(M,' 分');},
+    result(M,v){if(M.chatOff)M.chatOff();return mgIndivResult(v,' 分',150,50);}}});
+// ---- 合作大委託：放在 rooms/<房號>/big，大家一起交 ----
+function bigSum(b){const s={};for(const u in(b&&b.c)||{})for(const k in b.c[u])if(k!=='n')s[k]=(s[k]||0)+(+b.c[u][k]||0);return s;}
+function bigDone(b){if(!b)return false;const s=bigSum(b);return Object.keys(b.need).every(k=>(s[k]||0)>=b.need[k]);}
+function bigNew(){if(NET.mode!=='host')return;const sc=seasonCrops().slice().sort(()=>Math.random()-.5).slice(0,2),n=1+Object.keys(NET.pl).length,need={};for(const k of sc)need[k]=10+n*5;
+  NET.tp.set(netP('big'),{id:G.day+'_'+Date.now().toString(36),need,day:G.day,until:G.day+3});}
+function bigCheckDay(){if(NET.mode!=='host')return;const b=NET.big;if(!b||bigDone(b)||G.day>b.until)bigNew();}
+function bigOnChange(b){NET.big=b;if(!b||!bigDone(b))return;if(!G.bigDone)G.bigDone={};if(G.bigDone[b.id])return;const mine=(b.c&&b.c[NET.uid])||{},cnt=Object.keys(mine).filter(k=>k!=='n').reduce((a,k)=>a+(+mine[k]||0),0);G.bigDone[b.id]=1;if(!cnt){saveGame();return;}
+  const gold=300+cnt*15;G.gold+=gold;if(G.today)G.today.earn+=gold;for(const id of['fruit','clerk','guide'])addRel(id,3);updHUD();saveGame();sfx('coin');
+  popInfo('村子大委託完成！','大家一起把東西都交齊了！\n村民們都很感謝你們。\n\n你交了 '+cnt+' 個\n獲得 '+gold+'G・村民好感上升','太好了！',null,'#9fe0ff');}
+function bigRows(box){const b=NET.big;if(!NET.on||!b)return;const s=bigSum(b),done=bigDone(b);box.appendChild(el('div','shdr','── 村子大委託（大家一起交）──'));
+  const info=el('div','oi',done?'大家一起完成了！獎勵已經發給有交東西的人。':'要在第 '+b.until+' 天前一起交齊（還剩 '+Math.max(0,b.until-G.day+1)+' 天）\n完成後，有交東西的人：300G＋每交 1 個再 15G');info.style.cssText='margin:2px 0 4px;white-space:pre-line;line-height:1.7';box.appendChild(info);
+  for(const k in b.need){const q=b.need[k],got=s[k]||0,left=Math.max(0,q-got),h=have(k)||0;let bt=null;
+    if(left>0&&!done){bt=el('button','bb','交付');bt.type='button';bt.disabled=!h;bt.style.cssText=h?'background:#1b4e6e;border-color:#4ab0e0':'background:#2a2a2a;border-color:#444;opacity:.5';
+      bt.onclick=()=>popQty({title:'交'+ITEM[k].n,img:iconDataURL(k,32),desc:'還差 '+left+' 個・背包有 '+h+' 個',price:0,max:Math.min(h,left),verb:'交出',onBack:openRequests,onOk:n=>{const cur=+(((NET.big.c||{})[NET.uid]||{})[k])||0;addHave(k,-n);NET.tp.upd(netP('big/c/'+NET.uid),{n:G.pname||'？',[k]:cur+n});sfx('coin');updTB();saveGame();msg('交出 '+ITEM[k].n+' ×'+n+'！');setTimeout(openRequests,300);}});}
+    const rw=bagRow(k,ITEM[k].n,'大家已交 '+got+' / '+q+'｜背包有 '+h+' 個',bt);rw.dataset.tp=left>0?got+'/'+q:'✔ 交齊';box.appendChild(rw);}
+  const who=Object.values(b.c||{}).map(c=>c.n+' '+Object.keys(c).filter(x=>x!=='n').reduce((a,x)=>a+(+c[x]||0),0)+' 個');if(who.length){const w=el('div','oi','已經交的人：'+who.join('、'));w.style.margin='4px 0 8px';box.appendChild(w);}}
 // ---- 接到原本的遊戲流程 ----
+{const _lg=loadGame;loadGame=function(s){if(s){G.arts=s.arts||[];G.bigDone=s.bigDone||{};artRegisterAll();}return _lg.apply(this,arguments);};}
 {const _endDay=endDay;endDay=function(p){_endDay(p);if(!NET.on)return;const bs=[...document.querySelectorAll('#mbox button.bp')],b=bs[bs.length-1];if(b&&/迎接新的一天/.test(b.textContent)){const f=b.onclick;b.onclick=()=>netGate(()=>f());}};}
-{const _nextDay=nextDay;nextDay=function(){const r=_nextDay.apply(this,arguments);if(NET.on){if(NET.mode==='host'){netWriteSnap();NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}else if(NET.snap){const hp=[G.px,G.py];netApplySnap(NET.snap);G.px=hp[0];G.py=hp[1];saveGame();}}return r;};}
+{const _nextDay=nextDay;nextDay=function(){const r=_nextDay.apply(this,arguments);if(NET.on){if(NET.mode==='host'){netWriteSnap();NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});bigCheckDay();}else if(NET.snap){const hp=[G.px,G.py];netApplySnap(NET.snap);G.px=hp[0];G.py=hp[1];saveGame();}}return r;};}
 {const _useTool=useTool;useTool=function(){if(!NET.on)return _useTool.apply(this,arguments);const[fx,fy]=getFacing(),a=arguments;return netWatch(fx,fy,3,()=>_useTool.apply(this,a));};}
 {const _ia=interactAnimal;interactAnimal=function(){if(netGuestBlock('照顧動物'))return;return _ia.apply(this,arguments);};}
 {const _sp=startPlace;startPlace=function(){if(netGuestBlock('建造和種樹'))return;return _sp.apply(this,arguments);};}
