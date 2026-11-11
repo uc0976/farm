@@ -306,7 +306,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 <script>
 'use strict';
 // 版本號：每次更新往上加，開始畫面和設定頁會顯示
-const GAME_VER='1.19',GAME_DATE='2026-11-09';
+const GAME_VER='1.20',GAME_DATE='2026-11-11';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -4732,14 +4732,14 @@ function netApplyEdit(e){if(!e||e.by===NET.uid)return;const{x,y}=e,k=x+','+y;if(
   const flag=(arr,on)=>{if(!G[arr])G[arr]=[];const i=G[arr].indexOf(k);if(on&&i<0)G[arr].push(k);if(!on&&i>=0)G[arr].splice(i,1);};flag('planted',e.pl);flag('cleared',e.cl);}
 // ---- 玩家位置 ----
 function netMe(){return{n:G.pname||'小農夫',lk:JSON.stringify(G.look||{}),x:Math.round(G.px),y:Math.round(G.py),d:G.dir,m:G.moving?1:0,a:G.act?[G.act.row,G.act.n,G.act.spd,NET.seq]:0,
-  s:NET.wait?G.day:0,e:NET.emo?NET.emo.t:'',et:NET.emo?NET.emo.ts:0,h:NET.mode==='host'?1:0,si:netSeat()};}
-function netTick(now){if(!NET.on)return;netActTick();mgInviteTick();
+  s:NET.wait?G.day:0,e:NET.emo?NET.emo.t:'',et:NET.emo?NET.emo.ts:0,ec:NET.emo&&NET.emo.c?1:0,h:NET.mode==='host'?1:0,si:netSeat()};}
+function netTick(now){if(!NET.on)return;netActTick();mgInviteTick();mgGoTick();netZoneTick();
   if(G.act&&G.act!==NET._act){NET._act=G.act;NET.seq++;}if(!G.act)NET._act=null;
   if(now-NET.lastSend>120){const me=netMe(),sig=JSON.stringify(me);if(sig!==NET.lastSig){NET.lastSig=sig;NET.lastSend=now;NET.tp.upd(netP('pl/'+NET.uid),me);}}
   if(NET.mode==='host'&&now-NET.lastCk>2000){NET.lastCk=now;NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}
   for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null){p.rx=p.x;p.ry=p.y;}const dx=p.x-p.rx,dy=p.y-p.ry;if(Math.hypot(dx,dy)>TILE*6){p.rx=p.x;p.ry=p.y;}else{p.rx+=dx*.25;p.ry+=dy*.25;}
     if(p.a&&p.a[3]!==p._aseq){p._aseq=p.a[3];p._af=frameCount;}}}
-function netPlayers(v){const old=NET.pl;NET.pl={};for(const id in v||{}){if(id===NET.uid)continue;const p=Object.assign(old[id]||{},v[id]);if(!old[id]&&NET._plInit)msg(p.n+' 加入了農場！');NET.pl[id]=p;}
+function netPlayers(v){const old=NET.pl;NET.pl={};for(const id in v||{}){if(id===NET.uid)continue;const p=Object.assign(old[id]||{},v[id]);if(!old[id]&&NET._plInit)msg(p.n+' 加入了農場！');if(p.ec&&p.e&&p.et!==p._cet){const first=p._cet==null;p._cet=p.et;if(!first||Date.now()-p.et<5000){logMsg(p.n+'：'+p.e);if(p.rx==null||Math.abs(p.rx-G.px)>W2/2||Math.abs(p.ry-G.py)>H2/2)msg(p.n+'：'+p.e);}}NET.pl[id]=p;}
   for(const id in old)if(!NET.pl[id])msg(old[id].n+' 離開了農場');NET._plInit=true;
   if(NET.mode==='host'&&NET.wait)netCheckSleep();netPanelRefresh();}
 const NET_SHEETS={};
@@ -4751,11 +4751,11 @@ function netDrawPlayer(p){const sx=Math.round(p.rx-cam.x),sy=Math.round(p.ry-cam
     ctx.save();ctx.imageSmoothingEnabled=false;ctx.translate(sx,sy+15);if(p.d==='left')ctx.scale(-1,1);ctx.drawImage(frameCv(img,col,row),0,0,FW,FH,-12.5*HS,-FH*HS,FW*HS,FH*HS);ctx.restore();}
   ctx.font='bold 11px Cubic11,"Noto Sans TC",sans-serif';ctx.textAlign='center';const nm=p.n+(p.s?' Zz':''),w=fmw(nm)+10,ty=sy-FH*HS+46;
   ctx.fillStyle='rgba(10,6,2,.7)';ctx.fillRect(sx-w/2,ty-13,w,16);ctx.fillStyle=p.h?'#f9c74f':'#9fe0ff';ftx(nm,sx,ty);
-  if(p.e&&Date.now()-p.et<4000){ctx.font='bold 13px Cubic11,"Noto Sans TC",sans-serif';const bw=fmw(p.e)+16,by=ty-22;ctx.fillStyle='#fff';ctx.fillRect(sx-bw/2,by-16,bw,22);ctx.fillRect(sx-3,by+6,6,4);ctx.fillStyle='#2a1a0a';ftx(p.e,sx,by);}
+  if(p.e&&Date.now()-p.et<(p.ec?7000:4000)){ctx.font='bold 13px Cubic11,"Noto Sans TC",sans-serif';const bw=fmw(p.e)+16,by=ty-28;ctx.fillStyle='#fff';ctx.fillRect(sx-bw/2,by-16,bw,22);ctx.fillRect(sx-3,by+6,6,4);ctx.fillStyle='#2a1a0a';ftx(p.e,sx,by);}
   ctx.textAlign='left';}
 function netEnts(ents){if(!NET.on)return;const zone=e=>isInStore(e)?1:isInBarn(e)?2:0,mz=zone({x:G.px,y:G.py});
   for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null||!mgHideSee(p,id))continue;{const pz=zone({x:p.rx,y:p.ry});if(pz&&pz!==mz)continue;}ents.push({y:p.ry,f:()=>netDrawPlayer(p)});}
-  if(NET.emo&&Date.now()-NET.emo.ts<4000)ents.push({y:9e9,f:()=>{const sx=Math.round(G.px-cam.x),sy=Math.round(G.py-cam.y)-FH*HS+24;ctx.font='bold 13px Cubic11,"Noto Sans TC",sans-serif';ctx.textAlign='center';const bw=fmw(NET.emo.t)+16;ctx.fillStyle='#fff';ctx.fillRect(sx-bw/2,sy-16,bw,22);ctx.fillRect(sx-3,sy+6,6,4);ctx.fillStyle='#2a1a0a';ftx(NET.emo.t,sx,sy);ctx.textAlign='left';}});}
+  if(NET.emo&&Date.now()-NET.emo.ts<(NET.emo.c?7000:4000))ents.push({y:9e9,f:()=>{const sx=Math.round(G.px-cam.x),sy=Math.round(G.py-cam.y)-FH*HS+24;ctx.font='bold 13px Cubic11,"Noto Sans TC",sans-serif';ctx.textAlign='center';const bw=fmw(NET.emo.t)+16;ctx.fillStyle='#fff';ctx.fillRect(sx-bw/2,sy-16,bw,22);ctx.fillRect(sx-3,sy+6,6,4);ctx.fillStyle='#2a1a0a';ftx(NET.emo.t,sx,sy);ctx.textAlign='left';}});}
 // ---- 一起睡覺：大家都按了「迎接新的一天」才換日 ----
 function netGate(fn){if(!NET.on)return fn();NET.wait=fn;NET.lastSig='';netWaitUI();if(NET.mode==='host')netCheckSleep();}
 function netSleepers(){const ids=Object.keys(NET.pl);return{n:ids.length+1,ok:1+ids.filter(id=>NET.pl[id].s===G.day).length};}
@@ -4800,7 +4800,7 @@ async function netJoin(code){if(!netOK()){popInfo('多人連線','多人連線�
   netApplySnap(S);G.px=S.hx+TILE;G.py=S.hy;G.dir='down';G.indoor=false;if(G.tut!=null&&G.tut>=0)G.tut=-1;
   st.style.display='none';document.getElementById('st').style.display='none';initAudio();started=true;
   t.onDis(netP('pl/'+NET.uid));netListen();saveGame();
-  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角「互動」可以打招呼、跳舞、拍合照\n・點一下朋友，可以送東西、擊掌、抱抱\n・大家都上床睡覺才會到隔天\n・動物和建造先交給房主','開始！',null,'#9fe0ff'),300);}
+  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角「互動」可以打字聊天、跳舞、拍合照\n・走到球場、廣場、海邊這些場地，可以揪大家玩小遊戲\n・點一下朋友，可以送東西、擊掌、抱抱\n・大家都上床睡覺才會到隔天\n・動物和建造先交給房主','開始！',null,'#9fe0ff'),300);}
 function netClose(){if(!NET.on)return;if(NET.mode==='host'){NET.tp.del(netP());NET.offs.forEach(f=>f());NET.offs=[];NET.on=false;NET.mode=null;NET.pl={};const b=document.getElementById('netemo');if(b)b.remove();msg('房間關閉了');}else location.reload();}
 // ---- 介面 ----
 function netGuestBlock(what){if(NET.mode!=='guest')return false;msg('多人模式下，'+what+'先交給房主喔！');return true;}
@@ -4832,11 +4832,11 @@ function netSay(t){NET.emo={t,ts:Date.now()};NET.lastSig='';}
 function netNear(p,tiles){return Math.hypot(p.rx-G.px,p.ry-G.py)<=TILE*tiles;}
 function netHitPlayer(wx,wy){for(const id in NET.pl){const p=NET.pl[id];if(p.rx==null||!mgHideSee(p,id))continue;if(Math.abs(wx-p.rx)<18&&wy>p.ry+15-66&&wy<p.ry+20)return id;}return null;}
 function netPop(title,body,btns){festPop(title,body,btns,'#9fe0ff');}
-function netPlayerMenu(id){if(mgHideTap(id))return;const p=NET.pl[id];if(!p)return;sfx('click');
-  netPop(p.n,(p.h?'這座農場的主人\n':'')+(netNear(p,3)?'要做什麼呢？':'離太遠了，走近一點才能擊掌、抱抱或送東西'),[
-    ['送東西',()=>{if(!netNear(NET.pl[id]||p,3)){msg('走近一點才能把東西交給 '+p.n);return;}netGiftMenu(id);}],
-    ['擊掌',()=>netAsk(id,'hi5')],['抱抱',()=>netAsk(id,'hug')],
-    ['一起拍照',()=>netPhotoStart()],['返回',null,'bc']]);}
+function netPlayerMenu(id){if(mgHideTap(id))return;const p=NET.pl[id];if(!p)return;sfx('click');const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn',p.n);t.style.color='#9fe0ff';box.appendChild(t);
+  const near=netNear(p,3);box.appendChild(el('div','dpd',(p.h?'這座農場的主人\n':'')+(near?'要做什麼呢？':'離太遠了，走近一點才能互動')));
+  const g=netTiles(box,[['送東西','n_gift',()=>{netDpClose();if(!netNear(NET.pl[id]||p,3)){msg('走近一點才能把東西交給 '+p.n);return;}netGiftMenu(id);}],['擊掌','n_hi5',()=>{netDpClose();netAsk(id,'hi5');}],['抱抱','n_hug',()=>{netDpClose();netAsk(id,'hug');}],['拍合照','n_cam',()=>{netDpClose();netPhotoStart();}]],4);
+  if(!near)[...g.children].slice(0,3).forEach(c=>c.classList.add('off'));
+  const c=el('button','bc','返回');c.type='button';c.onclick=netDpClose;box.appendChild(c);document.getElementById('dp').style.display='flex';}
 const NET_ASK={hi5:{ask:'舉起手想跟你擊掌！',ok:'擊掌！',me:'擊掌！',done:'啪！擊掌成功！'},hug:{ask:'張開雙手想抱抱你！',ok:'抱抱',me:'抱抱～',done:'抱了一下，好溫暖～'}};
 function netAsk(id,k){const p=NET.pl[id];if(!p)return;if(!netNear(p,2.5)){msg('要站在 '+p.n+' 旁邊才行喔！');return;}netSay(NET_ASK[k].me);netSend(id,k);msg('等 '+p.n+' 回應……');}
 function netGiftMenu(id){const p=NET.pl[id];if(!p)return;const box=document.getElementById('mbox');box.innerHTML='';G.ph='market';box.appendChild(el('div','ot','送給 '+p.n));
@@ -4894,16 +4894,61 @@ function openAlbum(){const box=document.getElementById('mbox');box.innerHTML='';
       const c2=el('button','bc','返回');c2.type='button';c2.onclick=()=>{document.getElementById('dp').style.display='none';};b2.appendChild(c2);document.getElementById('dp').style.display='flex';};g.appendChild(f);});box.appendChild(g);
   const c=el('button','bc','關閉');c.type='button';c.onclick=closeOm;box.appendChild(c);document.getElementById('om').style.display='flex';}
 // ---- 💬 互動選單 ----
+// ---- 像素圖示 ----
+Object.assign(UIICON,{
+  n_wave:[[6,2,2,6,'#f4d8b0'],[9,1,2,7,'#f4d8b0'],[12,2,2,6,'#f4d8b0'],[4,6,11,6,'#f4d8b0'],[2,7,3,3,'#f4d8b0'],[5,12,8,2,'#e0b890'],[1,2,2,1,'#9fe0ff'],[0,4,2,1,'#9fe0ff']],
+  n_dance:[[6,1,4,4,'#f4d8b0'],[5,5,6,5,'#e86a8a'],[2,4,3,2,'#f4d8b0'],[11,6,3,2,'#f4d8b0'],[5,10,2,4,'#3a4a8a'],[9,10,2,3,'#3a4a8a'],[11,12,2,2,'#3a4a8a'],[13,1,2,1,'#ffd54f'],[14,2,1,3,'#ffd54f'],[12,4,2,2,'#ffd54f']],
+  n_cam:[[1,4,14,9,'#4a4a54'],[5,2,5,2,'#4a4a54'],[5,6,6,6,'#9fe0ff'],[6,7,4,4,'#2a62d0'],[7,8,1,1,'#fff'],[12,5,2,1,'#ffd54f'],[1,4,14,1,'#6a6a74']],
+  n_album:[[2,2,12,12,'#8a5a30'],[3,3,10,10,'#f4ecd8'],[4,4,8,6,'#7ac0e8'],[4,8,8,2,'#4caf50'],[9,5,2,2,'#ffd54f'],[4,11,6,1,'#8a5a30']],
+  n_room:[[7,1,2,2,'#c0392b'],[3,5,10,2,'#c0392b'],[5,3,6,2,'#c0392b'],[3,7,10,7,'#f4ecd8'],[7,9,2,5,'#8a5a30'],[4,8,2,2,'#7ac0e8'],[10,8,2,2,'#7ac0e8']],
+  n_gift:[[2,6,12,8,'#e86a8a'],[1,4,14,3,'#f088b0'],[7,4,2,10,'#ffd54f'],[5,2,2,2,'#ffd54f'],[9,2,2,2,'#ffd54f']],
+  n_hi5:[[5,1,2,7,'#f4d8b0'],[8,0,2,8,'#f4d8b0'],[11,1,2,7,'#f4d8b0'],[4,7,10,6,'#f4d8b0'],[2,8,2,3,'#f4d8b0'],[6,13,6,2,'#e0b890'],[0,2,2,1,'#ffd54f'],[1,0,1,2,'#ffd54f'],[14,3,2,1,'#ffd54f']],
+  n_hug:[[5,3,2,2,'#ff7a9a'],[9,3,2,2,'#ff7a9a'],[4,5,8,3,'#ff7a9a'],[5,8,6,2,'#ff7a9a'],[6,10,4,1,'#ff7a9a'],[7,11,2,1,'#ff7a9a'],[5,4,1,1,'#ffc0d0']],
+  n_shoe:[[2,5,5,5,'#e85a5a'],[2,10,12,3,'#e85a5a'],[7,8,5,2,'#e85a5a'],[2,13,12,1,'#f4f4f4'],[4,6,2,1,'#fff'],[0,7,1,1,'#9fe0ff'],[0,10,1,1,'#9fe0ff']],
+  n_tug:[[0,7,16,2,'#d8b878'],[2,7,1,2,'#a88848'],[6,7,1,2,'#a88848'],[10,7,1,2,'#a88848'],[13,7,1,2,'#a88848'],[7,4,2,8,'#e53935']],
+  n_pot:[[2,6,12,7,'#4a4a54'],[1,5,14,2,'#6a6a74'],[0,7,2,2,'#4a4a54'],[14,7,2,2,'#4a4a54'],[5,1,1,3,'#ddd'],[8,0,1,4,'#ddd'],[11,1,1,3,'#ddd']],
+  n_q:[[2,1,12,11,'#ffd54f'],[5,12,3,2,'#ffd54f'],[6,3,4,1,'#5a3a1a'],[9,4,1,2,'#5a3a1a'],[7,6,2,1,'#5a3a1a'],[7,7,1,1,'#5a3a1a'],[7,9,1,1,'#5a3a1a']],
+  n_rps:[[4,4,9,8,'#f4d8b0'],[4,4,9,2,'#e0b890'],[2,7,2,4,'#f4d8b0'],[5,12,7,2,'#e0b890'],[7,5,1,3,'#e0b890'],[10,5,1,3,'#e0b890']],
+  n_dice:[[2,2,12,12,'#f4f4f4'],[2,13,12,1,'#c8c8c8'],[4,4,2,2,'#2a1a0a'],[10,4,2,2,'#2a1a0a'],[7,7,2,2,'#c0392b'],[4,10,2,2,'#2a1a0a'],[10,10,2,2,'#2a1a0a']],
+  n_hide:[[1,6,14,4,'#f4f4f4'],[3,4,10,2,'#f4f4f4'],[3,10,10,2,'#f4f4f4'],[6,5,4,6,'#4a8ad8'],[7,7,2,2,'#2a1a0a'],[1,5,2,1,'#5a3a1a'],[13,5,2,1,'#5a3a1a']],
+  n_pen:[[10,1,3,3,'#f088b0'],[8,3,3,3,'#ffd54f'],[6,5,3,3,'#ffd54f'],[4,7,3,3,'#ffd54f'],[3,10,2,2,'#f4d8b0'],[2,12,1,1,'#2a1a0a'],[1,14,8,1,'#2a1a0a']],
+  n_pal:[[2,3,12,10,'#d8b07a'],[9,9,3,3,'#1c1208'],[4,5,2,2,'#e53935'],[7,4,2,2,'#f9d23c'],[10,5,2,2,'#4caf50'],[4,9,2,2,'#2a62d0']],
+  n_crop:[[6,1,4,3,'#4caf50'],[4,4,8,9,'#f39c12'],[5,13,6,1,'#c87a10'],[6,6,1,5,'#c87a10'],[9,6,1,5,'#c87a10']],
+  n_send:[[1,7,10,2,'#fff'],[9,4,2,8,'#fff'],[11,6,2,4,'#fff'],[13,7,2,2,'#fff']]});
+function netIcon(k){return k==='bball'?sportIcon('basket'):k==='vball'?sportIcon('volley'):uiIconURL(k);}
+const MG_ICON={bball:'bball',vball:'vball',race:'n_shoe',tug:'n_tug',fish:'fish_m',harv:'n_crop',cook:'n_pot',quiz:'n_q',rps:'n_rps',dice:'n_dice',hide:'n_hide',guess:'n_pen',paint:'n_pal'};
+// 圖示格子按鈕（跟背包的格子同一種外觀）
+function netTiles(box,items,cols){const g=el('div','tgrid');g.style.gridTemplateColumns='repeat('+(cols||4)+',minmax(0,1fr))';for(const[label,icon,fn,sub]of items){const t=el('div','titem');t.setAttribute('role','button');t.tabIndex=0;const im=document.createElement('img');im.src=netIcon(icon);im.alt='';t.appendChild(im);t.appendChild(el('span','tn',label));if(sub)t.appendChild(el('span','tp',sub));
+    t.onclick=()=>{sfx('click');fn();};g.appendChild(t);}box.appendChild(g);return g;}
+function netDpClose(){document.getElementById('dp').style.display='none';}
+// ---- 場地：要走到這些地方才能揪朋友玩 ----
+const NET_ZONES=[['court_b','籃球場',['bball']],['court_v','排球場',['vball']],['plaza','市集廣場',['race','tug','quiz','hide']],['sea','海邊・碼頭',['fish']],['field','農場的田',['harv']],['camp','營火旁邊',['rps','dice']],['home','家裡',['cook','guess','paint']]];
+function netZone(){const tx=Math.floor(G.px/TILE),ty=Math.floor(G.py/TILE),t=(G.map[ty]||[])[tx];let k=null;
+  const rm=roomAt(G.px,G.py);if(rm){if(houseOf(rm)==='home')k='home';}
+  else{const c=courtAt(tx,ty);if(c&&tx>=VX&&tx<RX)k=c.k==='basket'?'court_b':c.k==='volley'?'court_v':null;
+    else if(t===T.PLAZA)k='plaza';else if(Math.hypot(G.px-5.5*TILE,G.py-20.5*TILE)<TILE*3)k='camp';
+    else if(tx<FARMW&&(t===T.D||t===T.TI||t===T.WA))k='field';
+    else if(t===T.DOCK||t===T.SAND){for(let dy=-2;dy<=2&&k!=='sea';dy++)for(let dx=-2;dx<=2;dx++)if((G.map[ty+dy]||[])[tx+dx]===T.SEA||t===T.DOCK){k='sea';break;}}}
+  return k?NET_ZONES.find(z=>z[0]===k):null;}
+function netZoneTick(){if(frameCount%30||G.ph!=='play')return;const z=netZone(),k=z?z[0]:'';if(k===NET.zone)return;NET.zone=k;if(z&&Object.keys(NET.pl).length&&!NET.game){if(!NET.zoneSeen)NET.zoneSeen={};if(NET.zoneSeen[k]===G.day)return;NET.zoneSeen[k]=G.day;msg(z[1]+'可以揪朋友玩：\n'+z[2].map(g=>MG2[g].n).join('、')+'\n（按左下角「互動」）');}}
+// ---- 聊天：自己輸入 ----
+function netChat(t){t=String(t||'').replace(/\s+/g,' ').trim().slice(0,24);if(!t)return;NET.emo={t,ts:Date.now(),c:1};NET.lastSig='';sfx('click');logMsg((G.pname||'我')+'：'+t);}
 function openNetMenu(){if(G.ph!=='play')return;const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn','互動');t.style.color='#9fe0ff';box.appendChild(t);
-  const sec=(name,items)=>{box.appendChild(el('div','dps',name));const r=el('div','qtyrow');r.style.flexWrap='wrap';for(const[lb,fn]of items){const b=el('button','qb s',lb);b.type='button';b.onclick=()=>{document.getElementById('dp').style.display='none';fn();};r.appendChild(b);}box.appendChild(r);};
-  sec('說一句話',['嗨～','讚！','哈哈哈','哇！','好耶！','來這邊！','謝謝！','等我一下','晚安～'].map(s=>[s,()=>{netSay(s);sfx('click');}]));
-  sec('動作',[['揮手',netWave],['跳舞',netDance],['一起拍照',netPhotoStart]]);
-  sec('一起玩（運動）',Object.keys(MG2).filter(k=>MG2[k].cat==='sport').map(k=>[MG2[k].n,()=>mgStart(k)]));
-  sec('比賽與派對',Object.keys(MG2).filter(k=>MG2[k].cat==='party').map(k=>[MG2[k].n,()=>mgStart(k)]));
-  sec('畫畫',Object.keys(MG2).filter(k=>MG2[k].cat==='art').map(k=>[MG2[k].n,()=>mgStart(k)]));
-  box.appendChild(el('div','dps','點一下朋友，可以送東西、擊掌、抱抱'));
-  sec('其他',[['相簿',openAlbum],['房間資訊',openNetPanel]]);
-  const c=el('button','bc','關閉');c.type='button';c.onclick=()=>{document.getElementById('dp').style.display='none';};box.appendChild(c);document.getElementById('dp').style.display='flex';}
+  // 聊天輸入
+  const row=el('div');row.style.cssText='display:flex;gap:6px;margin:6px 0;width:100%';const inp=document.createElement('input');inp.type='text';inp.maxLength=24;inp.placeholder='想說什麼？';inp.id='netchat';inp.style.cssText='flex:1 1 auto;min-width:0;width:auto;font-family:var(--font-ui);font-size:16px;padding:8px;background:#120c04;color:#fff;border:2px solid #c8a050';
+  const send=()=>{const v=inp.value;if(!v.trim()){inp.focus();return;}netDpClose();netChat(v);};for(const ev of['keydown','keyup','keypress'])inp.addEventListener(ev,e=>{e.stopPropagation();if(ev==='keydown'&&e.key==='Enter')send();});
+  const sb=el('button','bp','送出');sb.type='button';sb.style.cssText='flex:0 0 auto;width:auto;margin:0;padding:0 14px;min-height:40px';sb.onclick=send;row.appendChild(inp);row.appendChild(sb);box.appendChild(row);
+  const qr=el('div','qtyrow');qr.style.cssText='flex-wrap:wrap;margin:0 0 6px';for(const s of['嗨～','謝謝！','來這邊！','等我一下']){const b=el('button','qb s',s);b.type='button';b.onclick=()=>{netDpClose();netChat(s);};qr.appendChild(b);}box.appendChild(qr);
+  netTiles(box,[['揮手','n_wave',()=>{netDpClose();netWave();}],['跳舞','n_dance',()=>{netDpClose();netDance();}],['拍合照','n_cam',()=>{netDpClose();netPhotoStart();}],['相簿','n_album',()=>{netDpClose();openAlbum();}],['房間','n_room',()=>{netDpClose();openNetPanel();}]],5);
+  // 這個場地可以玩的小遊戲
+  const z=netZone();if(z){box.appendChild(el('div','dps','在'+z[1]+'揪朋友一起玩'));netTiles(box,z[2].map(k=>[MG2[k].n,MG_ICON[k],()=>{netDpClose();mgStart(k);}]),4);}
+  else{const h=el('div','dps','想玩小遊戲，要先走到場地');box.appendChild(h);const b=el('button','qb s','看看哪裡可以玩什麼');b.type='button';b.style.margin='0 auto 6px';b.onclick=openNetZones;const r=el('div','qtyrow');r.appendChild(b);box.appendChild(r);}
+  box.appendChild(el('div','dps','點一下朋友：送東西、擊掌、抱抱'));
+  const c=el('button','bc','關閉');c.type='button';c.onclick=netDpClose;box.appendChild(c);document.getElementById('dp').style.display='flex';}
+function openNetZones(){const box=document.getElementById('dpbox');box.innerHTML='';DP=null;const t=el('div','dpn','哪裡可以玩什麼');t.style.color='#9fe0ff';box.appendChild(t);
+  box.appendChild(el('div','dpd','走到場地，按「互動」就能揪朋友。\n朋友答應後會走到你身邊，人到齊就開始！'));
+  for(const z of NET_ZONES){box.appendChild(el('div','dps',z[1]));netTiles(box,z[2].map(k=>[MG2[k].n,MG_ICON[k],()=>msg('「'+MG2[k].n+'」要在'+z[1]+'才能揪朋友玩')]),4);}
+  const c=el('button','bc','返回');c.type='button';c.onclick=()=>openNetMenu();box.appendChild(c);document.getElementById('dp').style.display='flex';}
 // ===== 多人小遊戲：揪團、大廳、開始、結算 =====
 // rooms/<房號>/game：{k 遊戲, st lobby|play|end, by 發起人, ts, pl:{uid:{n,j,sc,done,ft,prog,tp}}, ball, res}
 const MG2={
@@ -4914,27 +4959,42 @@ const MG2={
 let GM=null;
 function mgP(s){return netP('game'+(s?'/'+s:''));}
 function mgStart(k){if(!NET.on)return;if(NET.game){msg('已經有人在揪團了，先玩完這一場吧！');return;}if(!Object.keys(NET.pl).length){msg('農場裡只有你一個人，等朋友來再一起玩吧！');return;}
-  NET.tp.set(mgP(),{k,st:'lobby',by:NET.uid,ts:Date.now(),pl:{[NET.uid]:{n:G.pname||'小農夫',j:Date.now()}}});sfx('click');}
-function mgJoin(){if(!NET.game)return;NET.tp.upd(mgP('pl/'+NET.uid),{n:G.pname||'小農夫',j:Date.now()});}
-function mgLeave(){const g=NET.game;if(!g)return;document.getElementById('dp').style.display='none';G.ph='play';if(g.by===NET.uid)NET.tp.del(mgP());else NET.tp.del(mgP('pl/'+NET.uid));}
+  const z=netZone();if(!z||!z[2].includes(k)){const zz=NET_ZONES.find(o=>o[2].includes(k));msg('「'+MG2[k].n+'」要在'+(zz?zz[1]:'場地')+'才能揪朋友玩');return;}
+  NET.tp.set(mgP(),{k,st:'lobby',by:NET.uid,ts:Date.now(),zn:z[1],pl:{[NET.uid]:{n:G.pname||'小農夫',j:Date.now(),arr:1}}});sfx('click');}
+function mgJoin(){const g=NET.game;if(!g)return;NET.tp.upd(mgP('pl/'+NET.uid),{n:G.pname||'小農夫',j:Date.now(),arr:0});NET.mgGo=g.ts;NET.mgGoT=0;G.ph='play';mgGoBar();}
+function mgLeave(){const g=NET.game;NET.mgGo=0;mgGoBar();if(!g)return;netDpClose();if(G.ph==='market')G.ph='play';if(g.by===NET.uid)NET.tp.del(mgP());else NET.tp.del(mgP('pl/'+NET.uid));}
+// 答應之後：自動走向主辦人，到了才算加入
+function mgGoBar(txt){let b=document.getElementById('mggo');if(!NET.mgGo){if(b)b.remove();return;}if(!b){b=el('div');b.id='mggo';b.style.cssText='position:fixed;left:50%;top:calc(env(safe-area-inset-top) + 64px);transform:translateX(-50%);z-index:31;background:rgba(10,6,2,.9);color:#ffd54f;border:2px solid #c8a050;padding:6px 8px 6px 12px;font-size:12px;font-family:var(--font-ui);display:flex;align-items:center;gap:10px;max-width:92vw';
+    const s=el('span');s.style.cssText='white-space:pre;line-height:1.5';b.appendChild(s);const c=el('button','bc','不去了');c.type='button';c.style.cssText='width:auto;margin:0;padding:6px 10px;min-height:0;font-size:11px;flex:none';c.onclick=e=>{e.stopPropagation();clearPath();mgLeave();};b.appendChild(c);document.body.appendChild(b);}
+  if(txt)b.firstChild.textContent=txt;}
+function mgGoTick(){if(!NET.mgGo)return;const g=NET.game;if(!g||g.ts!==NET.mgGo||g.st!=='lobby'||!g.pl||!g.pl[NET.uid]){NET.mgGo=0;mgGoBar();return;}
+  const h=NET.pl[g.by];if(!h){return;}const who=h.n,zn=g.zn||'場地';
+  if(netNear(h,2.2)&&!!roomAt(G.px,G.py)===!!roomAt(h.rx,h.ry)){NET.mgGo=0;mgGoBar();clearPath();faceTo(h.rx,h.ry);NET.tp.upd(mgP('pl/'+NET.uid),{arr:1});sfx('right');return;}
+  if(G.ph!=='play'||frameCount<NET.mgGoT)return;NET.mgGoT=frameCount+90;
+  if(roomAt(h.rx,h.ry)){mgGoBar(who+' 在'+zn+'等你\n自己走進屋子裡找他吧');return;}
+  if(roomAt(G.px,G.py)){mgGoBar(who+' 在'+zn+'等你\n先走出屋子吧');return;}
+  mgGoBar('正在走去'+zn+'\n找 '+who+'……');if(G.path&&G.path.length)return;
+  const hx=Math.floor(h.rx/TILE),hy=Math.floor(h.ry/TILE),goals=neighborGoals(hx,hy);goals.add(hy*MW+hx);const p=bfs(Math.floor(G.px/TILE),Math.floor(G.py/TILE),goals,isWalk);
+  if(p&&p.length>1){G.path=p.map(c=>({x:(c.x+.5)*TILE,y:(c.y+.5)*TILE}));G.pathAct=null;G.target=null;}else if(!p)mgGoBar(who+' 在'+zn+'等你\n路走不通，自己走過去找他吧');}
 function mgIds(g){return Object.keys(g.pl||{}).sort((a,b)=>g.pl[a].j-g.pl[b].j);}
 function mgOnGame(v){const old=NET.game;NET.game=v;
   if(!v){if(GM&&!GM.ended){mgClose();msg('遊戲取消了');}else if(old&&old.st==='lobby'&&document.getElementById('mglobby'))mgCloseDp();return;}
   const me=v.pl&&v.pl[NET.uid];
-  if(v.st==='lobby'){if(me)mgLobby();else if(!NET.mgAsk||NET.mgAsk!==v.ts){NET.mgAsk=v.ts;NET.mgPending=v.ts;}if(!me&&document.getElementById('mglobby'))mgCloseDp();}
+  if(v.st==='lobby'){if(me&&(me.arr||v.by===NET.uid))mgLobby();else if(!me&&(!NET.mgAsk||NET.mgAsk!==v.ts)){NET.mgAsk=v.ts;NET.mgPending=v.ts;}if(!me&&document.getElementById('mglobby'))mgCloseDp();}
+  if(v.st==='play'&&!me&&NET.mgGo===v.ts){NET.mgGo=0;mgGoBar();clearPath();msg('來不及走到，遊戲先開始了……\n下一場再一起玩！');}
   if(v.st==='play'&&me&&(!GM||GM.ts!==v.ts)){mgCloseDp();mgRun(v);}
   if(v.st==='play'&&!me&&old&&old.st==='lobby'&&NET.mgPending===v.ts){NET.mgPending=0;mgCloseDp();}
   if(GM&&GM.ts===v.ts){GM.g=v;if(MG2G[v.k].sync)MG2G[v.k].sync(GM,v);if(v.st==='end')mgEnd(v);}
   if(v.by===NET.uid&&v.st==='play')mgHostCheck(v);}
 function mgCloseDp(){const d=document.getElementById('dp');if(d.style.display!=='none'&&(document.getElementById('mglobby')||document.getElementById('mgmark'))){d.style.display='none';if(G.ph==='market')G.ph='play';}}
 function mgInviteTick(){if(!NET.mgPending||G.ph!=='play')return;const g=NET.game;if(!g||g.st!=='lobby'||g.ts!==NET.mgPending){NET.mgPending=0;return;}NET.mgPending=0;const M=MG2[g.k],who=(g.pl[g.by]||{}).n||'朋友';
-  festPop(who+' 揪團！',who+' 想跟大家玩「'+M.n+'」\n\n'+M.d,[['加入',()=>mgJoin()],['不玩',null,'bc']],'#9fe0ff');{const mk=el('span');mk.id='mgmark';mk.hidden=true;document.getElementById('dpbox').appendChild(mk);}sfx('click');}
+  festPop(who+' 揪團！',who+' 在'+(g.zn||'場地')+'揪大家玩「'+M.n+'」\n\n'+M.d+'\n\n答應的話，會自動走去找 '+who+'。',[['好，我過去！',()=>mgJoin()],['不玩',null,'bc']],'#9fe0ff');{const mk=el('span');mk.id='mgmark';mk.hidden=true;document.getElementById('dpbox').appendChild(mk);}sfx('click');}
 function mgLobby(){const g=NET.game;if(!g)return;const M=MG2[g.k],box=document.getElementById('dpbox');G.ph='market';box.innerHTML='';DP=null;
   const t=el('div','dpn',M.n);t.id='mglobby';t.style.color='#9fe0ff';box.appendChild(t);box.appendChild(el('div','dpd',M.d));
-  const ids=mgIds(g);let list='現在加入的人（'+ids.length+'）：\n'+ids.map(id=>g.pl[id].n+(id===g.by?'（發起）':'')).join('\n');
+  const all=mgIds(g),ids=all.filter(id=>g.pl[id].arr||id===g.by),late=all.filter(id=>!ids.includes(id));let list='已經到的人（'+ids.length+'）：\n'+ids.map(id=>g.pl[id].n+(id===g.by?'（發起）':'')).join('\n')+(late.length?'\n\n正在走過來：'+late.map(id=>g.pl[id].n).join('、'):'');
   if(g.k==='tug'&&ids.length>1){const T=mgTeams(g);list+='\n\n藍隊：'+T.A.map(id=>g.pl[id].n).join('、')+'\n紅隊：'+T.B.map(id=>g.pl[id].n).join('、');}
   box.appendChild(el('div','dps',list));
-  if(g.by===NET.uid){const b=el('button','bp',ids.length>=M.min?'開始！（'+ids.length+' 人）':'等朋友加入……');b.type='button';b.disabled=ids.length<M.min;b.onclick=()=>NET.tp.upd(mgP(),{st:'play',go:Date.now(),...(g.k==='vball'?{ball:{to:ids[1],n:0,id:1}}:{}),...(M.start?M.start(ids):{})});box.appendChild(b);}
+  if(g.by===NET.uid){const b=el('button','bp',ids.length>=M.min?(late.length?'不等了，開始！（'+ids.length+' 人）':'開始！（'+ids.length+' 人）'):late.length?'等朋友走過來……':'等朋友答應……');b.type='button';b.disabled=ids.length<M.min;b.onclick=()=>NET.tp.upd(mgP(),{st:'play',go:Date.now(),...Object.fromEntries(late.map(id=>['pl/'+id,null])),...(g.k==='vball'?{ball:{to:ids[1],n:0,id:1}}:{}),...(M.start?M.start(ids):{})});box.appendChild(b);}
   else box.appendChild(el('div','dps','等 '+(g.pl[g.by]||{}).n+' 按開始……'));
   const c=el('button','bc',g.by===NET.uid?'取消揪團':'退出');c.type='button';c.onclick=mgLeave;box.appendChild(c);document.getElementById('dp').style.display='flex';}
 function mgTeams(g){const ids=mgIds(g),A=[],B=[];ids.forEach((id,i)=>(i%2?B:A).push(id));return{A,B};}
