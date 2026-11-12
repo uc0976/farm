@@ -2249,6 +2249,7 @@ function onTap(wx,wy){
   if(G.place==='floor'){paintFloor(Math.floor(wx/TILE),Math.floor(wy/TILE));return;}
   if(G.place){const tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);if(G.placeAt&&G.placeAt[0]===tx&&G.placeAt[1]===ty){doPlace(tx,ty);}else{G.placeAt=[tx,ty];updPlaceBar();}return;}
   if(NET.on){const rp=netHitPlayer(wx,wy);if(rp){netPlayerMenu(rp);return;}}
+  {const L=(G.loot||[]).find(o=>Math.hypot(wx-o.x,wy-(o.y-4))<22);if(L){if(G.sitting!=null)standUp();const lx=Math.floor(L.x/TILE),ly=Math.floor(L.y/TILE),gs=isWalk(lx,ly)?new Set([ly*MW+lx]):neighborGoals(lx,ly);if(walkTo(gs,{tx:lx,ty:ly}))msg('走過去撿物資袋');return;}}
   if(G.sitting!=null)standUp();
   {const sx=Math.floor(wx/TILE),sy=Math.floor(wy/TILE);if(sy===MH-1&&G.map[sy]&&G.map[sy][sx]===T.TREE){G.secret=(G.secret||[]).concat(sx+1).slice(-4);if(G.secret.join()==='4,6,2,2'){G.secret=[];G.gold+=5000;updHUD();sfx('coin');msg('樹上掉下了一袋金幣…\n獲得 5000G！');saveGame();}return;}}
   let tx=Math.floor(wx/TILE),ty=Math.floor(wy/TILE);
@@ -2868,7 +2869,7 @@ function bagRow(icon,name,sub,btn){const{row,info}=makeRow(icon,name,sub);row.ap
 const BAG_TABS=[['seed','種子'],['harvest','收穫'],['food','食物'],['build','建造'],['other','其他']];
 function openBag(focus){
   tutEvent('bag');G.ph='market';clearPath();const tab=focus==='food'?'food':focus==='seed'?'seed':focus==='bag'?(G.bagTab||'seed'):focus&&BAG_TABS.some(t=>t[0]===focus)?focus:'harvest';G.bagTab=tab;
-  const box=document.getElementById('mbox');box.innerHTML='';box.appendChild(el('div','ot','背包'));{const nk=invKinds(bagInv());box.appendChild(el('div','qhint'+(nk>=BAG_KINDS?' bagfull':''),'已放 '+nk+'/'+BAG_KINDS+' 種・每種最多 '+STACK+' 個'+(nk>=BAG_KINDS?'｜滿了！放進木箱或賣掉吧':'')+'（種子和工具不佔空間）'));}
+  const box=document.getElementById('mbox');box.innerHTML='';box.appendChild(el('div','ot','背包'));{const nk=invKinds(bagInv());box.appendChild(el('div','qhint'+(nk>=BAG_KINDS?' bagfull':''),nk>=BAG_KINDS?'背包滿了（'+nk+'/'+BAG_KINDS+' 種）！放進木箱或賣掉吧':'已放 '+nk+'/'+BAG_KINDS+' 種・每種最多 '+STACK+' 個・種子不佔空間'));}
   const tabs=el('div','bagtabs');for(const[k,nm]of BAG_TABS){const b=el('button',k===tab?'act':'',nm);b.type='button';b.onclick=()=>openBag(k);tabs.appendChild(b);}box.appendChild(tabs);
   const rows=[];
   if(tab==='seed'){const cur=curSeed(),list=[...new Set([...seasonCrops(),'wheat','rice','grass',...Object.keys(CROPS)])].filter(k=>G.seeds[k]>0);
@@ -2881,7 +2882,7 @@ function openBag(focus){
   else if(tab==='build'){const wd=(G.mat&&G.mat.wood)||0;box.appendChild(el('div','qhint','木材 ×'+wd+'　拿斧頭砍樹就能收集木材'));
     for(const k in BUILDS){const B=BUILDS[k];if(B.fixed){if(!(G.stashB&&G.stashB[k]))continue;const bt=el('button','bb','放回去');bt.type='button';bt.style.cssText='background:#1b5e20;border-color:#4caf50';bt.onclick=()=>{if(B.room){const cur=roomAt(G.px,G.py);if(!cur||houseOf(cur)!==houseOf(B.room)){msg('要回到'+ROOMS[houseOf(B.room)].n+'\n才能把'+B.n+'放回去喔！');return;}}closeOm();startPlace(k);};const r=bagRow('wood',B.n,'收起來的'+B.n+(G.stashB[k]>1?' ×'+G.stashB[k]:'')+(B.room?'｜'+ROOMS[houseOf(B.room)].n+'的東西，回去那裡才能放':B.home?'｜免費放回，放在家裡的地板上':'｜免費放回，放在草地或廣場上'),bt);r.querySelector('img').src=buildIconURL(k);rows.push(r);continue;}const can=wd>=B.cost,bt=el('button','bb','開始建造');bt.type='button';bt.disabled=!can;bt.style.cssText=can?'background:#1b5e20;border-color:#4caf50':'';bt.onclick=()=>{closeOm();startPlace(k);};
       const r=bagRow('wood',B.n,'木材 ×'+B.cost+'｜'+B.d+(rotList(k)?'｜可以轉向':'')+(can?'':'｜木材不夠（你有 '+wd+'）'),bt);r.querySelector('img').src=buildIconURL(k);rows.push(r);}
-    {const bt=el('button','bb','選地板');bt.type='button';bt.style.cssText='background:#1b5e20;border-color:#4caf50';bt.onclick=()=>{closeOm();openFloorPick();};const r=bagRow('wood','鋪地板','草地、泥土、泥土路、石子路、石磚｜免費鋪在自己的農場',bt);r.querySelector('img').src=floorThumb(T.PA);rows.push(r);}
+    {const bt=el('button','bb','選地板');bt.type='button';bt.style.cssText='background:#1b5e20;border-color:#4caf50';bt.onclick=()=>{closeOm();openFloorPick();};const r=bagRow('wood','鋪地板','免費｜草地、泥土、泥土路、石子路、石磚，鋪在自己的農場',bt);r._tp='免費';r.querySelector('img').src=floorThumb(T.PA);rows.push(r);}
     {const n=(G.mat&&G.mat.sapling)||0,bt=el('button','bb','開始種樹');bt.type='button';bt.disabled=!n;bt.style.cssText=n?'background:#1b5e20;border-color:#4caf50':'';bt.onclick=()=>{closeOm();startPlace('sapling');};
       rows.push(bagRow('sapling','種樹苗','樹苗 ×'+n+'｜種在空草地上，大約 3 天長成大樹'+(n?'':'｜砍樹有機會撿到，也可以跟阿牧或阿宇買'),bt));}}
   else{if(G.mat&&G.mat.wood>0)rows.push(bagRow('wood','木材 ×'+G.mat.wood,'可以在「建造」蓋東西，阿野和阿宇也很喜歡'));if(G.event&&G.event.id==='lost'&&G.event.found&&!G.event.returned)rows.push(bagRow('hikehat','阿方的登山帽','撿到的舊帽子，上面寫著「阿方」。\n拿去還給阿方吧！'));if(G.mat&&G.mat.sapling>0)rows.push(bagRow('sapling','樹苗 ×'+G.mat.sapling,'到「建造」選「種樹苗」，種在空草地上'));if(G.hay>0)rows.push(Object.assign(bagRow('hay','牧草 ×'+G.hay,'放進畜欄的飼料槽給動物吃'),{_tp:'動物飼料'}));rows.push((r=>{r.querySelector('img').src=toolIconURL('water');r._tp=G.water+'/'+G.maxWater;return r;})(bagRow('water','水桶','水量 '+G.water+'/'+G.maxWater+'｜去農場的水井可以裝水')));if(G.rod)rows.push(bagRow('rod','釣竿','站在沙灘邊或碼頭，點海面就能釣魚'));}
@@ -3704,7 +3705,7 @@ function openRanch(mode){
   const top=el('div','mtop');top.appendChild(el('span',null,'持有 '+G.gold+'G'));top.appendChild(el('span',null,'畜欄 Lv'+(G.penLv+1)));box.appendChild(top);
   const btn=(label,dis,fn,bg)=>{const b=el('button','bb',label);b.type='button';b.disabled=dis;b.style.cssText=dis?'background:#2a2a2a;border-color:#444;opacity:.5':'background:'+(bg||'#1b5e20')+';border-color:#4caf50';b.onclick=fn;return b;};
   if(mode==='buy'){for(const[type,D]of Object.entries(ANIMAL_DATA)){const cnt=G.animals.filter(a=>a.type===type).length,pr=D.cost;
-    box.appendChild(bagRow(type,D.n,'產出'+D.productN+'｜每 '+D.days+' 天｜目前 '+cnt+'/'+maxOf(type)+' 隻',btn(pr+'G',cnt>=maxOf(type)||G.gold<pr,()=>{G.gold-=pr;if(G.today)G.today.spent+=pr;addAnimal(type);sfx('coin');updHUD();msg('買了一隻'+D.n+'！\n已經送到你的畜欄了');saveGame();openRanch('buy');})));}}
+    box.appendChild(bagRow(type,D.n,'產出'+D.productN+'｜每 '+D.days+' 天｜目前 '+cnt+'/'+maxOf(type)+' 隻',btn(pr+'G',cnt>=maxOf(type)||G.gold<pr,()=>{G.gold-=pr;if(G.today)G.today.spent+=pr;if(NET.mode==='guest'){netBuyAnimal(type,pr);sfx('coin');updHUD();saveGame();openRanch('buy');return;}addAnimal(type);sfx('coin');updHUD();msg('買了一隻'+D.n+'！\n已經送到你的畜欄了');saveGame();openRanch('buy');})));}}
   if(mode==='sell'){const list=G.animals.filter(a=>!(a.baby>0));if(!list.length)box.appendChild(el('div','msgtxt','畜欄裡沒有可以賣的成年動物。'));
     for(const a of list){const D=ANIMAL_DATA[a.type],pr=Math.round(D.cost*.5*(1+a.love*.1));
       box.appendChild(bagRow(a.type,D.n+' '+'♥'.repeat(a.love),'心情越好賣得越高',btn('賣 '+pr+'G',false,e=>{const b=e.currentTarget;if(!b.dataset.arm){b.dataset.arm='1';b.textContent='確定？';return;}G.animals.splice(G.animals.indexOf(a),1);G.gold+=pr;if(G.today)G.today.earn+=pr;G.stats.earned+=pr;sfx('coin');updHUD();msg('把'+D.n+'交給阿牧了，獲得 '+pr+'G');saveGame();openRanch('sell');},'#4e2200')));}}
@@ -3881,6 +3882,11 @@ function openCalendar(si){si=si==null?season():si;G.ph='market';clearPath();cons
 
 // ===== 劇情任務 =====
 // 小路的論文大危機：口試前一天筆電當機，在睡覺前幫他找回論文
+// 突發劇情一次只進行一個，結束後至少隔 3 天才出下一個
+function storyActive(){const S=G.story||{},L=S.lu,T_=S.thief,M=S.mart;return[L&&/^(call|hunt|wait|result)$/.test(L.st)?'lu':0,T_&&/^(active|result)$/.test(T_.st)?'thief':0,M&&/^(call|active|result)$/.test(M.st)?'mart':0].filter(Boolean);}
+function storyFree(){if(storyActive().length)return false;const S=G.story||{},last=Math.max(-99,...['lu','thief','mart'].map(k=>(S[k]&&S[k].doneDay!=null)?S[k].doneDay:-99));return G.day-last>=3;}
+function storyDedupe(){const a=storyActive();if(a.length<2)return;const S=G.story,go=k=>k==='thief'||(k==='lu'&&S.lu.st!=='call')||(k==='mart'&&S.mart.st!=='call'),keep=a.find(go)||a[0];
+  for(const k of a){if(k===keep)continue;if(k==='lu'&&S.lu.st==='call'){S.lu.st='none';S.lu.pend=null;}if(k==='mart'&&S.mart.st==='call')S.mart.st='none';}if(typeof updStoryBar==='function')updStoryBar();}
 function stLu(){if(!G.story)G.story={};return G.story.lu||(G.story.lu={st:'none',got:{}});}
 const LU_GRADE={
   A:['口試通過！','小路帶著隨身碟和阿翔的筆電上台，\n簡報一張一張順利播完。\n\n老師：「這是你寫的？……寫得不錯嘛。」\n小路：「哈哈笑死，我自己都嚇到。」\n\n獲得 3000G・小路好感大幅上升',3000,{lu:30,ak:10,ted:10,yu:10}],
@@ -3890,9 +3896,9 @@ const LU_GRADE={
 function luGrade(){const L=stLu(),g=L.got;if(!L.delivered)return'D';if(g.usb&&g.laptop)return'A';if(g.usb)return'B';if(g.draft)return'C';return'D';}
 function luGotText(){const g=stLu().got,a=[];if(g.usb)a.push('隨身碟');if(g.laptop)a.push('筆電');if(g.draft)a.push('第一章初稿');return a.length?a.join('、'):'還沒有';}
 function storyNight(){martNight();const L=stLu();if(L.st==='hunt'||L.st==='wait'){L.grade=luGrade();L.st='result';}thiefNight();setTimeout(storyMorning,5800);}
-function storyMorning(){if(!started)return;thiefMorning();martMorning();const L=stLu();
+function storyMorning(){if(!started)return;storyDedupe();thiefMorning();martMorning();const L=stLu();
   if(L.st==='result'){const[t,body,gold,rel]=LU_GRADE[L.grade];L.st='done';L.doneDay=G.day;G.gold+=gold;if(G.today)G.today.earn+=gold;for(const id in rel)addRel(id,rel[id]);updHUD();saveGame();sfx(L.grade==='A'?'catch':'click');popInfo('小路的論文大危機｜'+t,body,'好',null,L.grade==='D'?'#ff8a80':'#ffcf40');return;}
-  if(L.st==='none'&&G.day>=6&&(G.rel.lu||0)>=40)L.pend=G.day;}
+  if(L.st==='none'&&G.day>=6&&(G.rel.lu||0)>=40&&storyFree())L.pend=G.day;}
 // 每分鐘檢查：小路起床（6:30）後才傳訊息求救
 function luWhere(){const S=RS&&RS.lu;if(S&&S.at&&ROOMS[S.at])return ROOMS[S.at].n+(S.sleep?'（睡覺中）':'');const n=NPCS.find(v=>v.id==='lu');if(n&&!n.away)return zoneOf(n.x)===1?'村子裡':'市集、農場附近';if(npcOff('lu')==='job')return'兼差中（17:00 回來）';return'在路上，等一下再找找';}
 function storyTick(){const L=G.story&&G.story.lu;if(L&&/^(call|hunt)$/.test(L.st)&&frameCount%30===0)updStoryBar();if(!L||L.st!=='none'||L.pend!==G.day||G.time<6.5*60||G.festOn||G.ph!=='play')return;L.st='call';L.pend=null;saveGame();updStoryBar();msg('小路傳來訊息：\n「救命！！！我一起床筆電就藍屏了！！\n快來找我！！」');sfx('bite');}
@@ -3936,7 +3942,7 @@ function thiefSteal(n){const c=[];for(let y=0;y<MH;y++)for(let x=0;x<FARMW;x++){
   c.sort((a,b)=>b[2]-a[2]);let k=0;for(const[x,y]of c.slice(0,n)){G.cr[y][x]=null;if(G.map[y][x]===T.WA)G.map[y][x]=T.TI;k++;}return k;}
 function cropCount(){let n=0;for(let y=0;y<MH;y++)for(let x=0;x<FARMW;x++){const cr=G.cr[y]&&G.cr[y][x];if(cr&&cr.type!=='grass')n++;}return n;}
 function thiefNight(){const T_=stTh();
-  if(T_.st==='none'&&G.day>=12&&cropCount()>=5){const k=thiefSteal(2);if(k){T_.st='active';T_.start=G.day+1;T_.stolen=k;T_.news=1;T_.clueDay=G.day+1;}return;}
+  if(T_.st==='none'&&G.day>=12&&cropCount()>=5&&storyFree()){const k=thiefSteal(2);if(k){T_.st='active';T_.start=G.day+1;T_.stolen=k;T_.news=1;T_.clueDay=G.day+1;}return;}
   if(T_.st!=='active')return;
   if(G.day+1-T_.start>=6){T_.st='result';T_.end='C';return;}
   const k=thiefSteal(1);T_.stolen+=k;if(k)T_.news=1;if(T_.clues.length+(T_.clueAt?1:0)<3)T_.clueDay=G.day+1;}
@@ -3978,7 +3984,7 @@ function martDetail(){const M=stMart();if(M.st==='call')return'6-TWELVE 門口�
 function martTrack(){const M=G.story&&G.story.mart;if(!M||M.st!=='active')return;const cur=G.today?G.today.spent:0;if(G.ph==='shop'&&M.spBase!=null&&M.spDay===G.day&&cur>M.spBase)M.spent+=cur-M.spBase;M.spBase=cur;M.spDay=G.day;}
 function martNight(){const M=stMart();if(M.st==='active'&&G.day+1>=M.start+7){const p=martPts();M.end=p>=100?'A':p>=60?'B':'C';M.st='result';}}
 function martMorning(){const M=stMart();
-  if(M.st==='none'&&G.day>=20){M.st='call';saveGame();updStoryBar();setTimeout(()=>msg('6-TWELVE 門口貼了一張公告：\n「本店即將由巨鯨超商收購」\n……罐罐好像很煩惱？'),2500);return;}
+  if(M.st==='none'&&G.day>=20&&storyFree()){M.st='call';saveGame();updStoryBar();setTimeout(()=>msg('6-TWELVE 門口貼了一張公告：\n「本店即將由巨鯨超商收購」\n……罐罐好像很煩惱？'),2500);return;}
   if(M.st==='done'&&M.end==='C'&&M.chainUntil&&G.day>=M.chainUntil&&!M.back){M.back=1;saveGame();popInfo('6-TWELVE 重新開張！','罐罐用存了兩週的錢，\n把店從巨鯨超商手上買回來了！\n\n招牌又換回 6-TWELVE，\n價格也恢復原本的樣子。\n\n罐罐：「麻吉們，我回來了！」','太好了！',null,'#ffcf40');return;}
   if(M.st!=='result')return;M.st='done';M.doneDay=G.day;const E=M.end;
   if(E==='A'){addRel('clerk',25);G.gold+=3000;if(G.today)G.today.earn+=3000;}
@@ -4019,7 +4025,14 @@ function openShop(mode){
   for(const e of [...list.children]){if(e.classList.contains('shdr')){const s=e.textContent;keep=mode==='food'?s.includes('食物'):(mode==='drink'||mode==='vend')?s.includes('飲料'):!(s.includes('食物')||s.includes('飲料')||s.includes('動物'));}if(!keep)e.remove();}
   document.getElementById('shopTitle').textContent=mode==='food'?'6-TWELVE・熟食櫃台':mode==='vend'?'廣場販賣機（24 小時）':mode==='drink'?'6-TWELVE・飲料櫃':'6-TWELVE・種子農具櫃台';
   if(martChain()){const t=document.getElementById('shopTitle');t.textContent=t.textContent.replace('6-TWELVE','巨鯨超商');}
+  shopTabs(mode);
 }
+const SHOP_TABS=[['seed','種子'],['tool','工具'],['other','食材・飼料']];
+function shopCat(h){return/種子（|全年作物/.test(h)?'seed':/工具/.test(h)?'tool':'other';}
+function shopTabs(mode){const list=document.getElementById('sl');let bar=document.getElementById('shoptabs');if(mode!=='farm'){if(bar)bar.remove();for(const e of list.children)e.style.display='';return;}
+  if(!bar){bar=el('div','bagtabs');bar.id='shoptabs';bar.style.marginBottom='6px';list.parentNode.insertBefore(bar,list);}const cur=G.shopTab||'seed';bar.innerHTML='';
+  for(const[k,nm]of SHOP_TABS){const b=el('button',k===cur?'act':'',nm);b.type='button';b.onclick=()=>{G.shopTab=k;sfx('click');shopTabs('farm');list.scrollTop=0;};bar.appendChild(b);}
+  const apply=()=>{let c='seed';for(const e of list.children){if(e.classList.contains('shdr'))c=shopCat(e.textContent);e.style.display=c===cur?'':'none';}};apply();setTimeout(apply,0);setTimeout(apply,60);}
 function openShopAll(){G.ph='shop';document.getElementById('sg').textContent='持有：'+G.gold+'G'+(martChain()?'（巨鯨超商：原價 +10%）':shopDisc()<1?'（'+(evIs('sale')?'今日特價':'九折優惠')+'）':'');const list=document.getElementById('sl');list.innerHTML='';for(let so=0;so<5;so++){const si=so===4?-1:(season()+so)%4;const sh=document.createElement('div');sh.className='shdr';sh.textContent=so===4?'── 全年作物（可以賣給阿牧）──':'── '+SEASONS[si]+'季種子'+(so?'（非當季，長得比較慢）':'（當季）')+' ──';list.appendChild(sh);for(const k of(si<0?['wheat','rice']:SEASON_CROPS[si])){const d=CROPS[k];const{row,info,i}=makeRow('seed:'+k,d.n+'種子','持有 '+G.seeds[k]+' 個｜'+Math.round(d.sd*shopDisc())+'G');const btn=document.createElement('button');btn.className='bb';btn.style.cssText='background:#1b5e20;border-color:#4caf50;';btn.textContent='購買';btn.dataset.bulk=Math.round(d.sd*shopDisc());btn.onclick=()=>{const pr=Math.round(d.sd*shopDisc());if(G.gold<pr){msg('金幣不足！');return;}G.gold-=pr;G.today.spent+=pr;sfx('click');G.seeds[k]++;document.getElementById('sg').textContent='持有：'+G.gold+'G';i.textContent='持有 '+G.seeds[k]+' 個｜'+Math.round(d.sd*shopDisc())+'G';updHUD();updTB();};row.appendChild(info);row.appendChild(btn);list.appendChild(row);}}if(!G.knife){const kh=document.createElement('div');kh.className='shdr';kh.textContent='── 工具 ──';list.appendChild(kh);const{row,info}=makeRow('knife','屠宰刀','可以把動物處理成肉｜'+Math.round(150*shopDisc())+'G');const btn=document.createElement('button');btn.className='bb';btn.style.cssText='background:#1b5e20;border-color:#4caf50;';btn.textContent='購買';btn.onclick=()=>{const pr=Math.round(150*shopDisc());if(G.gold<pr){msg('金幣不足！');return;}G.gold-=pr;G.today.spent+=pr;G.knife=true;sfx('click');updHUD();msg('買了屠宰刀。\n點動物就能選擇宰殺');openShop();};row.appendChild(info);row.appendChild(btn);list.appendChild(row);}
 shopToolUp(list);
 {const qh=document.createElement('div');qh.className='shdr';qh.textContent='── 食物 ──';list.appendChild(qh);const FL=Object.keys(FOOD).filter(k=>FOOD[k].price&&!FOOD[k].drink),DL=Object.keys(FOOD).filter(k=>FOOD[k].drink);for(const k of[...FL,...DL]){if(k===DL[0]){const dh=document.createElement('div');dh.className='shdr';dh.textContent='── 飲料 ──';list.appendChild(dh);}const d=FOOD[k];const{row,info,i}=makeRow(k,d.n,'持有 '+G.food[k]+' 個｜'+Math.round(d.price*shopDisc())+'G｜飽足 +'+d.full+'・體力 +'+d.en);const btn=document.createElement('button');btn.className='bb';btn.style.cssText='background:#1b5e20;border-color:#4caf50;';btn.textContent='購買';btn.dataset.bulk=Math.round(d.price*shopDisc());btn.onclick=()=>{const pr=Math.round(d.price*shopDisc());if(G.gold<pr){msg('金幣不足！');return;}G.gold-=pr;G.today.spent+=pr;sfx('click');G.food[k]++;document.getElementById('sg').textContent='持有：'+G.gold+'G';i.textContent='持有 '+G.food[k]+' 個｜'+Math.round(d.price*shopDisc())+'G｜飽足 +'+d.full+'・體力 +'+d.en;updHUD();updTB();};row.appendChild(info);row.appendChild(btn);list.appendChild(row);}}
@@ -4078,7 +4091,7 @@ function openSettings(){if(G.ph!=='play'&&G.ph!=='market')return;clearPath();G.p
   setRow(box,'音量',[[.35,'小'],[.6,'中'],[.9,'大']],SND.vol||.9,v=>{SND.vol=v;try{localStorage.setItem('farm-vol',v);}catch(e){}if(SND.master&&SND.on)SND.master.gain.value=v;sfx('coin');});
   setRow(box,'通知停留',[[3000,'短'],[6000,'標準'],[10000,'長']],G.toastMs||6000,v=>{G.toastMs=v;try{localStorage.setItem('farm-toast',v);}catch(e){}});
   const act=(label,cls,fn)=>{const b=el('button',cls,label);b.type='button';b.onclick=fn;box.appendChild(b);return b;};
-  {const r=el('div','setr');r.appendChild(el('div','setl','名字'));const nm=el('span',null,G.pname||'小農夫');nm.style.cssText='flex:1;color:var(--gold)';r.appendChild(nm);const b=el('button','bb','改名字');b.type='button';b.onclick=openRename;r.appendChild(b);box.appendChild(r);}
+  {const r=el('div','setr');r.appendChild(el('div','setl','名字'));const nm=el('span',null,G.pname||'小農夫');nm.style.cssText='flex:1;color:var(--gold)';r.appendChild(nm);const b=el('button','bb','改名字');b.type='button';b.style.cssText='background:#1b5e20;border-color:#4caf50;color:#fff';b.onclick=openRename;r.appendChild(b);box.appendChild(r);}
   act(NET.on?'多人連線（'+(NET.mode==='host'?'房號 '+NET.code:'在朋友的農場')+'）':'多人連線（邀請朋友來玩）','bp',()=>{closeOm();openNetPanel();});
   act('重看新手教學','bp',()=>{closeOm();startTutorial();});
   const svb=act('立刻存檔','bp',()=>{saveGame();sfx('coin');svb.textContent='✔ 存檔完成！';svb.style.background='#2e7d32';svb.style.borderColor='#a5d6a7';setTimeout(()=>{if(svb.isConnected){svb.textContent='立刻存檔';svb.style.background='';svb.style.borderColor='';}},1800);msg('存檔完成！\n遊戲也會每隔幾秒自動存檔');});
@@ -4346,7 +4359,8 @@ function bagRoom(src,k){return invRoom(bagInv(),src,k,BAG_KINDS);}
 let BFMT=0;function bagFullMsg(){if(frameCount-BFMT<60)return;BFMT=frameCount;msg('背包滿了！\n先把東西放進木箱或賣掉吧');}
 function chestInv(b){if(!b.inv)b.inv=invNew();for(const s of BAG_SRC)if(!b.inv[s])b.inv[s]={};return b.inv;}
 function storeCount(){let n=0;for(const b of G.builds||[])if(b.k==='chest'&&b.inv)for(const s of BAG_SRC)for(const k in b.inv[s]||{})n+=b.inv[s][k]||0;return n;}
-function dropLoot(x,y,inv){let any=false;for(const s in inv)for(const k in inv[s])if(inv[s][k]>0)any=true;if(!any)return false;if(!G.loot)G.loot=[];G.loot.push({x:Math.round(x),y:Math.round(y),inv});return true;}
+function lootSpot(x,y){const tx=Math.floor(x/TILE),ty=Math.floor(y/TILE),bad=(a,b)=>!isWalk(a,b)||[T.STALL,T.STALL2].includes((G.map[b-1]||[])[a])||!!buildAt(a,b);if(!bad(tx,ty))return[x,y];for(let r=1;r<=4;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;if(!bad(tx+dx,ty+dy))return[(tx+dx+.5)*TILE,(ty+dy+.6)*TILE];}return[G.px,G.py];}
+function dropLoot(x,y,inv){let any=false;for(const s in inv)for(const k in inv[s])if(inv[s][k]>0)any=true;if(!any)return false;[x,y]=lootSpot(x,y);if(!G.loot)G.loot=[];G.loot.push({x:Math.round(x),y:Math.round(y),inv});return true;}
 function migrateStore(){const S=G.store;if(!S)return;const chests=(G.builds||[]).filter(b=>b.k==='chest'),left=invNew();let lf=false;
   for(const s of ['mat','products','food','hv'])for(const k in S[s]||{}){let n=+S[s][k]||0;for(const b of chests){if(n<=0)break;const I=chestInv(b),r=Math.min(n,invRoom(I,s,k,CHEST_KINDS));if(r>0){I[s][k]=(I[s][k]||0)+r;n-=r;}}if(n>0){left[s][k]=n;lf=true;}}
   if(lf){const b=chests[0];dropLoot(b?(b.x+.5)*TILE:4.5*TILE,b?(b.y+1.4)*TILE:9.5*TILE,left);}G.store=null;}
@@ -4375,7 +4389,7 @@ function updateLoot(){if(G.ph!=='play'||frameCount%15)return;if(!G.mv3)moveObjs2
   for(let i=G.loot.length-1;i>=0;i--){const L=G.loot[i];if(Math.hypot(L.x-G.px,L.y-G.py)>TILE*.75){L.warned=false;continue;}const r=lootPick(L);
     if(r.left<=0){G.loot.splice(i,1);msg('撿起了一袋東西！');sfx('harvest');updTB();saveGame();}
     else{if(r.got){msg('背包裝不下全部，\n袋子裡還剩 '+r.left+' 個');sfx('click');updTB();saveGame();}else if(!L.warned)bagFullMsg();L.warned=true;}}}
-function drawLoot(L){const sx=Math.round(L.x-cam.x),sy=Math.round(L.y-cam.y);if(sx<-40||sy<-40||sx>W2+40||sy>H2+40)return;const b=Math.round(Math.sin(Date.now()/500)*1);const P=(a,c,w,h,k)=>{ctx.fillStyle=k;ctx.fillRect(sx+a,sy+c+b,w,h);};
+function drawLoot(L){const sx=Math.round(L.x-cam.x),sy=Math.round(L.y-cam.y);if(sx<-40||sy<-40||sx>W2+40||sy>H2+40)return;if(Math.hypot(L.x-G.px,L.y-G.py)<TILE*4){ctx.font='bold 10px Cubic11,"Noto Sans TC",sans-serif';const tw=fmw('物資袋')+8;ctx.fillStyle='rgba(10,6,2,.75)';ctx.fillRect(sx-tw/2,sy-30,tw,13);ctx.fillStyle='#ffd54f';ctx.textAlign='center';ftx('物資袋',sx,sy-20);ctx.textAlign='left';}const b=Math.round(Math.sin(Date.now()/500)*1);const P=(a,c,w,h,k)=>{ctx.fillStyle=k;ctx.fillRect(sx+a,sy+c+b,w,h);};
   pixShadow(sx,sy+6,18);P(-8,-6,16,12,'#3a2410');P(-7,-7,14,13,'#b8863e');P(-6,-6,4,11,'#d4a456');P(5,-6,2,11,'#8a5e26');P(-4,-11,8,4,'#3a2410');P(-3,-10,6,3,'#b8863e');P(-5,-8,10,2,'#c0392b');P(-1,-3,2,2,'#f9c74f');}
 let STB=null,STSEL=null;
 function openStorage(cb){cb=cb||STB||(G.builds||[]).find(b=>b.k==='chest');if(!cb){msg('還沒有木箱喔！');return;}STB=cb;const CI=chestInv(cb);if(!G.mat)G.mat={};const box=document.getElementById('mbox'),ps=box.scrollTop;box.innerHTML='';G.ph='market';clearPath();
@@ -4675,6 +4689,9 @@ function openLog(){if(G.ph!=='play')return;clearPath();G.ph='market';G.logNew=fa
   else{const wrap=el('div','logl');for(let i=L.length-1;i>=0;i--){const r=el('div','logr'+((L[i].q||0)>seen?' new':''));r.appendChild(el('span','logt',L[i].t));r.appendChild(el('span','logx',L[i].txt+(L[i].n>1?'（×'+L[i].n+'）':'')));wrap.appendChild(r);}box.appendChild(wrap);}
   box.appendChild(el('div','qhint','通知紀錄每天早上會自動清空'));
   const c=el('button','bc','關閉');c.type='button';c.onclick=closeOm;box.appendChild(c);document.getElementById('om').style.display='flex';}
+// 開視窗時，把之前留著的通知收起來，不要蓋在視窗上面
+{const ovIds=['om','dp','os','oq','od'];let wasOpen=false;const chk=()=>{const open=ovIds.some(id=>{const o=document.getElementById(id);return o&&o.style.display&&o.style.display!=='none';});if(open&&!wasOpen){const now=Date.now();for(const t of document.querySelectorAll('#mg > *'))if(now-(t._born||0)>400){clearTimeout(t._t);t.remove();}}wasOpen=open;};
+  const mo=new MutationObserver(chk);window.addEventListener('load',()=>{for(const id of ovIds){const o=document.getElementById(id);if(o)mo.observe(o,{attributes:true,attributeFilter:['style']});}const mg=document.getElementById('mg');if(mg)new MutationObserver(ms=>{for(const m of ms)for(const n of m.addedNodes)n._born=Date.now();}).observe(mg,{childList:true});});}
 function msg(txt){
   const box=document.getElementById('mg');if(!box)return;
   const kill=d=>{clearTimeout(d._t);d.classList.add('out');setTimeout(()=>d.remove(),440);};{const tb=document.getElementById('top');if(tb)box.style.top=(tb.offsetTop+tb.offsetHeight+6)+'px';}
@@ -4714,13 +4731,13 @@ async function netTransport(){
 function netP(s){return NET_PRE+NET.code+(s?'/'+s:'');}
 // ---- 世界快照 ----
 function netSnapObj(){return{day:G.day,time:Math.round(G.time),weather:G.weather,map:G.map,cr:G.cr,tdays:G.tdays||{},stumps:G.stumps||{},planted:G.planted||[],cleared:G.cleared||[],removed:G.removed||[],
-  builds:G.builds||[],floors:G.floors||{},hx:G.px,hy:G.py,animals:G.animals.map(a=>({type:a.type,x:a.x,y:a.y,love:a.love,baby:a.baby}))};}
+  builds:G.builds||[],floors:G.floors||{},hx:G.px,hy:G.py,saplings:G.saplings||{},penLv:G.penLv||0,trough:G.trough||0,animals:G.animals.map(a=>({type:a.type,x:a.x,y:a.y,love:a.love,baby:a.baby,fed:a.fed,petDay:a.petDay,daysLeft:a.daysLeft,readyProduct:a.readyProduct,bonus:a.bonus,treatDay:a.treatDay}))};}
 function netWriteSnap(){if(NET.mode!=='host')return;NET.snapV++;NET.tp.set(netP('snap'),{v:NET.snapV,s:JSON.stringify(netSnapObj())});NET.tp.del(netP('ed'));}
 let netSnapT=0;function netSnapSoon(){if(NET.mode!=='host')return;clearTimeout(netSnapT);netSnapT=setTimeout(netWriteSnap,800);}
-function netApplySnap(S){if(!S)return;G.map=S.map;G.cr=S.cr;G.tdays=S.tdays;G.stumps=S.stumps;G.planted=S.planted;G.cleared=S.cleared;G.removed=S.removed;G.builds=S.builds;G.floors=S.floors;
+function netApplySnap(S){if(!S)return;if(S.saplings)G.saplings=S.saplings;if(S.penLv!=null)G.penLv=S.penLv;if(S.trough!=null)G.trough=S.trough;G.map=S.map;G.cr=S.cr;G.tdays=S.tdays;G.stumps=S.stumps;G.planted=S.planted;G.cleared=S.cleared;G.removed=S.removed;G.builds=S.builds;G.floors=S.floors;
   const nd=S.day!==G.day;G.day=S.day;G.time=S.time;if(G.weather!==S.weather||nd){G.weather=S.weather;if(G.weather==='rainy'&&typeof initRain==='function')initRain();}
   G.animals.length=0;for(const a of S.animals){addAnimal(a.type);Object.assign(G.animals[G.animals.length-1],a,{fed:true});}
-  updWeatherHUD();updHUD();updTB();updClock();}
+  NET.animSig=netAnimSig();updWeatherHUD();updHUD();updTB();updClock();}
 // ---- 田地即時修改：比對動作前後的格子 ----
 function netSig(x,y){if(x<0||y<0||x>=MW||y>=MH)return'';const k=x+','+y;return G.map[y][x]+'|'+JSON.stringify(G.cr[y][x]||null)+'|'+JSON.stringify((G.stumps||{})[k]??null)+'|'+((G.planted||[]).includes(k)?1:0)+((G.cleared||[]).includes(k)?1:0);}
 function netGrab(cx,cy,r){const m={};for(let y=cy-r;y<=cy+r;y++)for(let x=cx-r;x<=cx+r;x++)if(x>=0&&y>=0&&x<MW&&y<MH)m[x+','+y]=netSig(x,y);return m;}
@@ -4733,7 +4750,7 @@ function netApplyEdit(e){if(!e||e.by===NET.uid)return;const{x,y}=e,k=x+','+y;if(
 // ---- 玩家位置 ----
 function netMe(){return{n:G.pname||'小農夫',lk:JSON.stringify(G.look||{}),x:Math.round(G.px),y:Math.round(G.py),d:G.dir,m:G.moving?1:0,a:G.act?[G.act.row,G.act.n,G.act.spd,NET.seq]:0,
   s:NET.wait?G.day:0,e:NET.emo?NET.emo.t:'',et:NET.emo?NET.emo.ts:0,ec:NET.emo&&NET.emo.c?1:0,h:NET.mode==='host'?1:0,si:netSeat()};}
-function netTick(now){if(!NET.on)return;netActTick();mgInviteTick();mgGoTick();netZoneTick();
+function netTick(now){if(!NET.on)return;netActTick();netAnimTick();mgInviteTick();mgGoTick();netZoneTick();
   if(G.act&&G.act!==NET._act){NET._act=G.act;NET.seq++;}if(!G.act)NET._act=null;
   if(now-NET.lastSend>120){const me=netMe(),sig=JSON.stringify(me);if(sig!==NET.lastSig){NET.lastSig=sig;NET.lastSend=now;NET.tp.upd(netP('pl/'+NET.uid),me);}}
   if(NET.mode==='host'&&now-NET.lastCk>2000){NET.lastCk=now;NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});}
@@ -4793,14 +4810,14 @@ async function netJoin(code){if(!netOK()){popInfo('多人連線','多人連線�
   if(!room||!room.meta){popInfo('找不到房間','房號 '+code+' 不存在，\n請跟房主確認一下房號。','好',null,'#ff8a80');return;}
   if(room.meta.ver!==GAME_VER){popInfo('版本不一樣','房主是 v'+room.meta.ver+'，你是 v'+GAME_VER+'。\n請兩個人都重新整理頁面，更新到最新版。','好',null,'#ff8a80');return;}
   if(Object.keys(room.pl||{}).length>=NET_MAX){popInfo('房間滿了','一個房間最多 '+NET_MAX+' 個人。','好',null,'#ff8a80');return;}
-  NET.tp=t;NET.uid=t.uid;NET.code=code;NET.mode='guest';NET.on=true;NET.snapV=room.snap.v;NET.hostName=room.meta.name;
+  NET.tp=t;NET.uid=t.uid;NET.code=code;NET.mode='guest';NET.on=true;NET.snapV=room.snap.v;NET.hostName=room.meta.name;NET.hostId=room.meta.host;
   // 客人的背包、金幣存在自己手機的另一個存檔，跟自己的農場分開
   SAVE_KEY='farm-guest-'+room.meta.host;const mine=SAVED,gs=readSave(),S=JSON.parse(room.snap.s);
   if(gs){loadGame(gs);}else{G.tut=-1;if(mine){G.look=mine.look;G.pname=mine.pname;}G.gold=500;rebuildHero();buildTools(true);}
   netApplySnap(S);G.px=S.hx+TILE;G.py=S.hy;G.dir='down';G.indoor=false;if(G.tut!=null&&G.tut>=0)G.tut=-1;
   st.style.display='none';document.getElementById('st').style.display='none';initAudio();started=true;
   t.onDis(netP('pl/'+NET.uid));netListen();saveGame();
-  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角「互動」可以打字聊天、跳舞、拍合照\n・走到球場、廣場、海邊這些場地，可以揪大家玩小遊戲\n・點一下朋友，可以送東西、擊掌、抱抱\n・大家都上床睡覺才會到隔天\n・動物和建造先交給房主','開始！',null,'#9fe0ff'),300);}
+  setTimeout(()=>popInfo('來到 '+room.meta.name+' 的農場！','你的背包和金幣跟自己的農場分開，\n在這裡賺的錢下次來還會在。\n\n・可以一起翻土、澆水、播種、收成\n・左下角「互動」可以打字聊天、跳舞、拍合照\n・走到球場、廣場、海邊這些場地，可以揪大家玩小遊戲\n・點一下朋友，可以送東西、擊掌、抱抱\n・大家都上床睡覺才會到隔天\n・可以照顧動物、在牧場買動物、蓋東西、種樹苗\n・木箱、家具移動和賣動物還是交給房主','開始！',null,'#9fe0ff'),300);}
 function netClose(){if(!NET.on)return;if(NET.mode==='host'){NET.tp.del(netP());NET.offs.forEach(f=>f());NET.offs=[];NET.on=false;NET.mode=null;NET.pl={};const b=document.getElementById('netemo');if(b)b.remove();msg('房間關閉了');}else location.reload();}
 // ---- 介面 ----
 function netGuestBlock(what){if(NET.mode!=='guest')return false;msg('多人模式下，'+what+'先交給房主喔！');return true;}
@@ -4862,7 +4879,11 @@ function netOnMsg(k,m){NET.tp.del(netP('msg/'+NET.uid+'/'+k));if(!m||Date.now()-
   if(/_ok$/.test(m.t)){const k2=m.t.slice(0,-3),A=NET_ASK[k2];if(!A)return;sfx('heart');netSay(A.me);netHearts(G.px,G.py);if(p){faceTo(p.rx,p.ry);netHearts(p.rx,p.ry);}msg(A.done);return;}
   if(m.t==='no')return msg(m.fn+'：「下次吧！」');
   if(m.t==='busy')return msg(m.fn+' 現在正在忙，等一下再試試');
-  if(m.t==='photo')return netPhotoCount(m.fn);}
+  if(m.t==='photo')return netPhotoCount(m.fn);
+  if(NET.mode==='host'){if(m.t==='place')return netHostPlace(m);if(m.t==='buyA')return netHostBuyA(m);if(m.t==='anims')return netHostAnims(m);}
+  if(m.t==='placeNo'){const d=m.d||{};if(!G.mat)G.mat={};if(d.k==='sapling')G.mat.sapling=(G.mat.sapling||0)+1;else G.mat.wood=(G.mat.wood||0)+(d.cost||0);updTB();saveGame();return msg('那裡剛好不能放，\n材料已經還給你了');}
+  if(m.t==='buyOk')return msg(ANIMAL_DATA[(m.d||{}).type].n+'已經住進畜欄了！');
+  if(m.t==='buyNo'){const d=m.d||{};G.gold+=d.pr||0;updHUD();saveGame();return msg('畜欄已經滿了，\n'+(d.pr||0)+'G 退還給你了');}}
 // ---- 動作 ----
 function netDance(){NET.dance=frameCount+180;netSay('♪～');}
 function netWave(){G.dir='down';netSay('嗨～');}
@@ -5259,13 +5280,34 @@ function bigRows(box){const b=NET.big;if(!NET.on||!b)return;const s=bigSum(b),do
     const rw=bagRow(k,ITEM[k].n,'大家已交 '+got+' / '+q+'｜背包有 '+h+' 個',bt);rw.dataset.tp=left>0?got+'/'+q:'✔ 交齊';box.appendChild(rw);}
   const who=Object.values(b.c||{}).map(c=>c.n+' '+Object.keys(c).filter(x=>x!=='n').reduce((a,x)=>a+(+c[x]||0),0)+' 個');if(who.length){const w=el('div','oi','已經交的人：'+who.join('、'));w.style.margin='4px 0 8px';box.appendChild(w);}}
 // ---- 接到原本的遊戲流程 ----
-{const _lg=loadGame;loadGame=function(s){if(s){G.arts=s.arts||[];G.bigDone=s.bigDone||{};artRegisterAll();}return _lg.apply(this,arguments);};}
+{const _lg=loadGame;loadGame=function(s){if(s){G.arts=s.arts||[];G.bigDone=s.bigDone||{};artRegisterAll();}const r=_lg.apply(this,arguments);storyDedupe();return r;};}
 {const _endDay=endDay;endDay=function(p){_endDay(p);if(!NET.on)return;const bs=[...document.querySelectorAll('#mbox button.bp')],b=bs[bs.length-1];if(b&&/迎接新的一天/.test(b.textContent)){const f=b.onclick;b.onclick=()=>netGate(()=>f());}};}
 {const _nextDay=nextDay;nextDay=function(){const r=_nextDay.apply(this,arguments);if(NET.on){if(NET.mode==='host'){netWriteSnap();NET.tp.upd(netP('ck'),{d:G.day,t:Math.round(G.time)});bigCheckDay();}else if(NET.snap){const hp=[G.px,G.py];netApplySnap(NET.snap);G.px=hp[0];G.py=hp[1];saveGame();}}return r;};}
 {const _useTool=useTool;useTool=function(){if(!NET.on)return _useTool.apply(this,arguments);const[fx,fy]=getFacing(),a=arguments;return netWatch(fx,fy,3,()=>_useTool.apply(this,a));};}
-{const _ia=interactAnimal;interactAnimal=function(){if(netGuestBlock('照顧動物'))return;return _ia.apply(this,arguments);};}
-{const _sp=startPlace;startPlace=function(){if(netGuestBlock('建造和種樹'))return;return _sp.apply(this,arguments);};}
-{const _dp=doPlace;doPlace=function(x,y){if(!NET.on)return _dp.apply(this,arguments);const a=arguments,r=netWatch(x,y,2,()=>_dp.apply(this,a));netSnapSoon();return r;};}
+{const _sl=slaughter;slaughter=function(){if(netGuestBlock('處理動物'))return;return _sl.apply(this,arguments);};}
+{const _or=openRanch;openRanch=function(mode){if((mode==='sell'||mode==='pen')&&netGuestBlock(mode==='sell'?'賣動物':'擴建畜欄'))return;return _or.apply(this,arguments);};}
+{const _ob=openBuildObj;openBuildObj=function(){if(netGuestBlock('移動或收回家具'))return;return _ob.apply(this,arguments);};}
+{const _os=openStorage;openStorage=function(){if(NET.mode==='guest'){msg('木箱是房主的，\n先用自己的背包吧！');return;}return _os.apply(this,arguments);};}
+{const _sp=startPlace;startPlace=function(k){if(NET.mode==='guest'&&BUILDS[k]&&BUILDS[k].fixed){msg('自己的家具要回自己的農場才能擺喔！');return;}return _sp.apply(this,arguments);};}
+{const _dp=doPlace;doPlace=function(x,y){if(!NET.on)return _dp.apply(this,arguments);
+  if(NET.mode==='guest'){const k=G.place,dir=G.placeDir||defDir(k),w0=(G.mat&&G.mat.wood)||0,s0=(G.mat&&G.mat.sapling)||0,r=_dp.apply(this,arguments);
+    if(((G.mat&&G.mat.wood)||0)<w0||((G.mat&&G.mat.sapling)||0)<s0)netSend(NET.hostId,'place',{k,x,y,dir,cost:w0-((G.mat&&G.mat.wood)||0)});return r;}
+  const a=arguments,r=netWatch(x,y,2,()=>_dp.apply(this,a));netSnapSoon();return r;};}
+// 房主幫朋友把東西蓋上去（材料朋友已經付了）
+function netHostPlace(m){const d=m.d||{},B=BUILDS[d.k];if(!(d.k==='sapling'||B)||(B&&B.fixed)){netSend(m.f,'placeNo',d);return;}
+  if(G.place){setTimeout(()=>netHostPlace(m),1000);return;}
+  if(!G.mat)G.mat={};const w=G.mat.wood||0,sp=G.mat.sapling||0,nb=(G.builds||[]).length,t0=G.map[d.y]&&G.map[d.y][d.x],om=msg;
+  G.place=d.k;G.placeDir=d.dir;G.mat.wood=9999;G.mat.sapling=99;msg=()=>{};let ok=false;
+  try{if(canPlace(d.x,d.y)){NET._hostPlacing=true;doPlace(d.x,d.y);ok=(G.builds||[]).length>nb||(G.map[d.y]&&G.map[d.y][d.x])!==t0;}}finally{NET._hostPlacing=false;msg=om;G.mat.wood=w;G.mat.sapling=sp;if(G.place)endPlace();}
+  if(ok){msg(m.fn+' 在農場'+(d.k==='sapling'?'種了一棵樹苗':'蓋了'+B.n)+'！');netSnapSoon();}else{netSend(m.f,'placeNo',d);netSnapSoon();}}
+// 朋友買的動物，送到房主的畜欄
+function netBuyAnimal(type,pr){netSend(NET.hostId,'buyA',{type,pr});msg('付了 '+pr+'G！\n'+ANIMAL_DATA[type].n+'會送到 '+(NET.hostName||'房主')+' 的畜欄');}
+function netHostBuyA(m){const d=m.d||{},D=ANIMAL_DATA[d.type];if(!D)return;if(G.animals.filter(a=>a.type===d.type).length>=maxOf(d.type)){netSend(m.f,'buyNo',d);return;}addAnimal(d.type);netSnapSoon();saveGame();msg(m.fn+' 買了一隻'+D.n+'，送到畜欄了！');netSend(m.f,'buyOk',d);}
+// 朋友照顧動物：把動物的狀態變化送給房主
+function netAnimSig(){return JSON.stringify([G.trough||0,G.animals.map(a=>[a.type,a.love,a.fed,a.petDay,a.readyProduct,a.bonus,a.treatDay,a.daysLeft])]);}
+function netAnimTick(){if(NET.mode!=='guest'||frameCount%30)return;const sg=netAnimSig();if(sg===NET.animSig)return;NET.animSig=sg;
+  netSend(NET.hostId,'anims',{tr:G.trough||0,a:G.animals.map(a=>({type:a.type,love:a.love,fed:a.fed,petDay:a.petDay,readyProduct:a.readyProduct,bonus:a.bonus,treatDay:a.treatDay,daysLeft:a.daysLeft}))});}
+function netHostAnims(m){const d=m.d||{};(d.a||[]).forEach((o,i)=>{const a=G.animals[i];if(a&&a.type===o.type){for(const f of['love','fed','petDay','readyProduct','bonus','treatDay','daysLeft'])if(o[f]!==undefined)a[f]=o[f];}});if(d.tr!=null)G.trough=d.tr;saveGame();netSnapSoon();}
 function startGame(fresh){
   if(started)return;initAudio();document.getElementById('st').style.display='none';
   if(!fresh&&SAVED){loadGame(SAVED);started=true;if(G.tut!=null&&G.tut>=0)setTimeout(updTut,300);setTimeout(()=>msg('歡迎回來，'+(G.pname||'小農夫')+'！\n第 '+G.day+' 天 '+hhmm(G.time)),400);}
