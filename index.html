@@ -306,7 +306,7 @@ button.ibtn{display:flex!important;align-items:center;justify-content:center;gap
 <script>
 'use strict';
 // 版本號：每次更新往上加，開始畫面和設定頁會顯示
-const GAME_VER='1.20',GAME_DATE='2026-11-11';
+const GAME_VER='1.21',GAME_DATE='2026-11-24';
 const TILE=36,FARMW=30,MW=130,MH=24,SPD=2.2,PSPD=3.6,MAX_E=100;
 const T={G:0,D:1,TI:2,WA:3,HW:4,HF:5,BD:6,WT:7,PA:8,FE:9,SW:10,SF:11,SC:12,CH:13,PF:14,PFLOOR:15,TROUGH:16,BD2:17,TABLE:18,SHELF:19,GS:20,TREE:21,SAND:22,SEA:23,WELL:24,GATE:25,PLAZA:26,STALL:27,STALL2:28,BOARD:29,STOVE:30,SIGN:31,LAMP:34,BARN:38,DOCK:39,BENCH:40,FLOWERB:41,BW:42,BF:43,BPEN:44,RCNT:45,VEND:46,FRIDGE:35,HOTF:36,SEEDC:37,CHALK:32,QBOARD:33,TENT:47,FIRE:48,CTABLE:49,WARDROBE:50,WFENCE:51,SCARE:52,POT:53,STUMP:54,WBENCH:55,WCHEST:56,SPROUT:57,VB:60,COURT:61,VDECO:62,IW:63,IF:64,IFURN:65,IDOOR:66,HFURN:67,DROAD:68};
 const WALK=new Set([T.DROAD,T.IF,T.IDOOR,T.COURT,T.BF,T.DOCK,T.G,T.D,T.TI,T.WA,T.HF,T.PA,T.SF,T.PFLOOR,T.SAND,T.GATE,T.PLAZA]);
@@ -5005,7 +5005,7 @@ function mgOnGame(v){const old=NET.game;NET.game=v;
   if(v.st==='play'&&!me&&NET.mgGo===v.ts){NET.mgGo=0;mgGoBar();clearPath();msg('來不及走到，遊戲先開始了……\n下一場再一起玩！');}
   if(v.st==='play'&&me&&(!GM||GM.ts!==v.ts)){mgCloseDp();mgRun(v);}
   if(v.st==='play'&&!me&&old&&old.st==='lobby'&&NET.mgPending===v.ts){NET.mgPending=0;mgCloseDp();}
-  if(GM&&GM.ts===v.ts){GM.g=v;if(MG2G[v.k].sync)MG2G[v.k].sync(GM,v);if(v.st==='end')mgEnd(v);}
+  if(GM&&GM.ts===v.ts){GM.g=v;if(MG2G[v.k].sync)MG2G[v.k].sync(GM,v);if(v.st==='end')mgEndMP(v);}
   if(v.by===NET.uid&&v.st==='play')mgHostCheck(v);}
 function mgCloseDp(){const d=document.getElementById('dp');if(d.style.display!=='none'&&(document.getElementById('mglobby')||document.getElementById('mgmark'))){d.style.display='none';if(G.ph==='market')G.ph='play';}}
 function mgInviteTick(){if(!NET.mgPending||G.ph!=='play')return;const g=NET.game;if(!g||g.st!=='lobby'||g.ts!==NET.mgPending){NET.mgPending=0;return;}NET.mgPending=0;const M=MG2[g.k],who=(g.pl[g.by]||{}).n||'朋友';
@@ -5043,7 +5043,7 @@ function mgRun(g){if(MG2[g.k].world)return mgRunWorld(g);mgClose();const W=320,H
     GM.sb.textContent=MG2G[GM.k].board(GM);requestAnimationFrame(loop);};requestAnimationFrame(loop);}
 function mgClose(){const o=document.getElementById('mg2');if(o)o.remove();GM=null;if(G.ph==='mg2')G.ph='play';}
 function mgName(g,id){return id===NET.uid?'你':(g.pl[id]||{}).n||'？';}
-function mgEnd(v){if(!GM||GM.ended)return;GM.ended=true;GM.over=true;const r=MG2G[v.k].result(GM,v);G.gold+=r.gold;if(G.today)G.today.earn+=r.gold;G.en=Math.max(0,G.en-5);updHUD();saveGame();sfx(r.win?'coin':'click');
+function mgEndMP(v){if(!GM||GM.ended)return;GM.ended=true;GM.over=true;const r=MG2G[v.k].result(GM,v);G.gold+=r.gold;if(G.today)G.today.earn+=r.gold;G.en=Math.max(0,G.en-5);updHUD();saveGame();sfx(r.win?'coin':'click');
   setTimeout(()=>{if(!GM)return;festPop(MG2[v.k].n+'｜結果',r.text+'\n\n'+(r.gold?'獲得 '+r.gold+'G':'')+'・體力 -5',[['好',()=>{mgClose();}]],'#9fe0ff');},900);
   if(v.by===NET.uid)setTimeout(()=>{if(NET.game&&NET.game.ts===v.ts)NET.tp.del(mgP());},8000);}
 function mgEndSend(o){if(GM)GM.endMsg=o;NET.tp.upd(mgP(),o);}
